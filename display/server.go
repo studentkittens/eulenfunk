@@ -50,7 +50,10 @@ func NewLine(w int) *Line {
 					ln.scrollPos = 0
 				} else {
 					delay = ln.ScrollDelay
-					ln.scrollPos = (ln.scrollPos + 1) % len(ln.buf)
+
+					if len(ln.text) > 0 {
+						ln.scrollPos = (ln.scrollPos + 1) % len(ln.text)
+					}
 				}
 			}
 			ln.Unlock()
@@ -66,9 +69,14 @@ func (ln *Line) SetText(text string) {
 	ln.Lock()
 	defer ln.Unlock()
 
-	ln.text = []byte(text)
-	ln.dirty = true
-	ln.scrollPos = 0
+	// Check if we need to re-render...
+	btext := []byte(text)
+	if !bytes.Equal(btext, ln.text) {
+		ln.dirty = true
+		ln.scrollPos = 0
+	}
+
+	ln.text = btext
 }
 
 func (ln *Line) SetScrollDelay(delay time.Duration) {

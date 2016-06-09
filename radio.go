@@ -6,6 +6,7 @@ import (
 
 	"github.com/studentkittens/eulenfunk/ambilight"
 	"github.com/studentkittens/eulenfunk/display"
+	"github.com/studentkittens/eulenfunk/mpdinfo"
 	"github.com/urfave/cli"
 )
 
@@ -26,6 +27,16 @@ func main() {
 		},
 	}
 	app.Commands = []cli.Command{{
+		Name:  "mpdinfo",
+		Usage: "Send mpd infos to the display server",
+		Flags: []cli.Flag{},
+		Action: func(ctx *cli.Context) error {
+			return mpdinfo.Run(&mpdinfo.Config{
+				"localhost", 6600,
+				"localhost", 7778,
+			})
+		},
+	}, {
 		Name:  "display",
 		Usage: "Display server",
 		Flags: []cli.Flag{
