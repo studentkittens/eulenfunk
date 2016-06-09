@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
+	"os/exec"
 	"os/signal"
 	"strings"
 	"sync"
@@ -387,4 +389,28 @@ func RunDaemon(cfg *Config) error {
 	}
 
 	return nil
+}
+
+func RunDumpClient(cfg *Config) error {
+	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return err
+	}
+
+	for {
+		if _, err := conn.Write([]byte("render\n")); err != nil {
+			return err
+		}
+
+		c := exec.Command("clear")
+		c.Stdout = os.Stdout
+		c.Run()
+
+		if _, err := io.CopyN(os.Stdout, conn, int64(cfg.Width*cfg.Height+cfg.Height)); err != nil {
+			return err
+		}
+
+		time.Sleep(50 * time.Millisecond)
+	}
 }

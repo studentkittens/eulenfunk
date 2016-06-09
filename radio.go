@@ -41,9 +41,23 @@ func main() {
 				Usage:  "Display server port",
 				EnvVar: "DISPLAY_PORT",
 			},
+			cli.BoolFlag{
+				Name:  "dump,d",
+				Usage: "Dumpy display output to terminal",
+			},
 		},
 		Action: func(ctx *cli.Context) error {
-			// client
+			cfg := &display.Config{
+				Host:   ctx.Parent().String("host"),
+				Port:   ctx.Parent().Int("port"),
+				Width:  ctx.Int("width"),
+				Height: ctx.Int("height"),
+			}
+
+			if ctx.Bool("dump") {
+				return display.RunDumpClient(cfg)
+			}
+
 			return nil
 		},
 		Subcommands: []cli.Command{{
