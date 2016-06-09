@@ -8,8 +8,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/exec"
-	"os/signal"
 	"strings"
 	"sync"
 	"time"
@@ -83,14 +81,6 @@ func (ln *Line) SetScrollDelay(delay time.Duration) {
 
 	ln.ScrollDelay = delay
 	ln.dirty = true
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-
-	return b
 }
 
 func scroll(buf []byte, text []byte, m int) {
@@ -203,8 +193,13 @@ func (srv *Server) AddWindow(name string) {
 	srv.Lock()
 	defer srv.Unlock()
 
-	win := NewWindow(name, srv.Config.Width, srv.Config.Height)
-	srv.Windows[name] = win
+	win, ok := srv.Windows[name]
+
+	if !ok {
+		log.Printf("Creating new window `%s`", name)
+		win = NewWindow(name, srv.Config.Width, srv.Config.Height)
+		srv.Windows[name] = win
+	}
 
 	if srv.Active == nil {
 		srv.Active = win
@@ -279,7 +274,6 @@ func handleConn(srv *Server, conn net.Conn) {
 				continue
 			}
 
-			log.Printf("Creating new window `%s`", name)
 			srv.AddWindow(name)
 		case "switch":
 			name := ""
@@ -339,6 +333,10 @@ func handleConn(srv *Server, conn net.Conn) {
 			log.Printf("Ignoring unknown command `%s`", line)
 		}
 	}
+
+	if err := scanner.Err(); err != nil {
+		log.Printf("Reading connection failed: %v", err)
+	}
 }
 
 func RunDaemon(cfg *Config) error {
@@ -352,8 +350,8 @@ func RunDaemon(cfg *Config) error {
 
 	defer lsn.Close()
 
-	sigint := make(chan os.Signal)
-	signal.Notify(sigint, os.Interrupt)
+	// sigint := make(chan os.Signal)
+	// signal.Notify(sigint, os.Interrupt)
 
 	srv := NewServer(cfg)
 
@@ -362,8 +360,8 @@ func RunDaemon(cfg *Config) error {
 		select {
 		case <-srv.Quit:
 			return nil
-		case <-sigint:
-			return nil
+		// case <-sigint:
+		// 	return nil
 		default:
 			// We may continue normally.
 		}
@@ -391,9 +389,23 @@ func RunDaemon(cfg *Config) error {
 	return nil
 }
 
-func RunDumpClient(cfg *Config) error {
+func createClient(cfg *Config, window string) (net.Conn, error) {
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := fmt.Sprintf("window %s\nswitch %s\n", window, window)
+	if _, err := conn.Write([]byte(cmd)); err != nil {
+		return nil, err
+	}
+
+	return conn, nil
+}
+
+func RunDumpClient(cfg *Config, window string, update bool) error {
+	conn, err := createClient(cfg, window)
 	if err != nil {
 		return err
 	}
@@ -403,14 +415,43 @@ func RunDumpClient(cfg *Config) error {
 			return err
 		}
 
-		c := exec.Command("clear")
-		c.Stdout = os.Stdout
-		c.Run()
+		if update {
+			// Clear the screen:
+			fmt.Println("\033[H\033[2J")
+		}
 
-		if _, err := io.CopyN(os.Stdout, conn, int64(cfg.Width*cfg.Height+cfg.Height)); err != nil {
+		n := int64(cfg.Width*cfg.Height + cfg.Height)
+		if _, err := io.CopyN(os.Stdout, conn, n); err != nil {
 			return err
 		}
 
-		time.Sleep(50 * time.Millisecond)
+		if update {
+			time.Sleep(50 * time.Millisecond)
+		} else {
+			break
+		}
 	}
+
+	return nil
+}
+
+func RunInputClient(cfg *Config, quit bool, window string) error {
+	conn, err := createClient(cfg, window)
+	if err != nil {
+		return err
+	}
+
+	if quit {
+		_, err := conn.Write([]byte("quit\n"))
+		return err
+	}
+
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		if _, err := conn.Write([]byte(scanner.Text())); err != nil {
+			return err
+		}
+	}
+
+	return scanner.Err()
 }

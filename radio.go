@@ -45,44 +45,55 @@ func main() {
 				Name:  "dump,d",
 				Usage: "Dumpy display output to terminal",
 			},
+			cli.BoolFlag{
+				Name:  "quit,q",
+				Usage: "Quit the display server",
+			},
+			cli.BoolFlag{
+				Name:  "update,u",
+				Usage: "For --dump; updates output when given",
+			},
+			cli.StringFlag{
+				Name:  "window,w",
+				Value: "1",
+				Usage: "Which window to show/modify",
+			},
+			cli.IntFlag{
+				Name:   "width",
+				Value:  20,
+				Usage:  "Width of each LCD display line",
+				EnvVar: "DISPLAY_LCD_WITH",
+			},
+			cli.IntFlag{
+				Name:   "height",
+				Value:  4,
+				Usage:  "Height of the LCD display in lines",
+				EnvVar: "DISPLAY_LCD_HEIGHT",
+			},
 		},
 		Action: func(ctx *cli.Context) error {
 			cfg := &display.Config{
-				Host:   ctx.Parent().String("host"),
-				Port:   ctx.Parent().Int("port"),
+				Host:   ctx.String("host"),
+				Port:   ctx.Int("port"),
 				Width:  ctx.Int("width"),
 				Height: ctx.Int("height"),
 			}
 
 			if ctx.Bool("dump") {
-				return display.RunDumpClient(cfg)
+				return display.RunDumpClient(cfg, ctx.String("window"), ctx.Bool("update"))
 			}
 
-			return nil
+			return display.RunInputClient(cfg, ctx.Bool("quit"), ctx.String("window"))
 		},
 		Subcommands: []cli.Command{{
 			Name:  "server",
 			Usage: "Start the display server",
-			Flags: []cli.Flag{
-				cli.IntFlag{
-					Name:   "width",
-					Value:  20,
-					Usage:  "Width of each LCD display line",
-					EnvVar: "DISPLAY_LCD_WITH",
-				},
-				cli.IntFlag{
-					Name:   "height",
-					Value:  4,
-					Usage:  "Height of the LCD display in lines",
-					EnvVar: "DISPLAY_LCD_HEIGHT",
-				},
-			},
 			Action: func(ctx *cli.Context) error {
 				return display.RunDaemon(&display.Config{
 					Host:   ctx.Parent().String("host"),
 					Port:   ctx.Parent().Int("port"),
-					Width:  ctx.Int("width"),
-					Height: ctx.Int("height"),
+					Width:  ctx.Parent().Int("width"),
+					Height: ctx.Parent().Int("height"),
 				})
 			},
 		},
