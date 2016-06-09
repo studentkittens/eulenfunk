@@ -1,2 +1,3 @@
-# RaspberryPiRadio
-Studienfach Hardwaresysteme
+# Eulenfunk
+
+A Webradio for the kitchen based on the Raspberry PI.
