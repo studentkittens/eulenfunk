@@ -3,7 +3,6 @@
 package ambilight
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -167,6 +166,7 @@ func readMoodbarFile(path string) ([]TimedColor, error) {
 // Create a HCL Gradient between c1 and c2 using N steps.
 // Returns the gradient as slice of individual colors.
 func createBlend(c1, c2 TimedColor, N int) []TimedColor {
+	// Do nothing if it's the same color:
 	if c1.R == c2.R && c1.G == c2.G && c1.B == c2.B {
 		return []TimedColor{c1}
 	}
@@ -469,27 +469,6 @@ func Watcher(client *mpd.Client, cfg *Config) error {
 	// other channels by the respective go routines:
 	close(updateCh)
 	return nil
-}
-
-// Parse commandline flags succesfully or exit hard otherwise:
-func MustParseCommandline() *Config {
-	hostFlag := flag.String("host", "localhost", "Hostname of the mpd server")
-	portFlag := flag.Int("port", 6600, "Hostname of the mpd server")
-	musicDirFlag := flag.String("music-dir", "", "Root path of the mpd directory")
-	moodDirFlag := flag.String("mood-dir", "", "Path to the mood database")
-	updateMoodDbFlag := flag.Bool("update-mood-db", false, "Update the mood database and exit")
-
-	flag.Parse()
-
-	checkForMoodbar()
-
-	return &Config{
-		Host:               *hostFlag,
-		Port:               *portFlag,
-		MusicDir:           *musicDirFlag,
-		MoodDir:            *moodDirFlag,
-		UpdateMoodDatabase: *updateMoodDbFlag,
-	}
 }
 
 func RunDaemon(cfg *Config) error {
