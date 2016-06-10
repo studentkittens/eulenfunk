@@ -46,6 +46,8 @@ LCD_D6 = 23
 LCD_D7 = 18
 LED_ON = 15
 
+LCD_SETCGRAMADDR = 0x40
+
 # Define some device constants
 LCD_WIDTH = 20    # Maximum characters per line
 LCD_CHR = True
@@ -189,6 +191,13 @@ def lcd_string(message, line):
 def lcd_backlight(flag):
     # Toggle backlight on-off-on
     GPIO.output(LED_ON, flag)
+
+
+def lcd_loadchar(location, glyph):
+    location &= 0x7
+    lcd_byte(LCD_SETCGRAMADDR | (location << 3), LCD_CMD)
+    for row in glyph:
+        lcd_byte(row, LCD_CHR)
 
 
 if __name__ == '__main__':

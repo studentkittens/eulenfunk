@@ -99,12 +99,21 @@ func main() {
 		Subcommands: []cli.Command{{
 			Name:  "server",
 			Usage: "Start the display server",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "driver",
+					Value:  "cat",
+					Usage:  "Driver program that takes the display output",
+					EnvVar: "DISPLAY_DRIVER",
+				},
+			},
 			Action: func(ctx *cli.Context) error {
 				return display.RunDaemon(&display.Config{
-					Host:   ctx.Parent().String("host"),
-					Port:   ctx.Parent().Int("port"),
-					Width:  ctx.Parent().Int("width"),
-					Height: ctx.Parent().Int("height"),
+					Host:         ctx.Parent().String("host"),
+					Port:         ctx.Parent().Int("port"),
+					Width:        ctx.Parent().Int("width"),
+					Height:       ctx.Parent().Int("height"),
+					DriverBinary: ctx.String("driver"),
 				})
 			},
 		},
