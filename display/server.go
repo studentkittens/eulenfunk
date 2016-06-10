@@ -69,6 +69,10 @@ func (ln *Line) SetText(text string) {
 	ln.Lock()
 	defer ln.Unlock()
 
+	if len(text) > len(ln.buf) {
+		text += " -*- "
+	}
+
 	// Check if we need to re-render...
 	btext := []byte(text)
 	if !bytes.Equal(btext, ln.text) {
