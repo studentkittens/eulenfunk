@@ -15,8 +15,6 @@
 #
 # http://www.raspberrypi-spy.co.uk/
 #
-#--------------------------------------
-
 # The wiring for the LCD is as follows:
 # 1 : GND
 # 2 : 5V
@@ -35,10 +33,9 @@
 # 15: LCD Backlight +5V**
 # 16: LCD Backlight GND
 
-# import
 import RPi.GPIO as GPIO
-import fileinput
 import time
+import sys
 
 # Define GPIO to LCD mapping
 LCD_RS = 7
@@ -80,12 +77,12 @@ def main():
     lcd_init()
 
     # Toggle backlight on-off-on
-    # lcd_backlight(True)
-    # time.sleep(0.5)
-    # lcd_backlight(False)
-    # time.sleep(0.5)
-    # lcd_backlight(True)
-    # time.sleep(0.5)
+    lcd_backlight(True)
+    time.sleep(0.1)
+    lcd_backlight(False)
+    time.sleep(0.2)
+    lcd_backlight(True)
+
     LINES = [
         LCD_LINE_1,
         LCD_LINE_2,
@@ -93,45 +90,31 @@ def main():
         LCD_LINE_4,
     ]
 
-    for line in fileinput.input():
-        line = line.split(' ', 1)
-        if len(line) is 1:
+    for line in sys.stdin:
+        specdata = line.split(' ', 1)
+        if len(specdata) is 1:
             # No spec in line:
             continue
 
-        spec, data = line
+        spec, data = specdata
 
-        spec = spec.split(',', 1)
-        lineno = int(spec[0])
+        try:
+            lineno = int(spec)
+        except ValueError:
+            continue
+
         if lineno < 0 or lineno >= len(LINES):
             # Bad line number:
             continue
 
-        offset = 0
-        if len(spec) == 2:
-            offset = int(spec[1])
-
-        if offset < 0 or offset >= LCD_WIDTH:
-            # Bad offset
-            continue
-
+        data = data.rstrip()
         lcd_byte(LINES[lineno], LCD_CMD)
-        for i in range(offset, len(data)):
+        for i in range(min(len(data), LCD_WIDTH)):
             lcd_byte(ord(data[i]), LCD_CHR)
 
+        # Fill up with spaces:
         for i in range(len(data), LCD_WIDTH):
             lcd_byte(ord(' '), LCD_CHR)
-    # i = 0
-    # while True:
-
-    #     # Send some centred test
-    #     lcd_string("--------------------", LCD_LINE_1, 2)
-    #     lcd_string("Eulenfunk 2.0", LCD_LINE_2, 2)
-    #     lcd_string("Gut. Einfach. Anders.", LCD_LINE_3, 2)
-    #     lcd_string(str(i), LCD_LINE_4, 2)
-    #     i += 1
-
-    #     time.sleep(1)  # 3 second delay
 
 
 def lcd_init():
@@ -215,5 +198,5 @@ if __name__ == '__main__':
         pass
     finally:
         lcd_byte(0x01, LCD_CMD)
-        lcd_string("Goodbye!", LCD_LINE_1, 2)
+        lcd_string("Goodbye!", LCD_LINE_1)
         GPIO.cleanup()
