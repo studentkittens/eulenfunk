@@ -1,9 +1,12 @@
+MAKE=make
+
 all: build
 
 build:
 	go build .
-	cd led && make
-	cd lcd && make
+	@cd led && $(MAKE) --no-print-directory
+	@cd lcd && $(MAKE) --no-print-directory
+	@cd rotary && $(MAKE) --no-print-directory
 
 install: build
 	cp eulenfunk /usr/bin

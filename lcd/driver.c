@@ -54,6 +54,11 @@ static int read_from_stdin(int handle) {
             continue;
         }
 
+        char *newline = strchr(line, '\n');
+        if(newline != NULL) {
+            *newline = 0;
+        }
+
         int lineno = 0;
         int offset = 0;
 
@@ -73,8 +78,12 @@ static int read_from_stdin(int handle) {
                 continue;
         }
 
-        lcdPosition(handle, lineno, offset);
-        lcdPuts(handle, &first_space[1]);
+        lcdPosition(handle, offset, lineno);
+
+	first_space++;
+	for(int i = offset; i < LCD_WIDTH && *first_space; i++) {
+       	    lcdPutchar(handle, *first_space++);
+	}
     }
 
     return EXIT_SUCCESS;
@@ -98,6 +107,5 @@ int main(void) {
     // Custom glyph definitions:
     lcdCharDef(handle, GLYPH_HOURGLASS, GlyphDataHourglass);
 
-    lcdPuts(handle, "Im a sheep, Hurr durr!");
     return read_from_stdin(handle);
 }
