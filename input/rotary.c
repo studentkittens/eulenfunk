@@ -1,86 +1,123 @@
+#include <wiringPi.h> 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <time.h>
+#include <string.h>
+
+#include <fcntl.h>
 #include <unistd.h>
-#include <wiringPi.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-#define ROTARY_PIN_A 12
-#define ROTARY_PIN_B 13
-#define ROTARY_BTN   14
+#define MAX_ENCODERS 8
 
-//17 pins / 2 pins per encoder = 8 maximum encoders
-#define max_encoders 8
-
-struct encoder
-{
+struct encoder {
     int pin_a;
     int pin_b;
     volatile long value;
-    volatile int last_value;
+    volatile int lastEncoded;
 };
 
-typedef struct {
-    int pin_a, pin_b;
-    volatile long last_value, value;
-} RotaryEncoder;
+//Pre-allocate encoder objects on the stack so we don't have to 
+//worry about freeing them
+struct encoder encoders[MAX_ENCODERS];
 
-RotaryEncoder ROTARY;
+/*
+  Should be run for every rotary encoder you want to control
+  Returns a pointer to the new rotary encoder structer
+  The pointer will be NULL is the function failed for any reason
+*/
+struct encoder *setupencoder(int pin_a, int pin_b); 
 
-void rotary_encoder_update() {
-    int MSB = digitalRead(ROTARY.pin_a);
-    int LSB = digitalRead(ROTARY.pin_b);
+int N_ENCODERS = 0;
 
-    int encoded = (MSB << 1) | LSB;
-    int sum = (ROTARY.last_value << 2) | encoded;
+void updateEncoders() {
+    struct encoder *encoder = encoders;
+    for(; encoder < encoders + N_ENCODERS; encoder++) {
+        int MSB = digitalRead(encoder->pin_a);
+        int LSB = digitalRead(encoder->pin_b);
 
-    if(sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) {
-        ROTARY.value++;
+        int encoded = (MSB << 1) | LSB;
+        int sum = (encoder->lastEncoded << 2) | encoded;
+
+        if(sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) encoder->value++;
+        if(sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoder->value--;
+
+        encoder->lastEncoded = encoded;
     }
-
-    if(sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) {
-        ROTARY.value--;
-    }
-
-    ROTARY.last_value = encoded;
 }
 
-int rotary_encoder_setup(int pin_a, int pin_b) {
-    ROTARY.pin_a = pin_a;
-    ROTARY.pin_b = pin_b;
-    ROTARY.value = ROTARY.last_value = 0;
+struct encoder *setupencoder(int pin_a, int pin_b) {
+    if (N_ENCODERS > MAX_ENCODERS) {
+        printf("Maximum number of encodered exceded: %i\n", MAX_ENCODERS);
+        return NULL;
+    }
+
+    struct encoder *newencoder = encoders + N_ENCODERS++;
+    newencoder->pin_a = pin_a;
+    newencoder->pin_b = pin_b;
+    newencoder->value = 0;
+    newencoder->lastEncoded = 0;
 
     pinMode(pin_a, INPUT);
     pinMode(pin_b, INPUT);
-
     pullUpDnControl(pin_a, PUD_UP);
     pullUpDnControl(pin_b, PUD_UP);
+    wiringPiISR(pin_a,INT_EDGE_BOTH, updateEncoders);
+    wiringPiISR(pin_b,INT_EDGE_BOTH, updateEncoders);
 
-    wiringPiISR(pin_a, INT_EDGE_BOTH, rotary_encoder_update);
-    wiringPiISR(pin_b, INT_EDGE_BOTH, rotary_encoder_update);
+    return newencoder;
 }
 
-int main() {
-    if(geteuid() != 0) {
-        fprintf(stderr, "Need to be root to run(sudo?)\n");
-        exit(1);
+int main(int argc, char **argv) {
+    if(argc < 2) {
+        printf("Usage: radio-rotary [FIFO_PATH]\n");
+        return 3;
     }
 
-    if(wiringPiSetup() == -1) {
-        exit(2);
+    wiringPiSetup();
+
+    if(mkfifo(argv[1], 0644) != 0) {
+        printf("Failed to create fifo at %s\n", argv[1]);
+        return 4;
     }
 
-    RotaryEncoder re;
+    int fd = open(argv[1], O_WRONLY);
+    if(fd < 0) {
+        printf("Failed to open write fifo");
+        return 5;
+    }
+
+    struct encoder *encoder = setupencoder(12,13);
+
+    char num_buf[20];
+    memset(num_buf, 0, sizeof(num_buf));
+
     long value;
-
-    while(1) {
-        rotary_encoder_update();
-        long l = re.value;
-
-        if(l != value) {
+    while (1) {
+        updateEncoders();
+        long l = encoder->value;
+        if(l!=value) {
             printf("value: %d\n", (void *)l);
             value = l;
         }
+
+        int n = snprintf(num_buf, sizeof(num_buf) - 1, "%ld", l);
+        if(write(fd, num_buf, n) == -1) {
+            printf("Failed to write to fifo.");
+            return 6;
+        }
+
+        struct timespec delay = {
+            .tv_sec = 0,
+            .tv_nsec = 1000 * 1000 * 100,
+        };
+
+        nanosleep(&delay, NULL);
     }
 
+    close(fd);
     return EXIT_SUCCESS;
 }
