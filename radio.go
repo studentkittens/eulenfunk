@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/studentkittens/eulenfunk/ambilight"
 	"github.com/studentkittens/eulenfunk/display"
-	"github.com/studentkittens/eulenfunk/mpdinfo"
+	"github.com/studentkittens/eulenfunk/lightd"
+	"github.com/studentkittens/eulenfunk/mpd/ambilight"
+	"github.com/studentkittens/eulenfunk/mpd/mpdinfo"
 	"github.com/urfave/cli"
 )
 
@@ -29,12 +30,62 @@ func main() {
 	app.Commands = []cli.Command{{
 		Name:  "mpdinfo",
 		Usage: "Send mpd infos to the display server",
-		Flags: []cli.Flag{},
+		Flags: []cli.Flag{}, // TODO
 		Action: func(ctx *cli.Context) error {
 			return mpdinfo.Run(&mpdinfo.Config{
-				"localhost", 6600,
-				"localhost", 7778,
+				"localhost", 6600, // MPD Config
+				"localhost", 7778, // Display server config
 			})
+		},
+	}, {
+		Name:  "lightd",
+		Usage: "Utility server to lock the led ownage and enable nice atomic effects",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:   "host,H",
+				Value:  "localhost",
+				Usage:  "lightd-host to connect to",
+				EnvVar: "LIGHTD_HOST",
+			},
+			cli.IntFlag{
+				Name:   "port,p",
+				Value:  3333,
+				Usage:  "lightd port to connect to",
+				EnvVar: "LIGHTD_PORT",
+			},
+			cli.StringFlag{
+				Name:  "send,s",
+				Usage: "Send an effect",
+				Value: "",
+			},
+			cli.BoolFlag{
+				Name:  "lock,l",
+				Usage: "Lock the light",
+			},
+			cli.BoolFlag{
+				Name:  "unlock,u",
+				Usage: "Unlock the lights",
+			},
+		},
+		Action: func(ctx *cli.Context) error {
+			cfg := &lightd.Config{
+				Host: ctx.String("host"),
+				Port: ctx.Int("port"),
+			}
+
+			if effect := ctx.String("send"); effect != "" {
+				return lightd.Send(cfg, effect)
+			}
+
+			if ctx.Bool("lock") {
+				return lightd.Send(cfg, "!lock")
+			}
+
+			if ctx.Bool("unlock") {
+				return lightd.Send(cfg, "!unlock")
+			}
+
+			return lightd.Run(cfg)
 		},
 	}, {
 		Name:  "display",

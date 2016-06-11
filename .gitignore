@@ -1,1 +1,6 @@
 eulenfunk
+.ropeproject
+
+driver/radio-led
+driver/radio-lcd
+driver/radio-rotary

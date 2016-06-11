@@ -19,7 +19,7 @@ import (
 	// External dependencies:
 	"github.com/fhs/gompd/mpd"
 	"github.com/lucasb-eyer/go-colorful"
-	"github.com/studentkittens/eulenfunk/util"
+	"github.com/studentkittens/eulenfunk/lightd"
 )
 
 type Config struct {
@@ -265,8 +265,13 @@ func MoodbarAdjuster(eventCh <-chan MPDEvent, colorsCh chan<- TimedColor) {
 
 	initialSend := true
 
+	lightdConfig := &lightd.Config{
+		Host: "localhost",
+		Port: 3333,
+	}
+
 	sendColor := func(col TimedColor) {
-		if err := util.LockCatlight(); err != nil {
+		if err := lightd.Lock(lightdConfig); err != nil {
 			log.Printf("Failed to acquire lock (sending anyways): %v", err)
 		}
 
@@ -274,7 +279,7 @@ func MoodbarAdjuster(eventCh <-chan MPDEvent, colorsCh chan<- TimedColor) {
 		colorsCh <- col
 		time.Sleep(col.Duration)
 
-		if err := util.UnlockCatlight(); err != nil {
+		if err := lightd.Unlock(lightdConfig); err != nil {
 			log.Printf("Failed to unlock: %v", err)
 		}
 	}
@@ -499,11 +504,6 @@ func RunDaemon(cfg *Config) error {
 			log.Fatalf("Failed to update the mood db: %v", err)
 		}
 
-		return err
-	}
-
-	if err := util.CleanupCatlightLock(); err != nil {
-		log.Fatalf("Failed to clean up previous lock: %v", err)
 		return err
 	}
 
