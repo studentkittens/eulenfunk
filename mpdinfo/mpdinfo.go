@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"time"
 
 	"github.com/fhs/gompd/mpd"
@@ -38,12 +39,69 @@ func display(conn net.Conn, textCh chan []string) {
 	}
 }
 
+func isRadio(currSong mpd.Attrs) bool {
+	_, ok := currSong["Name"]
+	return ok
+}
+
 func format(currSong, status mpd.Attrs) ([]string, error) {
+	if isRadio(currSong) {
+		return formatRadio(currSong, status)
+	}
+
+	return formatSong(currSong, status)
+}
+
+func formatTimeSpec(tm time.Duration) string {
+	h, m, s := int(tm.Hours()), int(tm.Minutes())%60, int(tm.Seconds())%60
+
+	f := fmt.Sprintf("%02d:%02d", m, s)
+	if h == 0 {
+		return f
+	}
+
+	return fmt.Sprintf("%02d:", h) + f
+}
+
+func formatStatusLine(currSong, status mpd.Attrs) string {
+	state := "[" + status["state"] + "]"
+	elapsedStr := status["elapsed"]
+
+	elapsedSec, err := strconv.ParseFloat(elapsedStr, 64)
+	if err != nil {
+		return state
+	}
+
+	state += " "
+	state += formatTimeSpec(time.Duration(elapsedSec*1000) * time.Millisecond)
+
+	// Append total time if available:
+	if timeStr, ok := currSong["Time"]; ok {
+		if totalSec, err := strconv.Atoi(timeStr); err == nil {
+			state += "/" + formatTimeSpec(time.Duration(totalSec)*time.Second)
+		}
+	}
+
+	return state
+}
+
+func formatRadio(currSong, status mpd.Attrs) ([]string, error) {
+	block := []string{
+		currSong["Title"],
+		fmt.Sprintf("Radio: %s", currSong["Name"]),
+		fmt.Sprintf("Bitrate: %s Kbit/s", status["bitrate"]),
+		formatStatusLine(currSong, status),
+	}
+
+	return block, nil
+}
+
+func formatSong(currSong, status mpd.Attrs) ([]string, error) {
 	block := []string{
 		currSong["Artist"],
 		fmt.Sprintf("%s (Genre: %s)", currSong["Album"], currSong["Genre"]),
 		fmt.Sprintf("%s %s", currSong["Title"], currSong["Track"]),
-		status["state"],
+		formatStatusLine(currSong, status),
 	}
 
 	return block, nil

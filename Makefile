@@ -3,6 +3,7 @@ all: build
 build:
 	go build .
 	cd led && make
+	cd lcd && make
 
 install: build
 	cp eulenfunk /usr/bin
