@@ -98,6 +98,7 @@ struct encoder *setupencoder(int pin_a, int pin_b, int pin_btn) {
 }
 
 int main(void) {
+    piHiPri(20);
     wiringPiSetup();
 
     struct encoder *encoder = setupencoder(

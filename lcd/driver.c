@@ -92,6 +92,7 @@ static int read_from_stdin(int handle) {
 
 int main(void) {
     wiringPiSetupGpio();
+    piHiPri(20);
 
     int handle = lcdInit(
         4, 20,                          // HxW

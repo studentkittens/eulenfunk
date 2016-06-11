@@ -61,7 +61,9 @@ static void hexstring_to_rgb(const char * str, unsigned * r, unsigned * g, unsig
 }
 
 int main(int argc, char **argv) {
+    piHiPri(30);
     wiringPiSetup();
+
     softPwmCreate(PIN_RED, 0, 100);
     softPwmCreate(PIN_GREEN, 0, 100);
     softPwmCreate(PIN_BLUE, 0, 100);
