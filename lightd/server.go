@@ -32,8 +32,8 @@ func (q *EffectQueue) Push(e Effect) {
 	}
 }
 
-func NewEffectQueue() (*EffectQueue, error) {
-	cmd := exec.Command("radio-led", "cat")
+func NewEffectQueue(driverBinary string) (*EffectQueue, error) {
+	cmd := exec.Command(driverBinary, "cat")
 	stdinpipe, err := cmd.StdinPipe()
 	if err != nil {
 		return &EffectQueue{StdInPipe: nil}, err
@@ -367,12 +367,13 @@ func handleRequest(conn net.Conn, queue *EffectQueue) {
 }
 
 type Config struct {
-	Host string
-	Port int
+	Host         string
+	Port         int
+	DriverBinary string
 }
 
 func Run(cfg *Config) error {
-	queue, err := NewEffectQueue()
+	queue, err := NewEffectQueue(cfg.DriverBinary)
 	if err != nil {
 		log.Printf("Unable to hook up to lightd: %v", err)
 		return err
