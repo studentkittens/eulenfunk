@@ -19,7 +19,7 @@ import (
 	// External dependencies:
 	"github.com/fhs/gompd/mpd"
 	"github.com/lucasb-eyer/go-colorful"
-	// "github.com/studentkittens/eulenfunk/lightd"
+	"github.com/studentkittens/eulenfunk/lightd"
 )
 
 type Config struct {
@@ -273,17 +273,17 @@ func MoodbarAdjuster(eventCh <-chan MPDEvent, colorsCh chan<- TimedColor) {
 	// }
 
 	sendColor := func(col TimedColor) {
-		// if err := lightd.Lock(lightdConfig); err != nil {
-		// 	log.Printf("Failed to acquire lock (sending anyways): %v", err)
-		// }
+		if err := lightd.Lock(lightdConfig); err != nil {
+			log.Printf("Failed to acquire lock (sending anyways): %v", err)
+		}
 
 		// Do not crash when colorsCh is closed:
 		colorsCh <- col
 		time.Sleep(col.Duration)
 
-		// if err := lightd.Unlock(lightdConfig); err != nil {
-		// 	log.Printf("Failed to unlock: %v", err)
-		// }
+		if err := lightd.Unlock(lightdConfig); err != nil {
+			log.Printf("Failed to unlock: %v", err)
+		}
 	}
 
 	defer func() {
