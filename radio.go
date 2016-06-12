@@ -94,11 +94,11 @@ func main() {
 			}
 
 			if ctx.Bool("lock") {
-				return lightd.Send(cfg, "!lock")
+				return lightd.Lock(cfg)
 			}
 
 			if ctx.Bool("unlock") {
-				return lightd.Send(cfg, "!unlock")
+				return lightd.Unlock(cfg)
 			}
 
 			return lightd.Run(cfg)

@@ -12,7 +12,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -20,26 +19,33 @@ import (
 //       and the effect syntax is awful.
 
 type EffectQueue struct {
-	sync.Mutex
 	StdInPipe io.Writer
+	Blocked   chan bool
 }
 
 func (q *EffectQueue) Push(e Effect) {
 	c := e.ComposeEffect()
+
 	for color := range c {
 		colorValue := fmt.Sprintf("%d %d %d\n", color.R, color.G, color.B)
 		q.StdInPipe.Write([]byte(colorValue))
 	}
+
+	q.Blocked <- false
 }
 
 func NewEffectQueue(driverBinary string) (*EffectQueue, error) {
 	cmd := exec.Command(driverBinary, "cat")
 	stdinpipe, err := cmd.StdinPipe()
 	if err != nil {
-		return &EffectQueue{StdInPipe: nil}, err
+		return nil, err
 	}
 
+	blocked := make(chan bool, 1)
+	blocked <- false
+
 	return &EffectQueue{
+		Blocked:   blocked,
 		StdInPipe: stdinpipe,
 	}, cmd.Start()
 }
@@ -264,8 +270,6 @@ func parseProperties(s string) (*Properties, error) {
 		return nil, fmt.Errorf("Bad effect properties: %s", s)
 	}
 
-	fmt.Println("Matches", matches)
-
 	duration, err := time.ParseDuration(matches[1])
 	if err != nil {
 		return nil, fmt.Errorf("Bad duration: `%s`: %v", matches[1], err)
@@ -347,10 +351,22 @@ func handleRequest(conn net.Conn, queue *EffectQueue) {
 
 		switch line {
 		case "!lock":
-			queue.Lock()
+			log.Printf("Locking queue...")
+			<-queue.Blocked
+
+			log.Printf("Lock acquired.")
+			if _, err := conn.Write([]byte("OK\n")); err != nil {
+				log.Printf("Failed to answer lock response: %v", err)
+			}
+
 			return
 		case "!unlock":
-			queue.Unlock()
+			log.Printf("Unlocking queue...")
+			queue.Blocked <- false
+
+			if _, err := conn.Write([]byte("OK\n")); err != nil {
+				log.Printf("Failed to answer unlock response: %v", err)
+			}
 			return
 		}
 
@@ -360,9 +376,8 @@ func handleRequest(conn net.Conn, queue *EffectQueue) {
 			return
 		}
 
-		queue.Lock()
+		<-queue.Blocked
 		queue.Push(effect)
-		queue.Unlock()
 	}
 }
 
