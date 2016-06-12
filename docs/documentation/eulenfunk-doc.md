@@ -50,18 +50,6 @@ Auge aller kommerziellen Internet--Radio--Anbieter sein könnte.
 
 # Motivation
 
-## Kommerzielle Produkte
-
-Kommerzielle Anbieter von Internet--Radios gibt es wie Sand am Meer. Die
-Preisspanne liegt hier zwischen \EUR{30} und mehreren hundert Euro. Die
-Funktionsumfang sowie Wiedergabequalität ist hier von Hersteller zu Hersteller
-und zwischen den verschiedenen Preisklassen auch sehr unterschiedlich. Einen
-aktuellen Überblick aus dem Jahr 2016 über getestete Modelle gibt es
-beispielsweise online unter *bestendrei.de*[^TEST].
-
-[^TEST]:Test von Internetradios: \url{http://www.bestendrei.de/elektronik/internetradio/}
-
-
 ## Private Situation 
 
 Die Autoren dieses Projekts leben in einer Wohngemeinschaft zusammen. Die Küche
@@ -80,15 +68,50 @@ zum *Raspbarry Pi*--Player hergestellt werden musste.
 [^VOL]: Volumio: https://volumio.org/
 
 
+## Kommerzielle Produkte
 
+Kommerzielle Anbieter von Internet--Radios gibt es wie Sand am Meer. Die
+Preisspanne liegt hier zwischen \EUR{30} und mehreren hundert Euro. Die
+Funktionsumfang sowie Wiedergabequalität ist hier von Hersteller zu Hersteller
+und zwischen den verschiedenen Preisklassen auch sehr unterschiedlich. Einen
+aktuellen Überblick aus dem Jahr 2016 über getestete Modelle gibt es
+beispielsweise online unter *bestendrei.de*[^TEST].
+
+Das *Problem* bei den kommerziellen Anbietern ist, dass man hier jeweils an die
+vorgegebenen Funktionalitäten des Herstellers gebunden ist. Bei einem
+Do--it--yourself--Projekt auf Basis Freier Software bzw eines freien
+Hardwaredesigns, hat man die Möglichkeit alle gewünschten Funktionalitäten ---
+auch Features die von keinem kommerziellen Anbieter unterstützt werden --- zu
+integrieren. Beispiele für Funktionalitäten, welche bei kommerziellen Produkten
+nur schwer bzw. vereinzelt zu finden sind:
+
+* Unterstützung bestimmter WLAN--Authentifizierungsstandards
+* Einhängen von benutzerdefinierten Shares wie *Samba*, *NFS*, *SSHFS*
+* Unterstützung verschiedener *lossy* Formate *mp3*, *ogg vorbis*, *acc*, u.a.
+* Unterstützung verschiedener *lossless* Formate *FLAC*, *APE*, u.a.
+* Integration verschiedener Dienste wie beispielsweise *Spotify*
+* Benutzerdefinierte Anzeigemöglichkeiten (Uhrzeit, Wetter, et. cetera.)
+
+
+
+[^TEST]:Test von Internetradios: \url{http://www.bestendrei.de/elektronik/internetradio/}
+
+
+## Projektziel
+
+Das grundlegende Projektziel ist aus vorhandenen alten Hardware--Komponenten
+ein möglichst optisch und klanglich ansprechendes Internetradio zu entwickeln.
+Als Basis für das Projekt dient ein defektes Analog--Radio und ein Raspberry Pi
+aus dem Jahr 2012.
 
 # Anforderungen an das Projekt
 
 ## Design
 
-Design soll *minimalistisch*  sein.
+Design soll *minimalistisch*  sein, das heisst, es sollen so wenige
+,,Bedienelemente'' wie nötig untergebracht werden. 
 
-## Funktionalität
+## Funktionsumfang (Hardware)
 
 * Aktive Lautsprecher
 * Passive Lautsprecher/Kopfhörer
@@ -122,7 +145,7 @@ Arch Installation kurz aufführen.
 
 ### Raspberry Pi
 
-Der vorhandene Raspberry ist aus dem Jahr 2010. Die genaue Hardware--Revision kann
+Der vorhandene Raspberry ist aus dem Jahr 2012. Die genaue Hardware--Revision kann
 auf Linux unter ``proc`` ausgelesen werden, siehe auch [@gay2014raspberry]:
 
 ```bash
@@ -168,11 +191,19 @@ Modell B, Revision 2.0 ist noch zusätzlich der P5 Header dazu gekommen.
 * Ansteuerung über GPIO möglich. Zu geringer Strom bei mehreren LEDs.
 * Transistorschaltung BC547 NPN anstatt BC557 PNP, da Rückflussstrom.
 
+\includegraphics[width=\linewidth]{images/transistorled.png}
+
 ### USB--Hub
 
 ### Netzteil
 
 ### Gehäuse
+
+Die Gehäuse--Farbe soll in hellelfenbeinweiß RAL 1015 einen dezenten
+,,Retro''--Look verschaffen.
+Plexiglas von Wolfgang
+Holzgehäuse des alten AEG Radios
+Knöpfe schwarz mit Alu-Optik
 
 #### Platz im Gehäuse gering
 
@@ -182,6 +213,10 @@ Modell B, Revision 2.0 ist noch zusätzlich der P5 Header dazu gekommen.
 # Hardwaredesign
 
 ## GPIO--Schnittstelle
+
+\includegraphics[width=\linewidth]{images/gpio.png}
+
+Bildquelle: \url{http://www.raspberrypi-spy.co.uk/2012/06/simple-guide-to-the-rpi-gpio-header-and-pins/#prettyPhoto}
 
 ### GPIO--Pinbelegung
 
