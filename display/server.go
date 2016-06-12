@@ -22,7 +22,7 @@ import (
 // It also supports special names for special symbols.
 type Line struct {
 	sync.Mutex
-
+	Pos int
 	ScrollDelay time.Duration
 
 	text       []byte
@@ -31,8 +31,9 @@ type Line struct {
 	driverPipe io.Writer
 }
 
-func NewLine(w int, driverPipe io.Writer) *Line {
+func NewLine(pos int, w int, driverPipe io.Writer) *Line {
 	ln := &Line{
+		Pos:        pos,
 		text:       []byte{},
 		buf:        make([]byte, w),
 		driverPipe: driverPipe,
@@ -73,10 +74,19 @@ func NewLine(w int, driverPipe io.Writer) *Line {
 func (ln *Line) redraw() {
 	scroll(ln.buf, ln.text, ln.scrollPos)
 
-	// TODO: output to driver here
+	lpos := fmt.Sprintf("%d ", ln.Pos)
+	if _, err := ln.driverPipe.Write([]byte(lpos)); err != nil {
+		log.Printf("Failed to write to driver: %v", err)
+	}
+
 	if _, err := ln.driverPipe.Write(ln.buf); err != nil {
 		log.Printf("Failed to write to driver: %v", err)
 	}
+
+	if _, err := ln.driverPipe.Write([]byte("\n")); err != nil {
+		log.Printf("Failed to write to driver: %v", err)
+	}
+
 }
 
 func (ln *Line) SetText(text string) {
@@ -156,7 +166,7 @@ func NewWindow(name string, driverPipe io.Writer, w, h int) *Window {
 	}
 
 	for i := 0; i < h; i++ {
-		win.Lines = append(win.Lines, NewLine(w, driverPipe))
+		win.Lines = append(win.Lines, NewLine(i, w, driverPipe))
 	}
 
 	return win
@@ -172,7 +182,6 @@ func (win *Window) SetLine(pos int, text string) error {
 		return fmt.Errorf("Only up to 1024 lines supported.")
 	}
 
-	x := len(win.Lines)
 	// We need to extend:
 	if pos >= len(win.Lines) {
 		newLines := make([]*Line, pos+1)
@@ -180,13 +189,11 @@ func (win *Window) SetLine(pos int, text string) error {
 
 		// Create the intermediate lines:
 		for i := len(win.Lines); i < len(newLines); i++ {
-			newLines[i] = NewLine(win.Width, win.DriverPipe)
+			newLines[i] = NewLine(i, win.Width, win.DriverPipe)
 		}
 
 		win.Lines = newLines
 	}
-
-	fmt.Println("SetLine", pos, len(win.Lines), x)
 
 	win.Lines[pos].SetText(text)
 	return nil
@@ -230,7 +237,6 @@ func (win *Window) Render() []byte {
 		hi = len(win.Lines)
 	}
 
-	fmt.Println(len(win.Lines), hi, win.LineOffset)
 	for _, line := range win.Lines[win.LineOffset:hi] {
 		buf.Write(line.Render())
 		buf.WriteRune('\n')

@@ -25,7 +25,7 @@ func display(conn net.Conn, textCh chan []string) {
 
 	// Make the first 3 lines scrolling:
 	for idx := 0; idx < 3; idx++ {
-		if _, err := conn.Write([]byte(fmt.Sprintf("scroll %d 200ms\n", idx))); err != nil {
+		if _, err := conn.Write([]byte(fmt.Sprintf("scroll %d 400ms\n", idx))); err != nil {
 			return
 		}
 	}

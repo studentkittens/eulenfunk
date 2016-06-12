@@ -22,10 +22,16 @@ static void usage(char *name) {
     exit(1);
 }
 
-static void set_rgb(int r, int g, int b) {
-    softPwmWrite(PIN_RED, r / 255. * 100);
-    softPwmWrite(PIN_GREEN, g / 255. * 100);
-    softPwmWrite(PIN_BLUE, b / 255. * 100);
+static void set_rgb(int r, int g, int b) { 
+    float pr = r / 255. * 100;
+    float pg = g / 255. * 100;
+    float pb = b / 255. * 100;
+
+    softPwmWrite(PIN_RED, pr);
+    softPwmWrite(PIN_GREEN, pg);
+    softPwmWrite(PIN_BLUE, pb);
+
+    printf("%f %f %f\n", pr, pg, pb);	
 }
 
 static int string_to_col(const char * arg) {
@@ -63,6 +69,10 @@ static void hexstring_to_rgb(const char * str, unsigned * r, unsigned * g, unsig
 int main(int argc, char **argv) {
     piHiPri(30);
     wiringPiSetup();
+
+    if(argc < 2) {
+	usage(argv[0]);
+    }
 
     softPwmCreate(PIN_RED, 0, 100);
     softPwmCreate(PIN_GREEN, 0, 100);
