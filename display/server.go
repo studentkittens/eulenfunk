@@ -521,6 +521,44 @@ func createClient(cfg *Config, window string) (net.Conn, error) {
 	return conn, nil
 }
 
+type LineWriter struct {
+	sync.Mutex
+	conn net.Conn
+}
+
+func (lw *LineWriter) Write(p []byte) (int, error) {
+	lw.Lock()
+	defer lw.Unlock()
+
+	if !bytes.HasSuffix(p, []byte("\n")) {
+		p = append(p, '\n')
+	}
+
+	return lw.conn.Write(p)
+}
+
+func (lw *LineWriter) Formatf(format string, args ...interface{}) (int, error) {
+	return lw.Write([]byte(fmt.Sprintf(format, args...)))
+}
+
+func (lw *LineWriter) Close() error {
+	lw.Lock()
+	defer lw.Unlock()
+
+	return lw.Close()
+}
+
+// TODO: cleanup and move to a new client.go
+func Connect(cfg *Config) (*LineWriter, error) {
+	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LineWriter{conn: conn}, nil
+}
+
 func RunDumpClient(cfg *Config, window string, update bool) error {
 	conn, err := createClient(cfg, window)
 	if err != nil {

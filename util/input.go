@@ -97,5 +97,8 @@ func NewRotary() (*Rotary, error) {
 }
 
 func (rty *Rotary) Close() error {
+	close(rty.Button)
+	close(rty.Pressed)
+	close(rty.Value)
 	return rty.stdout.Close()
 }

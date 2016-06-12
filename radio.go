@@ -7,6 +7,7 @@ import (
 	"github.com/studentkittens/eulenfunk/display"
 	"github.com/studentkittens/eulenfunk/lightd"
 	"github.com/studentkittens/eulenfunk/mpd/ambilight"
+	"github.com/studentkittens/eulenfunk/mpd/menu"
 	"github.com/studentkittens/eulenfunk/mpd/mpdinfo"
 	"github.com/urfave/cli"
 )
@@ -32,10 +33,18 @@ func main() {
 		Usage: "Send mpd infos to the display server",
 		Flags: []cli.Flag{}, // TODO
 		Action: func(ctx *cli.Context) error {
+			// TODO: check for running mpd (also for ambilight/mpdinfo)
 			return mpdinfo.Run(&mpdinfo.Config{
 				"localhost", 6600, // MPD Config
 				"localhost", 7778, // Display server config
 			})
+		},
+	}, {
+		Name:  "menu",
+		Usage: "Handle menu rendering and input",
+		Flags: []cli.Flag{}, // TODO
+		Action: func(ctx *cli.Context) error {
+			return menu.Run()
 		},
 	}, {
 		Name:  "lightd",
