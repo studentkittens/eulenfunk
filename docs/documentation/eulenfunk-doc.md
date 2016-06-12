@@ -43,7 +43,7 @@ welches je nach Konfiguration günstiger und mit mehr Funktionalität ausgestatt
 werden kann wie ein *Closed--Source*--Produkt --- möglicherweise ein Dorn im
 Auge aller kommerziellen Internet--Radio--Anbieter sein könnte.
 
-[^EULE]: Lebensweise der Eule: https://de.wikipedia.org/wiki/Eulen#Lebensweise
+[^EULE]: Lebensweise der Eule: \url{https://de.wikipedia.org/wiki/Eulen\#Lebensweise}
 
 [^GPIO]: General-purpose input/output Schnittstelle: \url{https://en.wikipedia.org/wiki/General-purpose_input/output}
 
@@ -57,7 +57,7 @@ Preisspanne liegt hier zwischen \EUR{30} und mehreren hundert Euro. Die
 Funktionsumfang sowie Wiedergabequalität ist hier von Hersteller zu Hersteller
 und zwischen den verschiedenen Preisklassen auch sehr unterschiedlich. Einen
 aktuellen Überblick aus dem Jahr 2016 über getestete Modelle gibt es
-beispielsweise online unter bestendrei.de[^TEST].
+beispielsweise online unter *bestendrei.de*[^TEST].
 
 [^TEST]:Test von Internetradios: \url{http://www.bestendrei.de/elektronik/internetradio/}
 
@@ -69,7 +69,7 @@ ist der Ort an welchem gemeinsam gekocht und gespeist wird. Für eine angenehme
 Atmosphäre und als Nachrichten--Quelle sorgte in der Küche sorgte früher ein
 Analog--Radio der Firma *AEG*, welches aufgrund der schlechten Empfangsqualität
 durch eine Kombination aus ,,alter Stereoanlage'', ,,altem Raspberry Pi'' und
-einem ,, alten Thinkpad x61t'' ersetzt wurde. In dieser Kombination fungierte
+einem ,,alten Thinkpad x61t'' ersetzt wurde. In dieser Kombination fungierte
 die Stereoanlage als Soundausgabe--Komponente, auf dem *Raspberry Pi* lief der
 linux--basierte Player Volumio[^VOL], welcher mit dem Touchscreen des *Thinkpad
 x61t* über eine Weboberfläche gesteuert wurde. Diese Kombination hat zwar
@@ -84,12 +84,148 @@ zum *Raspbarry Pi*--Player hergestellt werden musste.
 
 # Anforderungen an das Projekt
 
-# Wahl der Hardware-- und Softwarekomponenten
+## Design
+
+Design soll *minimalistisch*  sein.
+
+## Funktionalität
+
+* Aktive Lautsprecher
+* Passive Lautsprecher/Kopfhörer
+* Verwendung des Internen Lautsprechers des alten Radios
+
+## Bedienbarkeit
+
+* Minimale Bedienelemente
+* Keine *hässlichen* Knöpfe
+* *Retro*--Like Aussehen wünschenswert
+
+## Kosten/Nutzen--Verhältnis
+
+Nutzung bereits vorhandener Bauelemente.
+
+# Hardware-- und Softwarekomponenten
+
+## Linux Distribution
+
+Wahl der Linux Distribution
+
+* Debian
+* Archlinux
+
+### Installation des Grundsystems
+
+Arch Installation kurz aufführen.
+
+## Hardware
+
+
+### Raspberry Pi
+
+Der vorhandene Raspberry ist aus dem Jahr 2010. Die genaue Hardware--Revision kann
+auf Linux unter ``proc`` ausgelesen werden, siehe auch [@gay2014raspberry]:
+
+```bash
+
+    $ cat /proc/cpuinfo 
+    processor       : 0
+    model name      : ARMv6-compatible processor rev 7 (v6l)
+    BogoMIPS        : 697.95
+    Features        : half thumb fastmult vfp edsp java tls 
+    CPU implementer : 0x41
+    CPU architecture: 7
+    CPU variant     : 0x0
+    CPU part        : 0xb76
+    CPU revision    : 7
+
+    Hardware        : BCM2708
+    Revision        : 0003
+    Serial          : 00000000b8b9a4c2
+```
+
+Laut Tabelle unter [@gay2014raspberry] handelt es sich hierbei um das Modell B
+Revision 1+ mit 256MB RAM.
+
+Je nach Raspberry Revision sind die Pins teilweise unterschiedlich belegt. Seit
+Modell B, Revision 2.0 ist noch zusätzlich der P5 Header dazu gekommen.
+
+### LCD--Anzeige
+
+* Blau vs Green
+
+### Rotary--Switch
+
+* Switch von der FH: ALPS irgendwas...funktioniert, aber
+* Switch bestellt: ALPS irgendwas mit
+
+
+### Soundkarte
+
+### Audioverstärkermodul
+
+### RGB--LEDs
+
+* Ansteuerung über GPIO möglich. Zu geringer Strom bei mehreren LEDs.
+* Transistorschaltung BC547 NPN anstatt BC557 PNP, da Rückflussstrom.
+
+### USB--Hub
+
+### Netzteil
+
+### Gehäuse
+
+#### Platz im Gehäuse gering
+
+...
+
 
 # Hardwaredesign
 
-## Ansteuerung GPIO
+## GPIO--Schnittstelle
+
+### GPIO--Pinbelegung
+
+* Grafik
+
+...
+
+* 3,3V vs 5V
+* Max. Strom
+* Max. verfügbare Pins
 
 # Softwaredesign
+
+## Vorhandene Softwarelibraries
+
+## Grundlgender Aufbau
+
+# Überblick der einzelnen Komponenten?
+
+.. .
+
+## Treiber--Software
+
+### LCD--Treiber
+
+Von Elchen entwickelt.
+
+### Rotary--Treiber
+
+Von Elchen kopiert.
+
+### LED--Treiber
+
+* Software--PWM
+
+
+# Zusammenfassung
+
+## Ziel erreicht?
+
+Ja?
+
+## Mögliche Verbesserungen?
+
+* Alpine Linux da RAM--only Betrieb möglich
 
 # Literaturverzeichnis
