@@ -107,6 +107,7 @@ type MenuManager struct {
 	lw                   *display.LineWriter
 	rotateActions        []Action
 	currValue, lastValue int
+	rotary               *util.Rotary
 }
 
 func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
@@ -115,11 +116,10 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 		return nil, err
 	}
 
-	defer rty.Close()
-
 	mgr := &MenuManager{
-		Menus: make(map[string]*Menu),
-		lw:    lw,
+		Menus:  make(map[string]*Menu),
+		lw:     lw,
+		rotary: rty,
 	}
 
 	go func() {
@@ -188,6 +188,8 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 					log.Printf("Rotate action %d failed: %v", idx, err)
 				}
 			}
+
+			mgr.Active.Display()
 		}
 	}()
 
@@ -233,6 +235,7 @@ func (mgr *MenuManager) SwitchTo(name string) error {
 
 	if menu, ok := mgr.Menus[name]; ok {
 		mgr.Active = menu
+		mgr.Active.Display()
 	}
 
 	return nil
@@ -260,10 +263,15 @@ func (mgr *MenuManager) AddMenu(name string, entries []*Entry) error {
 
 	if mgr.Active == nil {
 		mgr.Active = menu
+		mgr.Active.Display()
 	}
 
 	mgr.Menus[name] = menu
 	return nil
+}
+
+func (mgr *MenuManager) Close() error {
+	return mgr.rotary.Close()
 }
 
 //////////////////////////////////////
@@ -292,6 +300,8 @@ func Run() error {
 	if err != nil {
 		return err
 	}
+
+	defer mgr.Close()
 
 	// Start clock and sysinfo screen:
 	killClock, killSysinfo := make(chan bool), make(chan bool)
