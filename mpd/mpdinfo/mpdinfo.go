@@ -18,21 +18,21 @@ type Config struct {
 }
 
 func display(conn net.Conn, textCh chan []string) {
-	if _, err := conn.Write([]byte("window mpd\nswitch mpd\n")); err != nil {
+	if _, err := conn.Write([]byte("switch mpd\n")); err != nil {
 		log.Printf("Failed to send hello to display server: %v", err)
 		return
 	}
 
 	// Make the first 3 lines scrolling:
 	for idx := 0; idx < 3; idx++ {
-		if _, err := conn.Write([]byte(fmt.Sprintf("scroll %d 400ms\n", idx))); err != nil {
+		if _, err := conn.Write([]byte(fmt.Sprintf("scroll mpd %d 400ms\n", idx))); err != nil {
 			return
 		}
 	}
 
 	for block := range textCh {
 		for idx, line := range block {
-			if _, err := conn.Write([]byte(fmt.Sprintf("line %d %s\n", idx, line))); err != nil {
+			if _, err := conn.Write([]byte(fmt.Sprintf("line mpd %d %s\n", idx, line))); err != nil {
 				log.Printf("Failed to send line to display server: %v", err)
 			}
 		}

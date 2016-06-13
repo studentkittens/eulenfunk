@@ -297,10 +297,7 @@ func NewServer(cfg *Config) (*Server, error) {
 	}, nil
 }
 
-func (srv *Server) AddWindow(name string) {
-	srv.Lock()
-	defer srv.Unlock()
-
+func (srv *Server) createOrLookupWindow(name string) *Window {
 	win, ok := srv.Windows[name]
 
 	if !ok {
@@ -312,60 +309,45 @@ func (srv *Server) AddWindow(name string) {
 	if srv.Active == nil {
 		srv.Active = win
 	}
+
+	return win
 }
 
-func (srv *Server) Switch(name string) error {
+func (srv *Server) Switch(name string) {
 	srv.Lock()
 	defer srv.Unlock()
 
-	win, ok := srv.Windows[name]
-	if !ok {
-		return fmt.Errorf("No such window: %s", name)
-	}
+	win := srv.createOrLookupWindow(name)
 
 	// Save a redraw just in case:
 	if win == srv.Active {
-		return nil
+		return
 	}
 
 	win.Switch()
 	srv.Active = win
-	return nil
+	return
 }
 
-func (srv *Server) SetLine(pos int, text string) error {
+func (srv *Server) SetLine(name string, pos int, text string) error {
 	srv.Lock()
 	defer srv.Unlock()
 
-	if srv.Active == nil {
-		return fmt.Errorf("No active window")
-	}
-
-	return srv.Active.SetLine(pos, text)
+	return srv.createOrLookupWindow(name).SetLine(pos, text)
 }
 
-func (srv *Server) SetScrollDelay(pos int, delay time.Duration) error {
+func (srv *Server) SetScrollDelay(name string, pos int, delay time.Duration) error {
 	srv.Lock()
 	defer srv.Unlock()
 
-	if srv.Active == nil {
-		return fmt.Errorf("No active window")
-	}
-
-	return srv.Active.SetScrollDelay(pos, delay)
+	return srv.createOrLookupWindow(name).SetScrollDelay(pos, delay)
 }
 
-func (srv *Server) Move(window string, n int) error {
+func (srv *Server) Move(window string, n int) {
 	srv.Lock()
 	defer srv.Unlock()
 
-	win, ok := srv.Windows[window]
-	if !ok {
-		return fmt.Errorf("No such window: %s", window)
-	}
-
-	win.Move(n)
-	return nil
+	srv.createOrLookupWindow(window).Move(n)
 }
 
 func (srv *Server) Render() []byte {
@@ -393,15 +375,7 @@ func handleConn(srv *Server, conn net.Conn) {
 			continue
 		}
 
-		switch split := strings.SplitN(line, " ", 3); split[0] {
-		case "window":
-			name := ""
-			if _, err := fmt.Sscanf(line, "window %s", &name); err != nil {
-				log.Printf("Failed to parse window command `%s`: %v", line, err)
-				continue
-			}
-
-			srv.AddWindow(name)
+		switch split := strings.SplitN(line, " ", 4); split[0] {
 		case "switch":
 			name := ""
 			if _, err := fmt.Sscanf(line, "switch %s", &name); err != nil {
@@ -409,30 +383,27 @@ func handleConn(srv *Server, conn net.Conn) {
 				continue
 			}
 
-			if err := srv.Switch(name); err != nil {
-				log.Printf("Unable to switch window: %s", name)
-				continue
-			}
-		// TODO: add window param
+			srv.Switch(name)
 		case "line":
 			text := ""
-			if len(split) >= 3 {
-				text = split[2]
+			if len(split) >= 4 {
+				text = split[3]
 			}
 
-			pos := 0
-			if _, err := fmt.Sscanf(line, "line %d ", &pos); err != nil {
+			win, pos := "", 0
+
+			if _, err := fmt.Sscanf(line, "line %s %d ", &win, &pos); err != nil {
 				log.Printf("Failed to parse line command `%s`: %v", line, err)
 				continue
 			}
 
-			if err := srv.SetLine(pos, text); err != nil {
+			if err := srv.SetLine(win, pos, text); err != nil {
 				log.Printf("Failed to set line: %v", err)
 				continue
 			}
 		case "scroll":
-			pos, durationSpec := 0, ""
-			if _, err := fmt.Sscanf(line, "scroll %d %s", &pos, &durationSpec); err != nil {
+			win, pos, durationSpec := "", 0, ""
+			if _, err := fmt.Sscanf(line, "scroll %s %d %s", &pos, &durationSpec); err != nil {
 				log.Printf("Failed to parse scroll command `%s`: %v", line, err)
 				continue
 			}
@@ -443,7 +414,7 @@ func handleConn(srv *Server, conn net.Conn) {
 				continue
 			}
 
-			if err := srv.SetScrollDelay(pos, duration); err != nil {
+			if err := srv.SetScrollDelay(win, pos, duration); err != nil {
 				log.Printf("Cannot set scroll: %v", err)
 				continue
 			}
@@ -454,10 +425,7 @@ func handleConn(srv *Server, conn net.Conn) {
 				continue
 			}
 
-			if err := srv.Move(name, pos); err != nil {
-				log.Printf("Failed to execute move command `%s`: %v", line, err)
-				continue
-			}
+			srv.Move(name, pos)
 		case "render":
 			if _, err := conn.Write(srv.Render()); err != nil {
 				log.Printf("Failed to respond rendered display: %v", err)
@@ -538,7 +506,7 @@ func createClient(cfg *Config, window string) (net.Conn, error) {
 		return nil, err
 	}
 
-	cmd := fmt.Sprintf("window %s\nswitch %s\n", window, window)
+	cmd := fmt.Sprintf("switch %s\n", window)
 	if _, err := conn.Write([]byte(cmd)); err != nil {
 		return nil, err
 	}

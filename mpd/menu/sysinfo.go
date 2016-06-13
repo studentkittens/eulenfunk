@@ -14,7 +14,7 @@ func RunSysinfo(lw *display.LineWriter, width int, killCh <-chan bool) {
 			return
 		}
 
-		if _, err := lw.Formatf("line 2 Im a raspberry. Schuhu!"); err != nil {
+		if _, err := lw.Formatf("line sysinfo 2 Im a raspberry. Schuhu!"); err != nil {
 			log.Printf("Failed to print sysinfo: %v", err)
 		}
 

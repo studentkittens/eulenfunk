@@ -26,10 +26,6 @@ type Menu struct {
 }
 
 func NewMenu(name string, lw *display.LineWriter) (*Menu, error) {
-	if _, err := lw.Formatf("window %s", name); err != nil {
-		return nil, err
-	}
-
 	return &Menu{
 		Name: name,
 		lw:   lw,
@@ -69,7 +65,7 @@ func (mn *Menu) Display() error {
 			line = "  " + line
 		}
 
-		if _, err := mn.lw.Formatf("line %d %s", pos, line); err != nil {
+		if _, err := mn.lw.Formatf("line %s %d %s", mn.Name, pos, line); err != nil {
 			return err
 		}
 	}
