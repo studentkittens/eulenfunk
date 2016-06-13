@@ -118,12 +118,14 @@ int main(void) {
         long curr = encoder->value / 3;
         if(curr != last_value) {
             printf("v %ld\n", curr);
+	    fflush(stdout);
             last_value = curr;
         }
 
         if(encoder->button_was_pressed) {
             encoder->button_was_pressed = false;
             printf("p 1\n");
+	    fflush(stdout);
         }
 
         if(encoder->button_time.tv_sec > 0) {
@@ -133,6 +135,7 @@ int main(void) {
             hold_time = now.tv_sec - encoder->button_time.tv_sec;
             hold_time += (now.tv_usec - encoder->button_time.tv_usec) / (1000.0 * 1000.0);
             printf("t %f\n", hold_time);
+	    fflush(stdout);
         } else {
             hold_time = 0;
         }
@@ -140,6 +143,7 @@ int main(void) {
         if(encoder->button_was_released) {
             encoder->button_was_released = false;
             printf("p 0\n");
+	    fflush(stdout);
         }
 
         // Sleep for a short amount to save cpu-time:

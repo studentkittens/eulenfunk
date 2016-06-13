@@ -81,7 +81,7 @@ func (mn *Menu) Click() error {
 	}
 
 	entry := mn.Entries[mn.Cursor]
-	if entry.Action != nil {
+	if entry.Action == nil {
 		return nil
 	}
 
@@ -118,6 +118,7 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 
 	mgr := &MenuManager{
 		Menus:  make(map[string]*Menu),
+		TimedActions: make(map[time.Duration]Action),
 		lw:     lw,
 		rotary: rty,
 	}
@@ -147,6 +148,7 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 
 	go func() {
 		for duration := range rty.Pressed {
+			log.Printf("Pressed for %s", duration)
 			mgr.Lock()
 
 			// Find the action with smallest non-negative diff:
@@ -177,9 +179,10 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 			mgr.Active.Scroll(value)
 			mgr.lastValue = mgr.currValue
 			mgr.currValue = value
+			name := mgr.Active.Name
 			mgr.Unlock()
 
-			if _, err := lw.Formatf("move menu %d", value); err != nil {
+			if _, err := lw.Formatf("move %s %d", name, value); err != nil {
 				log.Printf("move failed: %v", err)
 			}
 
@@ -301,8 +304,6 @@ func Run() error {
 		return err
 	}
 
-	defer mgr.Close()
-
 	// Start clock and sysinfo screen:
 	killClock, killSysinfo := make(chan bool), make(chan bool)
 	go RunClock(lw, 20, killClock) // TODO: get width?
@@ -341,14 +342,17 @@ func Run() error {
 	}
 
 	if err := mgr.AddMenu("menu-main", mainMenu); err != nil {
+		log.Printf("Add main-menu failed: %v", err)
 		return err
 	}
 
 	if err := mgr.AddMenu("menu-power", powerMenu); err != nil {
+		log.Printf("Add main-power failed: %v", err)
 		return err
 	}
 
 	if err := mgr.AddMenu("menu-easteregg", easterEggMenu); err != nil {
+		log.Printf("Add main-easteregg failed: %v", err)
 		return err
 	}
 
@@ -370,6 +374,7 @@ func Run() error {
 	})
 
 	mgr.RotateAction(func() error {
+		log.Printf("rotate action")
 		switch mgr.Direction() {
 		case DirectionRight:
 			log.Printf("Play next")
@@ -388,5 +393,5 @@ func Run() error {
 	killClock <- true
 	killSysinfo <- true
 
-	return nil
+	return mgr.Close()
 }

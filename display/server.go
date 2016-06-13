@@ -24,6 +24,7 @@ type Line struct {
 	sync.Mutex
 	Pos         int
 	ScrollDelay time.Duration
+	Visible     bool
 
 	text       []byte
 	buf        []byte
@@ -73,6 +74,10 @@ func NewLine(pos int, w int, driverPipe io.Writer) *Line {
 
 func (ln *Line) redraw() {
 	scroll(ln.buf, ln.text, ln.scrollPos)
+
+	if !ln.Visible {
+		return 
+	}
 
 	lpos := fmt.Sprintf("%d ", ln.Pos)
 	if _, err := ln.driverPipe.Write([]byte(lpos)); err != nil {
@@ -161,6 +166,7 @@ type Window struct {
 	LineOffset    int
 	Width, Height int
 	DriverPipe    io.Writer
+	Visible       bool
 }
 
 func NewWindow(name string, driverPipe io.Writer, w, h int) *Window {
@@ -172,7 +178,9 @@ func NewWindow(name string, driverPipe io.Writer, w, h int) *Window {
 	}
 
 	for i := 0; i < h; i++ {
-		win.Lines = append(win.Lines, NewLine(i, w, driverPipe))
+		ln := NewLine(i, w, driverPipe)
+		ln.Visible = true
+		win.Lines = append(win.Lines, ln)
 	}
 
 	return win
@@ -214,6 +222,16 @@ func (win *Window) SetScrollDelay(pos int, delay time.Duration) error {
 	return nil
 }
 
+func (win *Window) fixVisibility() {
+	for idx, line := range win.Lines {
+		if idx >= win.LineOffset && idx < win.LineOffset + win.Height {
+			line.Visible = win.Visible
+		} else {
+			line.Visible = false
+		}
+	}
+}
+
 func (win *Window) Move(n int) {
 	if n == 0 {
 		// no-op
@@ -221,6 +239,7 @@ func (win *Window) Move(n int) {
 	}
 
 	max := len(win.Lines) - win.Height
+
 	if win.LineOffset+n > max {
 		win.LineOffset = max
 	} else {
@@ -232,10 +251,20 @@ func (win *Window) Move(n int) {
 		win.LineOffset = 0
 	}
 
+	win.fixVisibility()
+
 	return
 }
 
+func (win *Window) Hide() {
+	win.Visible = false
+	win.fixVisibility()
+}
+
 func (win *Window) Switch() {
+	win.Visible = true
+	win.fixVisibility()
+
 	for _, line := range win.Lines {
 		line.Redraw()
 	}
@@ -310,6 +339,7 @@ func (srv *Server) createOrLookupWindow(name string) *Window {
 		srv.Active = win
 	}
 
+	srv.Active.Switch()
 	return win
 }
 
@@ -324,6 +354,7 @@ func (srv *Server) Switch(name string) {
 		return
 	}
 
+	srv.Active.Hide()
 	win.Switch()
 	srv.Active = win
 	return
@@ -527,6 +558,7 @@ func (lw *LineWriter) Write(p []byte) (int, error) {
 		p = append(p, '\n')
 	}
 
+	log.Printf("lw: %s", p)
 	return lw.conn.Write(p)
 }
 
@@ -538,7 +570,7 @@ func (lw *LineWriter) Close() error {
 	lw.Lock()
 	defer lw.Unlock()
 
-	return lw.Close()
+	return lw.conn.Close()
 }
 
 // TODO: cleanup and move to a new client.go
