@@ -12,9 +12,11 @@ import (
 	"github.com/studentkittens/eulenfunk/util"
 )
 
+type Action func() error
+
 type Entry struct {
 	Text   string
-	Action func() error
+	Action Action
 }
 
 type Menu struct {
@@ -78,19 +80,33 @@ func (mn *Menu) Click() error {
 		return nil
 	}
 
-	return mn.Entries[mn.Cursor].Action()
+	entry := mn.Entries[mn.Cursor]
+	if entry.Action != nil {
+		return nil
+	}
+
+	return entry.Action()
 }
 
 ////////////////////////
+
+const (
+	// No movement (initial)
+	DirectionNone = iota
+	DirectionRight
+	DirectionLeft
+)
 
 type MenuManager struct {
 	sync.Mutex
 
 	Active       *Menu
 	Menus        map[string]*Menu
-	TimedActions map[time.Duration]func() error
+	TimedActions map[time.Duration]Action
 
-	lw *display.LineWriter
+	lw                   *display.LineWriter
+	rotateActions        []Action
+	currValue, lastValue int
 }
 
 func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
@@ -135,7 +151,7 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 
 			// Find the action with smallest non-negative diff:
 			var diff time.Duration
-			var action func() error
+			var action Action
 
 			for after, timedAction := range mgr.TimedActions {
 				newDiff := duration - after
@@ -159,15 +175,51 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 
 			mgr.Lock()
 			mgr.Active.Scroll(value)
+			mgr.lastValue = mgr.currValue
+			mgr.currValue = value
 			mgr.Unlock()
 
 			if _, err := lw.Formatf("move menu %d", value); err != nil {
 				log.Printf("move failed: %v", err)
 			}
+
+			for idx, action := range mgr.rotateActions {
+				if err := action(); err != nil {
+					log.Printf("Rotate action %d failed: %v", idx, err)
+				}
+			}
 		}
 	}()
 
 	return mgr, nil
+}
+
+func (mgr *MenuManager) Direction() int {
+	mgr.Lock()
+	defer mgr.Unlock()
+
+	switch {
+	case mgr.lastValue < mgr.currValue:
+		return DirectionRight
+	case mgr.lastValue > mgr.currValue:
+		return DirectionLeft
+	default:
+		return DirectionNone
+	}
+}
+
+func (mgr *MenuManager) Value() int {
+	mgr.Lock()
+	defer mgr.Unlock()
+
+	return mgr.currValue
+}
+
+func (mgr *MenuManager) RotateAction(a Action) {
+	mgr.Lock()
+	defer mgr.Unlock()
+
+	mgr.rotateActions = append(mgr.rotateActions, a)
 }
 
 func (mgr *MenuManager) SwitchTo(name string) error {
@@ -176,6 +228,9 @@ func (mgr *MenuManager) SwitchTo(name string) error {
 		return err
 	}
 
+	mgr.Lock()
+	defer mgr.Unlock()
+
 	if menu, ok := mgr.Menus[name]; ok {
 		mgr.Active = menu
 	}
@@ -183,7 +238,7 @@ func (mgr *MenuManager) SwitchTo(name string) error {
 	return nil
 }
 
-func (mgr *MenuManager) AddTimedAction(after time.Duration, action func() error) {
+func (mgr *MenuManager) AddTimedAction(after time.Duration, action Action) {
 	mgr.Lock()
 	defer mgr.Unlock()
 
@@ -213,6 +268,13 @@ func (mgr *MenuManager) AddMenu(name string, entries []*Entry) error {
 
 //////////////////////////////////////
 
+func switcher(lw *display.LineWriter, name string) func() error {
+	return func() error {
+		_, err := lw.Formatf("switch %s", name)
+		return err
+	}
+}
+
 func Run() error {
 	cfg := &display.Config{
 		Host: "localhost",
@@ -231,52 +293,42 @@ func Run() error {
 		return err
 	}
 
+	// Start clock and sysinfo screen:
 	killClock, killSysinfo := make(chan bool), make(chan bool)
 	go RunClock(lw, 20, killClock) // TODO: get width?
 	go RunSysinfo(lw, 20, killSysinfo)
 
-	// TODO: Create clock and sysinfo
-
-	mainMenu := []*Entry{{
-		"Exit",
-		func() error {
-			_, err := lw.Formatf("switch mpd")
-			return err
+	mainMenu := []*Entry{
+		{
+			"Exit", switcher(lw, "mpd"),
+		}, {
+			"Playlists", switcher(lw, "playlists"),
+		}, {
+			"Toggle PartyMode", nil, // TODO
+		}, {
+			"System info", switcher(lw, "sysinfo"),
+		}, {
+			"Clock", switcher(lw, "clock"),
+		}, {
+			"Stop playback", nil, // TODO
+		}, {
+			"Power", switcher(lw, "menu-power"),
 		},
-	}, {
-		"Playlists",
-		nil,
-	}, {
-		"Toggle PartyMode",
-		nil,
-	}, {
-		"System info",
-		func() error {
-			_, err := lw.Formatf("switch sysinfo")
-			return err
-		},
-	}, {
-		"Clock",
-		nil,
-	}, {
-		"Stop playback",
-		nil,
-	}, {
-		"Power",
-		nil,
-	},
 	}
 
-	powerMenu := []*Entry{{
-		"Poweroff",
-		nil,
-	}, {
-		"Reboot",
-		nil,
-	},
+	powerMenu := []*Entry{
+		{
+			"Poweroff", nil, // TODO
+		}, {
+			"Reboot", nil, // TODO
+		},
 	}
 
-	easterEggMenu := []*Entry{{"Schuhu?", nil}}
+	easterEggMenu := []*Entry{
+		{
+			"Schuhu?", nil,
+		},
+	}
 
 	if err := mgr.AddMenu("menu-main", mainMenu); err != nil {
 		return err
@@ -305,6 +357,17 @@ func Run() error {
 
 	mgr.AddTimedAction(10*time.Second, func() error {
 		return mgr.SwitchTo("menu-easteregg")
+	})
+
+	mgr.RotateAction(func() error {
+		switch mgr.Direction() {
+		case DirectionRight:
+			log.Printf("Play next")
+		case DirectionLeft:
+			log.Printf("Play prev")
+		}
+
+		return nil
 	})
 
 	log.Printf("Press CTRL-C to shut down")
