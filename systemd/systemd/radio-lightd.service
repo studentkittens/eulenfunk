@@ -1,0 +1,9 @@
+[Unit]
+Description=LED locking and effect service
+
+[Service]
+ExecStart=/usr/bin/eulenfunk lightd --driver radio-led
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

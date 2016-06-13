@@ -30,8 +30,6 @@ func (q *EffectQueue) Push(e Effect) {
 		colorValue := fmt.Sprintf("%d %d %d\n", color.R, color.G, color.B)
 		q.StdInPipe.Write([]byte(colorValue))
 	}
-
-	q.Blocked <- false
 }
 
 func NewEffectQueue(driverBinary string) (*EffectQueue, error) {
@@ -340,6 +338,26 @@ func parseEffect(s string) (Effect, error) {
 func handleRequest(conn net.Conn, queue *EffectQueue) {
 	defer conn.Close()
 
+	lock := func() {
+		timer := time.NewTimer(5 * time.Second)
+		select {
+		case <-queue.Blocked:
+			break
+		case <-timer.C:
+			break
+		}
+	}
+
+	unlock := func() {
+		timer := time.NewTimer(5 * time.Second)
+		select {
+		case queue.Blocked <- false:
+			break
+		case <-timer.C:
+			break
+		}
+	}
+
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -351,33 +369,38 @@ func handleRequest(conn net.Conn, queue *EffectQueue) {
 
 		switch line {
 		case "!lock":
-			log.Printf("Locking queue...")
-			<-queue.Blocked
+			lock()
 
-			log.Printf("Lock acquired.")
 			if _, err := conn.Write([]byte("OK\n")); err != nil {
 				log.Printf("Failed to answer lock response: %v", err)
 			}
 
-			return
+			continue
 		case "!unlock":
-			log.Printf("Unlocking queue...")
-			queue.Blocked <- false
+			unlock()
 
 			if _, err := conn.Write([]byte("OK\n")); err != nil {
 				log.Printf("Failed to answer unlock response: %v", err)
 			}
-			return
+
+			continue
+		case "!close":
+			break
 		}
 
 		effect, err := parseEffect(line)
 		if err != nil {
 			log.Printf("Unable to process effect: %v", err)
-			return
+			continue
 		}
 
-		<-queue.Blocked
+		lock()
 		queue.Push(effect)
+		unlock()
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Printf("line scanning failed: %v", err)
 	}
 }
 

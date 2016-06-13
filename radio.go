@@ -93,12 +93,21 @@ func main() {
 				return lightd.Send(cfg, effect)
 			}
 
-			if ctx.Bool("lock") {
-				return lightd.Lock(cfg)
-			}
+			if ctx.Bool("lock") || ctx.Bool("unlock") {
+				locker, err := lightd.NewLocker(cfg)
+				if err != nil {
+					return err
+				}
 
-			if ctx.Bool("unlock") {
-				return lightd.Unlock(cfg)
+				defer locker.Close()
+
+				if ctx.Bool("lock") {
+					locker.Lock()
+				} else {
+					locker.Unlock()
+				}
+
+				return nil
 			}
 
 			return lightd.Run(cfg)

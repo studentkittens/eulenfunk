@@ -22,7 +22,7 @@ import (
 // It also supports special names for special symbols.
 type Line struct {
 	sync.Mutex
-	Pos int
+	Pos         int
 	ScrollDelay time.Duration
 
 	text       []byte
@@ -86,7 +86,13 @@ func (ln *Line) redraw() {
 	if _, err := ln.driverPipe.Write([]byte("\n")); err != nil {
 		log.Printf("Failed to write to driver: %v", err)
 	}
+}
 
+func (ln *Line) Redraw() {
+	ln.Lock()
+	defer ln.Unlock()
+
+	ln.redraw()
 }
 
 func (ln *Line) SetText(text string) {
@@ -229,6 +235,12 @@ func (win *Window) Move(n int) {
 	return
 }
 
+func (win *Window) Switch() {
+	for _, line := range win.Lines {
+		line.Redraw()
+	}
+}
+
 func (win *Window) Render() []byte {
 	buf := &bytes.Buffer{}
 
@@ -311,6 +323,12 @@ func (srv *Server) Switch(name string) error {
 		return fmt.Errorf("No such window: %s", name)
 	}
 
+	// Save a redraw just in case:
+	if win == srv.Active {
+		return nil
+	}
+
+	win.Switch()
 	srv.Active = win
 	return nil
 }
@@ -395,6 +413,7 @@ func handleConn(srv *Server, conn net.Conn) {
 				log.Printf("Unable to switch window: %s", name)
 				continue
 			}
+		// TODO: add window param
 		case "line":
 			text := ""
 			if len(split) >= 3 {
