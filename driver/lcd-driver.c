@@ -62,7 +62,7 @@ static int read_from_stdin(int handle) {
 
         int lineno = 0;
         int offset = 0;
-	bool offset_given = false;
+    	bool offset_given = false;
 
         switch(first_space - line) {
             case 1:
@@ -78,6 +78,10 @@ static int read_from_stdin(int handle) {
             default:
                 // Some bad formatting going on...
                 continue;
+        }
+
+        if(lineno >= LCD_HEIGHT) {
+            continue;
         }
 
         lcdPosition(handle, offset, lineno);
