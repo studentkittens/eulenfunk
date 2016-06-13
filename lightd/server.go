@@ -12,7 +12,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -20,26 +19,31 @@ import (
 //       and the effect syntax is awful.
 
 type EffectQueue struct {
-	sync.Mutex
 	StdInPipe io.Writer
+	Blocked   chan bool
 }
 
 func (q *EffectQueue) Push(e Effect) {
 	c := e.ComposeEffect()
+
 	for color := range c {
 		colorValue := fmt.Sprintf("%d %d %d\n", color.R, color.G, color.B)
 		q.StdInPipe.Write([]byte(colorValue))
 	}
 }
 
-func NewEffectQueue() (*EffectQueue, error) {
-	cmd := exec.Command("radio-led", "cat")
+func NewEffectQueue(driverBinary string) (*EffectQueue, error) {
+	cmd := exec.Command(driverBinary, "cat")
 	stdinpipe, err := cmd.StdinPipe()
 	if err != nil {
-		return &EffectQueue{StdInPipe: nil}, err
+		return nil, err
 	}
 
+	blocked := make(chan bool, 1)
+	blocked <- false
+
 	return &EffectQueue{
+		Blocked:   blocked,
 		StdInPipe: stdinpipe,
 	}, cmd.Start()
 }
@@ -264,8 +268,6 @@ func parseProperties(s string) (*Properties, error) {
 		return nil, fmt.Errorf("Bad effect properties: %s", s)
 	}
 
-	fmt.Println("Matches", matches)
-
 	duration, err := time.ParseDuration(matches[1])
 	if err != nil {
 		return nil, fmt.Errorf("Bad duration: `%s`: %v", matches[1], err)
@@ -336,6 +338,26 @@ func parseEffect(s string) (Effect, error) {
 func handleRequest(conn net.Conn, queue *EffectQueue) {
 	defer conn.Close()
 
+	lock := func() {
+		timer := time.NewTimer(5 * time.Second)
+		select {
+		case <-queue.Blocked:
+			break
+		case <-timer.C:
+			break
+		}
+	}
+
+	unlock := func() {
+		timer := time.NewTimer(5 * time.Second)
+		select {
+		case queue.Blocked <- false:
+			break
+		case <-timer.C:
+			break
+		}
+	}
+
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -347,32 +369,49 @@ func handleRequest(conn net.Conn, queue *EffectQueue) {
 
 		switch line {
 		case "!lock":
-			queue.Lock()
-			return
+			lock()
+
+			if _, err := conn.Write([]byte("OK\n")); err != nil {
+				log.Printf("Failed to answer lock response: %v", err)
+			}
+
+			continue
 		case "!unlock":
-			queue.Unlock()
-			return
+			unlock()
+
+			if _, err := conn.Write([]byte("OK\n")); err != nil {
+				log.Printf("Failed to answer unlock response: %v", err)
+			}
+
+			continue
+		case "!close":
+			break
 		}
 
 		effect, err := parseEffect(line)
 		if err != nil {
 			log.Printf("Unable to process effect: %v", err)
-			return
+			continue
 		}
 
-		queue.Lock()
+		lock()
 		queue.Push(effect)
-		queue.Unlock()
+		unlock()
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Printf("line scanning failed: %v", err)
 	}
 }
 
 type Config struct {
-	Host string
-	Port int
+	Host         string
+	Port         int
+	DriverBinary string
 }
 
 func Run(cfg *Config) error {
-	queue, err := NewEffectQueue()
+	queue, err := NewEffectQueue(cfg.DriverBinary)
 	if err != nil {
 		log.Printf("Unable to hook up to lightd: %v", err)
 		return err

@@ -51,6 +51,12 @@ func main() {
 		Usage: "Utility server to lock the led ownage and enable nice atomic effects",
 		Flags: []cli.Flag{
 			cli.StringFlag{
+				Name:   "driver,d",
+				Value:  "catlight",
+				Usage:  "Which driver binary to use to send colors to",
+				EnvVar: "LIGHTD_DRIVER",
+			},
+			cli.StringFlag{
 				Name:   "host,H",
 				Value:  "localhost",
 				Usage:  "lightd-host to connect to",
@@ -78,20 +84,30 @@ func main() {
 		},
 		Action: func(ctx *cli.Context) error {
 			cfg := &lightd.Config{
-				Host: ctx.String("host"),
-				Port: ctx.Int("port"),
+				Host:         ctx.String("host"),
+				Port:         ctx.Int("port"),
+				DriverBinary: ctx.String("driver"),
 			}
 
 			if effect := ctx.String("send"); effect != "" {
 				return lightd.Send(cfg, effect)
 			}
 
-			if ctx.Bool("lock") {
-				return lightd.Send(cfg, "!lock")
-			}
+			if ctx.Bool("lock") || ctx.Bool("unlock") {
+				locker, err := lightd.NewLocker(cfg)
+				if err != nil {
+					return err
+				}
 
-			if ctx.Bool("unlock") {
-				return lightd.Send(cfg, "!unlock")
+				defer locker.Close()
+
+				if ctx.Bool("lock") {
+					locker.Lock()
+				} else {
+					locker.Unlock()
+				}
+
+				return nil
 			}
 
 			return lightd.Run(cfg)

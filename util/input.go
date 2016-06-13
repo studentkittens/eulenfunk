@@ -84,7 +84,7 @@ func NewRotary() (*Rotary, error) {
 					continue
 				}
 
-				rty.Pressed <- time.Duration(t)
+				rty.Pressed <- time.Duration(t) * time.Second
 			}
 		}
 
@@ -97,8 +97,12 @@ func NewRotary() (*Rotary, error) {
 }
 
 func (rty *Rotary) Close() error {
+	if err := rty.stdout.Close(); err != nil {
+		return err
+	}
+
 	close(rty.Button)
 	close(rty.Pressed)
 	close(rty.Value)
-	return rty.stdout.Close()
+	return nil
 }

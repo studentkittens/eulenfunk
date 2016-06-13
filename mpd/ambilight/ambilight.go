@@ -270,17 +270,28 @@ func MoodbarAdjuster(eventCh <-chan MPDEvent, colorsCh chan<- TimedColor) {
 		Port: 3333,
 	}
 
+	locker, err := lightd.NewLocker(lightdConfig)
+	if err != nil {
+		log.Printf("Failed to create locker. Will continue without. lightd running?")
+	} else {
+		defer locker.Close()
+	}
+
 	sendColor := func(col TimedColor) {
-		if err := lightd.Lock(lightdConfig); err != nil {
-			log.Printf("Failed to acquire lock (sending anyways): %v", err)
+		if locker != nil {
+			if err := locker.Lock(); err != nil {
+				log.Printf("Failed to acquire lock (sending anyways): %v", err)
+			}
 		}
 
 		// Do not crash when colorsCh is closed:
 		colorsCh <- col
 		time.Sleep(col.Duration)
 
-		if err := lightd.Unlock(lightdConfig); err != nil {
-			log.Printf("Failed to unlock: %v", err)
+		if locker != nil {
+			if err := locker.Unlock(); err != nil {
+				log.Printf("Failed to unlock: %v", err)
+			}
 		}
 	}
 

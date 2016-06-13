@@ -22,8 +22,9 @@ import (
 // It also supports special names for special symbols.
 type Line struct {
 	sync.Mutex
-
+	Pos         int
 	ScrollDelay time.Duration
+	Visible     bool
 
 	text       []byte
 	buf        []byte
@@ -31,8 +32,9 @@ type Line struct {
 	driverPipe io.Writer
 }
 
-func NewLine(w int, driverPipe io.Writer) *Line {
+func NewLine(pos int, w int, driverPipe io.Writer) *Line {
 	ln := &Line{
+		Pos:        pos,
 		text:       []byte{},
 		buf:        make([]byte, w),
 		driverPipe: driverPipe,
@@ -73,10 +75,29 @@ func NewLine(w int, driverPipe io.Writer) *Line {
 func (ln *Line) redraw() {
 	scroll(ln.buf, ln.text, ln.scrollPos)
 
-	// TODO: output to driver here
+	if !ln.Visible {
+		return 
+	}
+
+	lpos := fmt.Sprintf("%d ", ln.Pos)
+	if _, err := ln.driverPipe.Write([]byte(lpos)); err != nil {
+		log.Printf("Failed to write to driver: %v", err)
+	}
+
 	if _, err := ln.driverPipe.Write(ln.buf); err != nil {
 		log.Printf("Failed to write to driver: %v", err)
 	}
+
+	if _, err := ln.driverPipe.Write([]byte("\n")); err != nil {
+		log.Printf("Failed to write to driver: %v", err)
+	}
+}
+
+func (ln *Line) Redraw() {
+	ln.Lock()
+	defer ln.Unlock()
+
+	ln.redraw()
 }
 
 func (ln *Line) SetText(text string) {
@@ -145,6 +166,7 @@ type Window struct {
 	LineOffset    int
 	Width, Height int
 	DriverPipe    io.Writer
+	Visible       bool
 }
 
 func NewWindow(name string, driverPipe io.Writer, w, h int) *Window {
@@ -156,7 +178,9 @@ func NewWindow(name string, driverPipe io.Writer, w, h int) *Window {
 	}
 
 	for i := 0; i < h; i++ {
-		win.Lines = append(win.Lines, NewLine(w, driverPipe))
+		ln := NewLine(i, w, driverPipe)
+		ln.Visible = true
+		win.Lines = append(win.Lines, ln)
 	}
 
 	return win
@@ -172,7 +196,6 @@ func (win *Window) SetLine(pos int, text string) error {
 		return fmt.Errorf("Only up to 1024 lines supported.")
 	}
 
-	x := len(win.Lines)
 	// We need to extend:
 	if pos >= len(win.Lines) {
 		newLines := make([]*Line, pos+1)
@@ -180,13 +203,11 @@ func (win *Window) SetLine(pos int, text string) error {
 
 		// Create the intermediate lines:
 		for i := len(win.Lines); i < len(newLines); i++ {
-			newLines[i] = NewLine(win.Width, win.DriverPipe)
+			newLines[i] = NewLine(i, win.Width, win.DriverPipe)
 		}
 
 		win.Lines = newLines
 	}
-
-	fmt.Println("SetLine", pos, len(win.Lines), x)
 
 	win.Lines[pos].SetText(text)
 	return nil
@@ -201,6 +222,16 @@ func (win *Window) SetScrollDelay(pos int, delay time.Duration) error {
 	return nil
 }
 
+func (win *Window) fixVisibility() {
+	for idx, line := range win.Lines {
+		if idx >= win.LineOffset && idx < win.LineOffset + win.Height {
+			line.Visible = win.Visible
+		} else {
+			line.Visible = false
+		}
+	}
+}
+
 func (win *Window) Move(n int) {
 	if n == 0 {
 		// no-op
@@ -208,6 +239,7 @@ func (win *Window) Move(n int) {
 	}
 
 	max := len(win.Lines) - win.Height
+
 	if win.LineOffset+n > max {
 		win.LineOffset = max
 	} else {
@@ -219,7 +251,23 @@ func (win *Window) Move(n int) {
 		win.LineOffset = 0
 	}
 
+	win.fixVisibility()
+
 	return
+}
+
+func (win *Window) Hide() {
+	win.Visible = false
+	win.fixVisibility()
+}
+
+func (win *Window) Switch() {
+	win.Visible = true
+	win.fixVisibility()
+
+	for _, line := range win.Lines {
+		line.Redraw()
+	}
 }
 
 func (win *Window) Render() []byte {
@@ -230,7 +278,6 @@ func (win *Window) Render() []byte {
 		hi = len(win.Lines)
 	}
 
-	fmt.Println(len(win.Lines), hi, win.LineOffset)
 	for _, line := range win.Lines[win.LineOffset:hi] {
 		buf.Write(line.Render())
 		buf.WriteRune('\n')
@@ -279,10 +326,7 @@ func NewServer(cfg *Config) (*Server, error) {
 	}, nil
 }
 
-func (srv *Server) AddWindow(name string) {
-	srv.Lock()
-	defer srv.Unlock()
-
+func (srv *Server) createOrLookupWindow(name string) *Window {
 	win, ok := srv.Windows[name]
 
 	if !ok {
@@ -294,54 +338,47 @@ func (srv *Server) AddWindow(name string) {
 	if srv.Active == nil {
 		srv.Active = win
 	}
+
+	srv.Active.Switch()
+	return win
 }
 
-func (srv *Server) Switch(name string) error {
+func (srv *Server) Switch(name string) {
 	srv.Lock()
 	defer srv.Unlock()
 
-	win, ok := srv.Windows[name]
-	if !ok {
-		return fmt.Errorf("No such window: %s", name)
+	win := srv.createOrLookupWindow(name)
+
+	// Save a redraw just in case:
+	if win == srv.Active {
+		return
 	}
 
+	srv.Active.Hide()
+	win.Switch()
 	srv.Active = win
-	return nil
+	return
 }
 
-func (srv *Server) SetLine(pos int, text string) error {
+func (srv *Server) SetLine(name string, pos int, text string) error {
 	srv.Lock()
 	defer srv.Unlock()
 
-	if srv.Active == nil {
-		return fmt.Errorf("No active window")
-	}
-
-	return srv.Active.SetLine(pos, text)
+	return srv.createOrLookupWindow(name).SetLine(pos, text)
 }
 
-func (srv *Server) SetScrollDelay(pos int, delay time.Duration) error {
+func (srv *Server) SetScrollDelay(name string, pos int, delay time.Duration) error {
 	srv.Lock()
 	defer srv.Unlock()
 
-	if srv.Active == nil {
-		return fmt.Errorf("No active window")
-	}
-
-	return srv.Active.SetScrollDelay(pos, delay)
+	return srv.createOrLookupWindow(name).SetScrollDelay(pos, delay)
 }
 
-func (srv *Server) Move(window string, n int) error {
+func (srv *Server) Move(window string, n int) {
 	srv.Lock()
 	defer srv.Unlock()
 
-	win, ok := srv.Windows[window]
-	if !ok {
-		return fmt.Errorf("No such window: %s", window)
-	}
-
-	win.Move(n)
-	return nil
+	srv.createOrLookupWindow(window).Move(n)
 }
 
 func (srv *Server) Render() []byte {
@@ -369,15 +406,7 @@ func handleConn(srv *Server, conn net.Conn) {
 			continue
 		}
 
-		switch split := strings.SplitN(line, " ", 3); split[0] {
-		case "window":
-			name := ""
-			if _, err := fmt.Sscanf(line, "window %s", &name); err != nil {
-				log.Printf("Failed to parse window command `%s`: %v", line, err)
-				continue
-			}
-
-			srv.AddWindow(name)
+		switch split := strings.SplitN(line, " ", 4); split[0] {
 		case "switch":
 			name := ""
 			if _, err := fmt.Sscanf(line, "switch %s", &name); err != nil {
@@ -385,29 +414,27 @@ func handleConn(srv *Server, conn net.Conn) {
 				continue
 			}
 
-			if err := srv.Switch(name); err != nil {
-				log.Printf("Unable to switch window: %s", name)
-				continue
-			}
+			srv.Switch(name)
 		case "line":
 			text := ""
-			if len(split) >= 3 {
-				text = split[2]
+			if len(split) >= 4 {
+				text = split[3]
 			}
 
-			pos := 0
-			if _, err := fmt.Sscanf(line, "line %d ", &pos); err != nil {
+			win, pos := "", 0
+
+			if _, err := fmt.Sscanf(line, "line %s %d ", &win, &pos); err != nil {
 				log.Printf("Failed to parse line command `%s`: %v", line, err)
 				continue
 			}
 
-			if err := srv.SetLine(pos, text); err != nil {
+			if err := srv.SetLine(win, pos, text); err != nil {
 				log.Printf("Failed to set line: %v", err)
 				continue
 			}
 		case "scroll":
-			pos, durationSpec := 0, ""
-			if _, err := fmt.Sscanf(line, "scroll %d %s", &pos, &durationSpec); err != nil {
+			win, pos, durationSpec := "", 0, ""
+			if _, err := fmt.Sscanf(line, "scroll %s %d %s", &pos, &durationSpec); err != nil {
 				log.Printf("Failed to parse scroll command `%s`: %v", line, err)
 				continue
 			}
@@ -418,7 +445,7 @@ func handleConn(srv *Server, conn net.Conn) {
 				continue
 			}
 
-			if err := srv.SetScrollDelay(pos, duration); err != nil {
+			if err := srv.SetScrollDelay(win, pos, duration); err != nil {
 				log.Printf("Cannot set scroll: %v", err)
 				continue
 			}
@@ -429,10 +456,7 @@ func handleConn(srv *Server, conn net.Conn) {
 				continue
 			}
 
-			if err := srv.Move(name, pos); err != nil {
-				log.Printf("Failed to execute move command `%s`: %v", line, err)
-				continue
-			}
+			srv.Move(name, pos)
 		case "render":
 			if _, err := conn.Write(srv.Render()); err != nil {
 				log.Printf("Failed to respond rendered display: %v", err)
@@ -513,7 +537,7 @@ func createClient(cfg *Config, window string) (net.Conn, error) {
 		return nil, err
 	}
 
-	cmd := fmt.Sprintf("window %s\nswitch %s\n", window, window)
+	cmd := fmt.Sprintf("switch %s\n", window)
 	if _, err := conn.Write([]byte(cmd)); err != nil {
 		return nil, err
 	}
@@ -534,6 +558,7 @@ func (lw *LineWriter) Write(p []byte) (int, error) {
 		p = append(p, '\n')
 	}
 
+	log.Printf("lw: %s", p)
 	return lw.conn.Write(p)
 }
 
@@ -545,7 +570,7 @@ func (lw *LineWriter) Close() error {
 	lw.Lock()
 	defer lw.Unlock()
 
-	return lw.Close()
+	return lw.conn.Close()
 }
 
 // TODO: cleanup and move to a new client.go

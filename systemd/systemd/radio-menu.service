@@ -1,0 +1,11 @@
+[Unit]
+Description=MPD client that show the current state on the LCD
+After=mpd.service radio-display.service
+Requires=mpd.service radio-display.service
+
+[Service]
+ExecStart=/usr/bin/eulenfunk menu
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

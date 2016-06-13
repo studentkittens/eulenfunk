@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <wiringPi.h>
@@ -61,6 +62,7 @@ static int read_from_stdin(int handle) {
 
         int lineno = 0;
         int offset = 0;
+    	bool offset_given = false;
 
         switch(first_space - line) {
             case 1:
@@ -78,11 +80,22 @@ static int read_from_stdin(int handle) {
                 continue;
         }
 
+        if(lineno >= LCD_HEIGHT) {
+            continue;
+        }
+
         lcdPosition(handle, offset, lineno);
 
 	first_space++;
-	for(int i = offset; i < LCD_WIDTH && *first_space; i++) {
+	int i = offset;
+	for(; i < LCD_WIDTH && *first_space; i++) {
        	    lcdPutchar(handle, *first_space++);
+	}
+
+	if(!offset_given) {
+		for(; i < LCD_WIDTH; i++) {
+		    lcdPutchar(handle, ' ');
+		}
 	}
     }
 
