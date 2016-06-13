@@ -321,7 +321,7 @@ func NewServer(cfg *Config) (*Server, error) {
 	go func() {
 		for {
 			srv.renderToDriver()
-			time.Sleep(250 * time.Millisecond)
+			time.Sleep(150 * time.Millisecond)
 		}
 	}()
 

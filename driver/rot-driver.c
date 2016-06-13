@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
+#include <math.h>
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -19,12 +20,14 @@
 #define ROTARY_PIN_B  13
 #define ROTARY_BUTTON 14
 
+#define ROTATY_INCREMENT (0.25)
+
 struct encoder {
     int pin_a;
     int pin_b;
     int pin_btn;
 
-    volatile long value;
+    volatile double value;
     volatile int lastEncoded;
 
     volatile struct timeval button_time;
@@ -60,8 +63,8 @@ void updateEncoders() {
         int encoded = (MSB << 1) | LSB;
         int sum = (encoder->lastEncoded << 2) | encoded;
 
-        if(sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) encoder->value--;
-        if(sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoder->value++;
+        if(sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) encoder->value -= ROTATY_INCREMENT;
+        if(sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoder->value += ROTATY_INCREMENT;
 
         encoder->lastEncoded = encoded;
     }
@@ -111,11 +114,11 @@ int main(void) {
     double hold_time = 0;
 
     while (1) {
-        updateEncoders();
+        //updateEncoders();
 
         // Divide by three since it counts 
         // about 3 value increments per "tick" which is too much.
-        long curr = encoder->value / 3;
+        long curr = lround(encoder->value);
         if(curr != last_value) {
             printf("v %ld\n", curr);
 	    fflush(stdout);

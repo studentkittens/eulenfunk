@@ -129,20 +129,22 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 				continue
 			}
 
-			if state {
+			if !state {
 				// We don't do anything yet...
-				fmt.Println("Button pressed")
+			fmt.Println("Button released")
 				continue
 			}
 
-			fmt.Println("Button released")
+				fmt.Println("Button pressed")
 
 			mgr.Lock()
-			if err := mgr.Active.Click(); err != nil {
-				active := mgr.Active.ActiveName()
-				log.Printf("Action for menu entry `%s` failed: %v", active, err)
-			}
+			active := mgr.Active
 			mgr.Unlock()
+
+			if err := active.Click(); err != nil {
+				name := active.ActiveName()
+				log.Printf("Action for menu entry `%s` failed: %v", name, err)
+			}
 		}
 	}()
 
@@ -173,16 +175,18 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 
 	go func() {
 		for value := range rty.Value {
-			fmt.Printf("Value: %d\n", value)
 
 			mgr.Lock()
-			mgr.Active.Scroll(value)
 			mgr.lastValue = mgr.currValue
 			mgr.currValue = value
+			diff := mgr.currValue - mgr.lastValue
 			name := mgr.Active.Name
 			mgr.Unlock()
 
-			if _, err := lw.Formatf("move %s %d", name, value); err != nil {
+			log.Printf("Value: %d Diff %d\n", value, diff)
+
+			mgr.Active.Scroll(diff)
+			if _, err := lw.Formatf("move %s %d", name, diff); err != nil {
 				log.Printf("move failed: %v", err)
 			}
 
@@ -279,10 +283,9 @@ func (mgr *MenuManager) Close() error {
 
 //////////////////////////////////////
 
-func switcher(lw *display.LineWriter, name string) func() error {
+func switcher(mgr *MenuManager, lw *display.LineWriter, name string) func() error {
 	return func() error {
-		_, err := lw.Formatf("switch %s", name)
-		return err
+		return mgr.SwitchTo(name)
 	}
 }
 
@@ -311,19 +314,19 @@ func Run() error {
 
 	mainMenu := []*Entry{
 		{
-			"Exit", switcher(lw, "mpd"),
+			"Show status", switcher(mgr, lw, "mpd"),
 		}, {
-			"Playlists", switcher(lw, "playlists"),
+			"Playlists", switcher(mgr, lw, "playlists"),
 		}, {
 			"Toggle PartyMode", nil, // TODO
 		}, {
-			"System info", switcher(lw, "sysinfo"),
+			"System info", switcher(mgr, lw, "sysinfo"),
 		}, {
-			"Clock", switcher(lw, "clock"),
+			"Clock", switcher(mgr, lw, "clock"),
 		}, {
 			"Stop playback", nil, // TODO
 		}, {
-			"Power", switcher(lw, "menu-power"),
+			"Power", switcher(mgr, lw, "menu-power"),
 		},
 	}
 
@@ -332,12 +335,16 @@ func Run() error {
 			"Poweroff", nil, // TODO
 		}, {
 			"Reboot", nil, // TODO
+		}, {
+			"Exit", switcher(mgr, lw, "menu-main"),
 		},
 	}
 
 	easterEggMenu := []*Entry{
 		{
 			"Schuhu?", nil,
+		}, {
+			"Exit", switcher(mgr, lw, "menu-main"),
 		},
 	}
 
@@ -366,7 +373,7 @@ func Run() error {
 	})
 
 	mgr.AddTimedAction(2*time.Second, func() error {
-		return mgr.SwitchTo("menu-main")
+		return mgr.SwitchTo("menu-power")
 	})
 
 	mgr.AddTimedAction(10*time.Second, func() error {

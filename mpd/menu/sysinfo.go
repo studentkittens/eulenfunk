@@ -12,6 +12,7 @@ func RunSysinfo(lw *display.LineWriter, width int, killCh <-chan bool) {
 		select {
 		case <-killCh:
 			return
+		default:
 		}
 
 		if _, err := lw.Formatf("line sysinfo 2 Im a raspberry. Schuhu!"); err != nil {

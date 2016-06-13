@@ -92,14 +92,14 @@ static int read_from_stdin(int handle) {
             continue;
         }
 
-        lcdPosition(handle, offset, lineno);
 
         first_space++;
         int i = offset;
-        for(; i < LCD_WIDTH && *first_space; i++) {
-            char c = *first_space++;
+        for(; i < LCD_WIDTH && *first_space; i++, first_space++) {
+            char c = *first_space;
             if(c != matrix[lineno][i]) {
-                lcdPutchar(handle, *first_space++);
+        	lcdPosition(handle, i, lineno);
+                lcdPutchar(handle, *first_space);
                 matrix[lineno][i] = c;
             }
         }
@@ -107,6 +107,7 @@ static int read_from_stdin(int handle) {
         if(!offset_given) {
             for(; i < LCD_WIDTH; i++) {
                 if(' ' != matrix[lineno][i]) {
+        	    lcdPosition(handle, i, lineno);
                     lcdPutchar(handle, ' ');
                     matrix[lineno][i] = ' ';
                 }
