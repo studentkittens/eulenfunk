@@ -28,18 +28,26 @@ extern void lcdCharDef(const int fd, int index, unsigned char data [8]);
 // https://omerk.github.io/lcdchargen/
 
 static uint8_t GlyphDataHourglass[8] = {
-	0b11111,
-	0b00100,
-	0b01110,
-	0b11011,
-	0b11011,
-	0b01110,
-	0b00100,
-	0b11111
+    0b11111,
+    0b00100,
+    0b01110,
+    0b11011,
+    0b11011,
+    0b01110,
+    0b00100,
+    0b11111
 };
 
 static int read_from_stdin(int handle) {
     const int n = LCD_WIDTH + 4 + 1;
+
+    char matrix[LCD_HEIGHT][LCD_WIDTH];
+    for(int y = 0; y < LCD_HEIGHT; y++) {
+        for(int x = 0; x < LCD_WIDTH; x++) {
+            matrix[y][x] = 0;
+        }
+    }
+
     char line[n];
 
     for(;;) {
@@ -62,7 +70,7 @@ static int read_from_stdin(int handle) {
 
         int lineno = 0;
         int offset = 0;
-    	bool offset_given = false;
+        bool offset_given = false;
 
         switch(first_space - line) {
             case 1:
@@ -86,17 +94,24 @@ static int read_from_stdin(int handle) {
 
         lcdPosition(handle, offset, lineno);
 
-	first_space++;
-	int i = offset;
-	for(; i < LCD_WIDTH && *first_space; i++) {
-       	    lcdPutchar(handle, *first_space++);
-	}
+        first_space++;
+        int i = offset;
+        for(; i < LCD_WIDTH && *first_space; i++) {
+            char c = *first_space++;
+            if(c != matrix[lineno][i]) {
+                lcdPutchar(handle, *first_space++);
+                matrix[lineno][i] = c;
+            }
+        }
 
-	if(!offset_given) {
-		for(; i < LCD_WIDTH; i++) {
-		    lcdPutchar(handle, ' ');
-		}
-	}
+        if(!offset_given) {
+            for(; i < LCD_WIDTH; i++) {
+                if(' ' != matrix[lineno][i]) {
+                    lcdPutchar(handle, ' ');
+                    matrix[lineno][i] = ' ';
+                }
+            }
+        }
     }
 
     return EXIT_SUCCESS;
@@ -108,12 +123,12 @@ int main(void) {
     piHiPri(20);
 
     int handle = lcdInit(
-        4, 20,                          // HxW
-        4,                              // bit mode
-        LCD_RS, LCD_E,                  // RS and Strobe
-        LCD_D4, LCD_D5, LCD_D6, LCD_D7, // Data pins
-        0, 0, 0, 0
-    );
+            4, 20,                          // HxW
+            4,                              // bit mode
+            LCD_RS, LCD_E,                  // RS and Strobe
+            LCD_D4, LCD_D5, LCD_D6, LCD_D7, // Data pins
+            0, 0, 0, 0
+            );
 
     lcdHome(handle);
     lcdClear(handle);

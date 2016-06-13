@@ -117,10 +117,10 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 	}
 
 	mgr := &MenuManager{
-		Menus:  make(map[string]*Menu),
+		Menus:        make(map[string]*Menu),
 		TimedActions: make(map[time.Duration]Action),
-		lw:     lw,
-		rotary: rty,
+		lw:           lw,
+		rotary:       rty,
 	}
 
 	go func() {
@@ -228,17 +228,17 @@ func (mgr *MenuManager) RotateAction(a Action) {
 }
 
 func (mgr *MenuManager) SwitchTo(name string) error {
-	if _, err := mgr.lw.Formatf("switch %s", name); err != nil {
-		log.Printf("switch failed: %v", err)
-		return err
-	}
-
 	mgr.Lock()
 	defer mgr.Unlock()
 
 	if menu, ok := mgr.Menus[name]; ok {
 		mgr.Active = menu
 		mgr.Active.Display()
+	}
+
+	if _, err := mgr.lw.Formatf("switch %s", name); err != nil {
+		log.Printf("switch failed: %v", err)
+		return err
 	}
 
 	return nil
@@ -374,6 +374,7 @@ func Run() error {
 	})
 
 	mgr.RotateAction(func() error {
+		// TODO: check if in default
 		log.Printf("rotate action")
 		switch mgr.Direction() {
 		case DirectionRight:
