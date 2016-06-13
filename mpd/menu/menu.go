@@ -235,6 +235,10 @@ func Run() error {
 		return err
 	}
 
+	killClock, killSysinfo := make(chan bool), make(chan bool)
+	go RunClock(lw, 20, killClock) // TODO: get width?
+	go RunSysinfo(lw, 20, killSysinfo)
+
 	// TODO: Create clock and sysinfo
 
 	mainMenu := []*Entry{{
@@ -311,6 +315,9 @@ func Run() error {
 	ctrlCh := make(chan os.Signal, 1)
 	signal.Notify(ctrlCh, os.Interrupt)
 	<-ctrlCh
+
+	killClock <- true
+	killSysinfo <- true
 
 	return nil
 }
