@@ -3,12 +3,14 @@ package menu
 import (
 	"fmt"
 	"log"
-	"os"
-	"os/signal"
+	"strings"
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/studentkittens/eulenfunk/display"
+	"github.com/studentkittens/eulenfunk/mpd/mpdinfo"
 	"github.com/studentkittens/eulenfunk/util"
 )
 
@@ -106,6 +108,7 @@ type MenuManager struct {
 
 	lw                   *display.LineWriter
 	rotateActions        []Action
+	releaseActions       []Action
 	currValue, lastValue int
 	rotary               *util.Rotary
 }
@@ -117,10 +120,10 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 	}
 
 	mgr := &MenuManager{
-		Menus:  make(map[string]*Menu),
+		Menus:        make(map[string]*Menu),
 		TimedActions: make(map[time.Duration]Action),
-		lw:     lw,
-		rotary: rty,
+		lw:           lw,
+		rotary:       rty,
 	}
 
 	go func() {
@@ -129,20 +132,27 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 				continue
 			}
 
-			if state {
-				// We don't do anything yet...
-				fmt.Println("Button pressed")
+			if !state {
+				fmt.Println("Button released")
+				for idx, action := range mgr.releaseActions {
+					if err := action(); err != nil {
+						log.Printf("release action %d failed: %v", idx, err)
+					}
+				}
+
 				continue
 			}
 
-			fmt.Println("Button released")
+			fmt.Println("Button pressed")
 
 			mgr.Lock()
-			if err := mgr.Active.Click(); err != nil {
-				active := mgr.Active.ActiveName()
-				log.Printf("Action for menu entry `%s` failed: %v", active, err)
-			}
+			active := mgr.Active
 			mgr.Unlock()
+
+			if err := active.Click(); err != nil {
+				name := active.ActiveName()
+				log.Printf("Action for menu entry `%s` failed: %v", name, err)
+			}
 		}
 	}()
 
@@ -173,16 +183,18 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 
 	go func() {
 		for value := range rty.Value {
-			fmt.Printf("Value: %d\n", value)
 
 			mgr.Lock()
-			mgr.Active.Scroll(value)
 			mgr.lastValue = mgr.currValue
 			mgr.currValue = value
+			diff := mgr.currValue - mgr.lastValue
 			name := mgr.Active.Name
 			mgr.Unlock()
 
-			if _, err := lw.Formatf("move %s %d", name, value); err != nil {
+			log.Printf("Value: %d Diff %d\n", value, diff)
+
+			mgr.Active.Scroll(diff)
+			if _, err := lw.Formatf("move %s %d", name, diff); err != nil {
 				log.Printf("move failed: %v", err)
 			}
 
@@ -227,18 +239,25 @@ func (mgr *MenuManager) RotateAction(a Action) {
 	mgr.rotateActions = append(mgr.rotateActions, a)
 }
 
-func (mgr *MenuManager) SwitchTo(name string) error {
-	if _, err := mgr.lw.Formatf("switch %s", name); err != nil {
-		log.Printf("switch failed: %v", err)
-		return err
-	}
+func (mgr *MenuManager) ReleaseAction(a Action) {
+	mgr.Lock()
+	defer mgr.Unlock()
 
+	mgr.releaseActions = append(mgr.releaseActions, a)
+}
+
+func (mgr *MenuManager) SwitchTo(name string) error {
 	mgr.Lock()
 	defer mgr.Unlock()
 
 	if menu, ok := mgr.Menus[name]; ok {
 		mgr.Active = menu
 		mgr.Active.Display()
+	}
+
+	if _, err := mgr.lw.Formatf("switch %s", name); err != nil {
+		log.Printf("switch failed: %v", err)
+		return err
 	}
 
 	return nil
@@ -279,14 +298,8 @@ func (mgr *MenuManager) Close() error {
 
 //////////////////////////////////////
 
-func switcher(lw *display.LineWriter, name string) func() error {
-	return func() error {
-		_, err := lw.Formatf("switch %s", name)
-		return err
-	}
-}
-
-func Run() error {
+func Run(ctx context.Context) error {
+	// TODO: pass config
 	cfg := &display.Config{
 		Host: "localhost",
 		Port: 7778,
@@ -299,31 +312,60 @@ func Run() error {
 
 	defer lw.Close()
 
+	// Switch to mpd initially:
+	if _, err := lw.Formatf("switch mpd"); err != nil {
+		return err
+	}
+
+	msg := util.Center("... booting ...", 20) // TODO
+	if _, err := lw.Formatf("line mpd 2 %s", msg); err != nil {
+		return err
+	}
+
 	mgr, err := NewMenuManager(lw)
 	if err != nil {
 		return err
 	}
 
-	// Start clock and sysinfo screen:
-	killClock, killSysinfo := make(chan bool), make(chan bool)
-	go RunClock(lw, 20, killClock) // TODO: get width?
-	go RunSysinfo(lw, 20, killSysinfo)
+	// Some flags to coordinate actions:
+	togglePlayback := false
+	currentWindow := "mpd"
+
+	switcher := func(mgr *MenuManager, lw *display.LineWriter, name string) func() error {
+		return func() error {
+			currentWindow = name
+			return mgr.SwitchTo(name)
+		}
+	}
+
+	// Start auxillary services:
+	go mpdinfo.Run(&mpdinfo.Config{
+		Host:        "localhost",
+		Port:        6600,
+		DisplayHost: "localhost",
+		DisplayPort: 7778,
+	}, ctx)
+
+	go RunClock(lw, 20, ctx) // TODO: get width?
+	go RunSysinfo(lw, 20, ctx)
 
 	mainMenu := []*Entry{
 		{
-			"Exit", switcher(lw, "mpd"),
+			"Show status", switcher(mgr, lw, "mpd"),
 		}, {
-			"Playlists", switcher(lw, "playlists"),
+			"Playlists", switcher(mgr, lw, "playlists"),
 		}, {
 			"Toggle PartyMode", nil, // TODO
 		}, {
-			"System info", switcher(lw, "sysinfo"),
+			"System info", switcher(mgr, lw, "sysinfo"),
 		}, {
-			"Clock", switcher(lw, "clock"),
+			"Clock", switcher(mgr, lw, "clock"),
+		}, {
+			"Switch Mono/Stereo", nil, // TODO
 		}, {
 			"Stop playback", nil, // TODO
 		}, {
-			"Power", switcher(lw, "menu-power"),
+			"Power", switcher(mgr, lw, "menu-power"),
 		},
 	}
 
@@ -332,12 +374,16 @@ func Run() error {
 			"Poweroff", nil, // TODO
 		}, {
 			"Reboot", nil, // TODO
+		}, {
+			"Exit", switcher(mgr, lw, "menu-main"),
 		},
 	}
 
 	easterEggMenu := []*Entry{
 		{
-			"Schuhu?", nil,
+			"Schuhu?", nil, // TODO: Play actual shuhu.
+		}, {
+			"Exit", switcher(mgr, lw, "menu-main"),
 		},
 	}
 
@@ -357,23 +403,45 @@ func Run() error {
 	}
 
 	mgr.AddTimedAction(10*time.Millisecond, func() error {
-		log.Printf("TODO: Toggle playback")
+		togglePlayback = true
 		return nil
 	})
 
 	mgr.AddTimedAction(500*time.Millisecond, func() error {
+		togglePlayback = false
 		return mgr.SwitchTo("menu-main")
 	})
 
 	mgr.AddTimedAction(2*time.Second, func() error {
-		return mgr.SwitchTo("menu-main")
+		togglePlayback = false
+		return mgr.SwitchTo("menu-power")
 	})
 
 	mgr.AddTimedAction(10*time.Second, func() error {
+		togglePlayback = false
 		return mgr.SwitchTo("menu-easteregg")
 	})
 
+	mgr.ReleaseAction(func() error {
+		switch currentWindow {
+		case "mpd":
+			if togglePlayback {
+				log.Printf("TOGGLE PLAYBACK!!!")
+				togglePlayback = false
+			}
+		default:
+			// This is a bit of a hack:
+			// Enable "click to exit window" on most non-menu windows:
+			if !strings.Contains(currentWindow, "menu") {
+				return switcher(mgr, lw, "main-menu")()
+			}
+		}
+
+		return nil
+	})
+
 	mgr.RotateAction(func() error {
+		// TODO: check if in default
 		log.Printf("rotate action")
 		switch mgr.Direction() {
 		case DirectionRight:
@@ -385,13 +453,7 @@ func Run() error {
 		return nil
 	})
 
-	log.Printf("Press CTRL-C to shut down")
-	ctrlCh := make(chan os.Signal, 1)
-	signal.Notify(ctrlCh, os.Interrupt)
-	<-ctrlCh
-
-	killClock <- true
-	killSysinfo <- true
+	<-ctx.Done()
 
 	return mgr.Close()
 }

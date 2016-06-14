@@ -7,4 +7,4 @@ radio-lcd:
 	gcc lcd-driver.c -o radio-lcd -lwiringPi -lwiringPiDev -Os -Wall -Wextra
 
 radio-rotary:
-	gcc rot-driver.c -o radio-rotary -lwiringPi -Os -Wall -Wextra
+	gcc rot-driver.c -o radio-rotary -lwiringPi -Os -Wall -Wextra -lm

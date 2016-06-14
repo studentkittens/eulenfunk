@@ -24,7 +24,6 @@ type Line struct {
 	sync.Mutex
 	Pos         int
 	ScrollDelay time.Duration
-	Visible     bool
 
 	text       []byte
 	buf        []byte
@@ -74,23 +73,6 @@ func NewLine(pos int, w int, driverPipe io.Writer) *Line {
 
 func (ln *Line) redraw() {
 	scroll(ln.buf, ln.text, ln.scrollPos)
-
-	if !ln.Visible {
-		return 
-	}
-
-	lpos := fmt.Sprintf("%d ", ln.Pos)
-	if _, err := ln.driverPipe.Write([]byte(lpos)); err != nil {
-		log.Printf("Failed to write to driver: %v", err)
-	}
-
-	if _, err := ln.driverPipe.Write(ln.buf); err != nil {
-		log.Printf("Failed to write to driver: %v", err)
-	}
-
-	if _, err := ln.driverPipe.Write([]byte("\n")); err != nil {
-		log.Printf("Failed to write to driver: %v", err)
-	}
 }
 
 func (ln *Line) Redraw() {
@@ -161,12 +143,15 @@ func (ln *Line) Render() []byte {
 
 // Window consists of a fixed number of lines and a handle name
 type Window struct {
-	Name          string
-	Lines         []*Line
+	Name  string
+	Lines []*Line
+
+	// NLines is the number of lines a window has
+	// (might be less than len(Lines) due to op-truncate)
+	NLines        int
 	LineOffset    int
 	Width, Height int
 	DriverPipe    io.Writer
-	Visible       bool
 }
 
 func NewWindow(name string, driverPipe io.Writer, w, h int) *Window {
@@ -179,8 +164,8 @@ func NewWindow(name string, driverPipe io.Writer, w, h int) *Window {
 
 	for i := 0; i < h; i++ {
 		ln := NewLine(i, w, driverPipe)
-		ln.Visible = true
 		win.Lines = append(win.Lines, ln)
+		win.NLines++
 	}
 
 	return win
@@ -207,6 +192,7 @@ func (win *Window) SetLine(pos int, text string) error {
 		}
 
 		win.Lines = newLines
+		win.NLines = len(win.Lines)
 	}
 
 	win.Lines[pos].SetText(text)
@@ -214,22 +200,12 @@ func (win *Window) SetLine(pos int, text string) error {
 }
 
 func (win *Window) SetScrollDelay(pos int, delay time.Duration) error {
-	if pos < 0 || pos >= len(win.Lines) {
+	if pos < 0 || pos >= win.NLines {
 		return fmt.Errorf("Bad line position %d", pos)
 	}
 
 	win.Lines[pos].SetScrollDelay(delay)
 	return nil
-}
-
-func (win *Window) fixVisibility() {
-	for idx, line := range win.Lines {
-		if idx >= win.LineOffset && idx < win.LineOffset + win.Height {
-			line.Visible = win.Visible
-		} else {
-			line.Visible = false
-		}
-	}
 }
 
 func (win *Window) Move(n int) {
@@ -238,7 +214,7 @@ func (win *Window) Move(n int) {
 		return
 	}
 
-	max := len(win.Lines) - win.Height
+	max := win.NLines - win.Height
 
 	if win.LineOffset+n > max {
 		win.LineOffset = max
@@ -251,20 +227,33 @@ func (win *Window) Move(n int) {
 		win.LineOffset = 0
 	}
 
-	win.fixVisibility()
-
 	return
 }
 
-func (win *Window) Hide() {
-	win.Visible = false
-	win.fixVisibility()
+func (win *Window) Truncate(n int) {
+	oldN := win.NLines
+
+	switch {
+	case n < 0:
+		win.LineOffset = 0
+	case n > len(win.Lines):
+		win.NLines = len(win.Lines)
+	default:
+		win.NLines = n
+	}
+
+	diff := win.NLines - oldN
+	if diff < 0 {
+		win.Move(diff)
+	}
+
+	// Clear remaining lines:
+	for i := win.NLines; i < oldN; i++ {
+		win.Lines[i].SetText("")
+	}
 }
 
 func (win *Window) Switch() {
-	win.Visible = true
-	win.fixVisibility()
-
 	for _, line := range win.Lines {
 		line.Redraw()
 	}
@@ -274,8 +263,8 @@ func (win *Window) Render() []byte {
 	buf := &bytes.Buffer{}
 
 	hi := win.LineOffset + win.Height
-	if hi > len(win.Lines) {
-		hi = len(win.Lines)
+	if hi > win.NLines {
+		hi = win.NLines
 	}
 
 	for _, line := range win.Lines[win.LineOffset:hi] {
@@ -307,6 +296,43 @@ type Server struct {
 	DriverPipe io.Writer
 }
 
+func (srv *Server) renderToDriver() {
+	srv.Lock()
+	defer srv.Unlock()
+
+	if srv.Active == nil {
+		return
+	}
+
+	// TODO: Make this nicer, possibly just
+	//       render single lines and don't split what Render()
+	//       did?
+
+	lines, pos := srv.Active.Render(), 0
+	width := srv.Config.Width
+
+	for i := 0; i < len(lines); i += width + 1 {
+		lpos := fmt.Sprintf("%d ", pos)
+
+		buf := lines[i : i+width]
+
+		log.Printf("%s%s", lpos, buf)
+		if _, err := srv.DriverPipe.Write([]byte(lpos)); err != nil {
+			log.Printf("Failed to write to driver: %v", err)
+		}
+
+		if _, err := srv.DriverPipe.Write(buf); err != nil {
+			log.Printf("Failed to write to driver: %v", err)
+		}
+
+		if _, err := srv.DriverPipe.Write([]byte("\n")); err != nil {
+			log.Printf("Failed to write to driver: %v", err)
+		}
+
+		pos++
+	}
+}
+
 func NewServer(cfg *Config) (*Server, error) {
 	cmd := exec.Command(cfg.DriverBinary)
 	stdinPipe, err := cmd.StdinPipe()
@@ -318,12 +344,21 @@ func NewServer(cfg *Config) (*Server, error) {
 		return nil, err
 	}
 
-	return &Server{
+	srv := &Server{
 		Config:     cfg,
 		Windows:    make(map[string]*Window),
 		Quit:       make(chan bool, 1),
 		DriverPipe: stdinPipe,
-	}, nil
+	}
+
+	go func() {
+		for {
+			srv.renderToDriver()
+			time.Sleep(150 * time.Millisecond)
+		}
+	}()
+
+	return srv, nil
 }
 
 func (srv *Server) createOrLookupWindow(name string) *Window {
@@ -354,7 +389,6 @@ func (srv *Server) Switch(name string) {
 		return
 	}
 
-	srv.Active.Hide()
 	win.Switch()
 	srv.Active = win
 	return
@@ -379,6 +413,13 @@ func (srv *Server) Move(window string, n int) {
 	defer srv.Unlock()
 
 	srv.createOrLookupWindow(window).Move(n)
+}
+
+func (srv *Server) Truncate(window string, n int) {
+	srv.Lock()
+	defer srv.Unlock()
+
+	srv.createOrLookupWindow(window).Truncate(n)
 }
 
 func (srv *Server) Render() []byte {
@@ -434,7 +475,7 @@ func handleConn(srv *Server, conn net.Conn) {
 			}
 		case "scroll":
 			win, pos, durationSpec := "", 0, ""
-			if _, err := fmt.Sscanf(line, "scroll %s %d %s", &pos, &durationSpec); err != nil {
+			if _, err := fmt.Sscanf(line, "scroll %s %d %s", &win, &pos, &durationSpec); err != nil {
 				log.Printf("Failed to parse scroll command `%s`: %v", line, err)
 				continue
 			}
@@ -457,7 +498,16 @@ func handleConn(srv *Server, conn net.Conn) {
 			}
 
 			srv.Move(name, pos)
+		case "truncate":
+			name, pos := "", 0
+			if _, err := fmt.Sscanf(line, "truncate %s %d", &name, &pos); err != nil {
+				log.Printf("Failed to parse move command `%s`: %v", line, err)
+				continue
+			}
+
+			srv.Truncate(name, pos)
 		case "render":
+			// NOTE: This is only used for --dump, not for the actual driver.
 			if _, err := conn.Write(srv.Render()); err != nil {
 				log.Printf("Failed to respond rendered display: %v", err)
 				continue

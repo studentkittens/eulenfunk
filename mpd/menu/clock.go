@@ -5,22 +5,25 @@ import (
 	"log"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/studentkittens/eulenfunk/display"
 	"github.com/studentkittens/eulenfunk/util"
 )
 
-func RunClock(lw *display.LineWriter, width int, killCh <-chan bool) {
+func RunClock(lw *display.LineWriter, width int, ctx context.Context) {
 	for {
 		select {
-		case <-killCh:
+		case <-ctx.Done():
 			return
+		default:
 		}
 
 		now := time.Now()
 		hur, min, sec := now.Clock()
 		yer, mon, day := now.Date()
 
-		tm := util.Center(fmt.Sprintf("%d:%d:%d", hur, min, sec), width)
+		tm := util.Center(fmt.Sprintf("%02d:%02d:%02d", hur, min, sec), width)
 		dt := util.Center(fmt.Sprintf("%d %s %d", day, mon.String(), yer), width)
 
 		if _, err := lw.Formatf("line clock 1 %s", tm); err != nil {
