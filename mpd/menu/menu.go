@@ -3,6 +3,7 @@ package menu
 import (
 	"fmt"
 	"log"
+	"os/exec"
 	"strings"
 	"sync"
 	"time"
@@ -313,6 +314,19 @@ func (mgr *MenuManager) Close() error {
 
 //////////////////////////////////////
 
+func mpdCommand(name string, mpdCmdCh chan<- string) func() error {
+	return func() error {
+		mpdCmdCh <- name
+		return nil
+	}
+}
+
+func sysCommand(name string, args ...string) func() error {
+	return func() error {
+		return exec.Command(name, args...).Run()
+	}
+}
+
 func Run(ctx context.Context) error {
 	// TODO: pass config
 	cfg := &display.Config{
@@ -348,6 +362,8 @@ func Run(ctx context.Context) error {
 		}
 	}
 
+	mpdCmdCh := make(chan string)
+
 	// Start auxillary services:
 	log.Printf("Starting background services...")
 	go mpdinfo.Run(&mpdinfo.Config{
@@ -355,7 +371,7 @@ func Run(ctx context.Context) error {
 		Port:        6600,
 		DisplayHost: "localhost",
 		DisplayPort: 7778,
-	}, ctx)
+	}, ctx, mpdCmdCh)
 
 	go RunClock(lw, 20, ctx) // TODO: get width?
 	go RunSysinfo(lw, 20, ctx)
@@ -368,13 +384,15 @@ func Run(ctx context.Context) error {
 		}, {
 			"Toggle PartyMode", nil, // TODO
 		}, {
+			"Clock", switcher("clock"),
+		}, {
 			"System info", switcher("sysinfo"),
 		}, {
-			"Clock", switcher("clock"),
+			"Statistics", switcher("stats"),
 		}, {
 			"Switch Mono/Stereo", nil, // TODO
 		}, {
-			"Stop playback", nil, // TODO
+			"Stop playback", mpdCommand("stop", mpdCmdCh),
 		}, {
 			"Power", switcher("menu-power"),
 		},
@@ -382,9 +400,9 @@ func Run(ctx context.Context) error {
 
 	powerMenu := []*Entry{
 		{
-			"Poweroff", nil, // TODO
+			"Poweroff", sysCommand("systemctl", "poweroff"),
 		}, {
-			"Reboot", nil, // TODO
+			"Reboot", sysCommand("systemctl", "reboot"),
 		}, {
 			"Exit", switcher("menu-main"),
 		},
@@ -438,7 +456,7 @@ func Run(ctx context.Context) error {
 
 		switch currWin := mgr.ActiveWindow(); currWin {
 		case "mpd":
-			log.Printf("TOGGLE PLAYBACK!!!")
+			mpdCmdCh <- "toggle"
 		default:
 			// This is a bit of a hack:
 			// Enable "click to exit window" on most non-menu windows:
@@ -459,8 +477,10 @@ func Run(ctx context.Context) error {
 		switch mgr.Direction() {
 		case DirectionRight:
 			log.Printf("Play next")
+			mpdCmdCh <- "next"
 		case DirectionLeft:
 			log.Printf("Play prev")
+			mpdCmdCh <- "prev"
 		}
 
 		return nil

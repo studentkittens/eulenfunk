@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"log"
+	"os"
 	"os/signal"
 
 	"github.com/studentkittens/eulenfunk/display"
@@ -57,7 +57,7 @@ func main() {
 			return mpdinfo.Run(&mpdinfo.Config{
 				"localhost", 6600, // MPD Config
 				"localhost", 7778, // Display server config
-			}, killCtx)
+			}, killCtx, nil)
 		},
 	}, {
 		Name:  "ui",
