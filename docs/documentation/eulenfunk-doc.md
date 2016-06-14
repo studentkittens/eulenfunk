@@ -87,8 +87,7 @@ nur schwer bzw. vereinzelt zu finden sind:
 
 * Unterstützung bestimmter WLAN--Authentifizierungsstandards
 * Einhängen von benutzerdefinierten Shares wie *Samba*, *NFS*, *SSHFS*
-* Unterstützung verschiedener *lossy* Formate *mp3*, *ogg vorbis*, *acc*, u.a.
-* Unterstützung verschiedener *lossless* Formate *FLAC*, *APE*, u.a.
+* Unterstützung verschiedener *lossy* und *lossless* Formate *OGG VORBIS*, *FLAC*, u.a.
 * Integration verschiedener Dienste wie beispielsweise *Spotify*
 * Benutzerdefinierte Anzeigemöglichkeiten (Uhrzeit, Wetter, et. cetera.)
 
@@ -106,32 +105,242 @@ aus dem Jahr 2012.
 
 # Anforderungen an das Projekt
 
-## Design
+## Spezifikation 
 
-Design soll *minimalistisch*  sein, das heisst, es sollen so wenige
-,,Bedienelemente'' wie nötig untergebracht werden. 
+### Anschlussmöglichkeiten
 
-## Funktionsumfang (Hardware)
+Das Radio soll dem Benutzer folgende Hardwarekonfigurationsmöglichkeiten bieten:
 
-* Aktive Lautsprecher
-* Passive Lautsprecher/Kopfhörer
+* Anschluß aktiver Lautsprecher möglich
+* Anschluß passive Lautsprecher/Kopfhörer möglich 
 * Verwendung des Internen Lautsprechers des alten Radios
 
-## Bedienbarkeit
+### Optische Erscheinungsform
+
+Die Eingabe--Peripherie soll möglichst einfach gehalten werden, um eine *schöne*
+Produkt--Optik zu gewährleisten. Folgende 
 
 * Minimale Bedienelemente
 * Keine *hässlichen* Knöpfe
-* *Retro*--Like Aussehen wünschenswert
+* *Retro--Look*-Aussehen wünschenswert
 
-## Kosten/Nutzen--Verhältnis
+Design soll im Grunde *minimalistisch*  gehalten werden, das heisst, es sollen
+nur so wenige ,,Bedienelemente'' wie nötig angebracht werden.
 
-Nutzung bereits vorhandener Bauelemente.
+### Anforderungen an die Software
 
-# Hardware-- und Softwarekomponenten
+Die Software soll generisch gehalten werden um eine möglichst einfache
+Erweiterbarkeit zu  gewährleisten. 
+
+Hier was zu Menu--Steuerung schrieben und Umfang?
+
+### Kosten/Nutzen--Verhältnis
+
+Für die Erstellung des Projekts sollte bereits vorhandene Komponenten und
+Bauelemente wiederverwendet werden um den Kostenaufwand minimal zu halten.
+
+# Überblick möglicher Hardwarekomponenten
+
+Folgende Hardwarekomponenten oder Bauteile sind bereits vorhanden oder müssen
+noch erworben werden:
+
+* Altes Gehäuse AEG 4104 Küchenradio[^AEG] (vorhanden)
+* *Raspberry Pi* aus dem Jahr 2012 (vorhanden)
+* LCD--Anzeige (Altbestände u. Arduino--Kit vorhanden)
+* Kleinbauteile wie LEDs, Widerstände (vorhanden, Arduino--Kit)
+* USB--Hub für Anschluss von beispielsweise ext. Festplatte (vorhanden)
+* USB--Soundkarte (vorhanden)
+* WIFI--Adapter (vorhanden)
+* Netzteil (vorhanden, div. 5V)
+* Farbe und Kunststoffabdeckung für das neue Gehäuse (muss erworben werden)
+
+[^AEG]: AEG Küchenradio 4104: \url{https://www.amazon.de/AEG-MR-4104-Desgin-Uhrenradio-buche/dp/B000HD19W8}
+
+
+# Hardware-- und Softwarekonfiguration
+
+## Raspberry Pi
+
+Der vorhandene Raspberry ist aus dem Jahr 2012. Die genaue Hardware--Revision kann
+auf Linux unter ``proc`` ausgelesen werden, siehe auch [@gay2014raspberry]:
+
+```bash
+
+    $ cat /proc/cpuinfo 
+    processor       : 0
+    model name      : ARMv6-compatible processor rev 7 (v6l)
+    BogoMIPS        : 697.95
+    Features        : half thumb fastmult vfp edsp java tls 
+    CPU implementer : 0x41
+    CPU architecture: 7
+    CPU variant     : 0x0
+    CPU part        : 0xb76
+    CPU revision    : 7
+
+    Hardware        : BCM2708
+    Revision        : 0003
+    Serial          : 00000000b8b9a4c2
+```
+
+Laut Tabelle unter [@gay2014raspberry] handelt es sich hierbei um das Modell B
+Revision 1+ mit 256MB RAM.
+
+Je nach Raspberry Revision sind die Pins teilweise unterschiedlich belegt. Seit
+Modell B, Revision 2.0 ist noch zusätzlich der P5 Header dazu gekommen.
+
+## LCD--Anzeige
+
+Um dem Benutzer Informationen beispielsweise über das aktuell gespielte Lied
+anzeigen zu können, soll eine LCD--Anzeige verbaut werden. In den privaten
+Altbeständen finden sich folgende drei hd44780--kompatible Modelle:
+
+* Blaues Display, 4x20 Zeichen, Bolymin BC204A
+* Blaues Display, 2x16 Zeichen, Bolymin BC1602A
+* Grünes Display, 4x20 Zeichen, Dispalytech 204B 
+
+Wir haben uns für das blaue 4x20 Display --- aufgrund der größeren Anzeigefläche und
+Farbe --- entschieden.
+
+### Anschlussmöglichkeiten
+
+Ein LCD Display kann an den Raspberry PI über auf verschiedene Art und Weise
+angeschlossen werden. Die zwei Grundlegenden Schnittstellen wären:
+
+* GPIO (parallel)
+* I2C--Bus (seriell)
+* SPI--Bus (seriell)
+
+Da für den seriellen Betrieb beispielsweise über den I2C--Bus ein zusätzlicher
+Logik--Adapter benötigt wird, wird die parallele Ansteuerung über die GPIO--Pins
+bevorzugt.
+
+\begin{figure}[h!]
+  \centering
+\includegraphics[width=0.7\textwidth]{images/lcdraspi.png}
+  \caption{Verdrahtung von LCD und Raspberry Pi.}
+  \label{lcd}
+\end{figure}
+
+Das Display arbeitet mit einer Logik--Spannung von 5V. Da die GPIO--Pins jedoch
+eine High--Logik von 3,3V aufweisen, würde man hier in der Regel einen
+Pegelwandler bei bidirektionaler Kommunikation benötigen. Da wir aber nur auf
+das Display zugreifen und die GPIO--Pins nicht schreiben zugegriffen wird kann
+eine operation des Displays auch mit 3.3V erfolgen, falls die GPIO--Pegel
+ausreichen um die Logik des Displays anzusteuern.
+
+Die Hintergrundbeleuchtung des Displays wurde direkt über ein Potentiometer mit
+10K$\Omega$ an die 5V Spannungsversogrung angeschlossen.
+
+Laut Datenblatt kann die Hintergrundbeleuchtung entweder mit 3.4V ohne
+Vorwiderstand oder mit 5V bei einem 48$\Omega$ Widerstand betrieben werden. Damit das
+Display beim herunter geregeltem Potentiometer keinen Schaden nimmt, wurden
+zusätzlich zwei Widerstände mit 100$\Omega$ (parallel geschaltet) zwischen Display
+und Potentiometer gehängt.
+
+Das der resultierende Gesamtwiderstand ohne Potentiometer beträgt in diesem Fall
+$\approx$ 50 $\Omega$:
+
+$$  R_{ges} = \frac{R_1 \times R_2}{R_1 + R_2} = \frac{100\Omega \times 100\Omega}{100\Omega + 100\Omega} = 50\Omega $$
+
+## Rotary--Switch
+
+* Switch von der FH: ALPS irgendwas...funktioniert, aber
+* Switch bestellt: ALPS irgendwas mit
+
+
+\begin{figure}[h!]
+  \centering
+\includegraphics[width=0.5\textwidth]{images/rotary.png}
+  \caption{Drehimpulsgeber--Anschluss an den Raspberry Pi}
+  \label{alps}
+\end{figure}
+
+## Soundkarte
+
+Die interne Soundkarte des *Raspberry Pi* ist über eine triviale
+Pulsweitenmodulation realisiert. Die einfache Schaltung soll hier eine sehr
+niedrige Audioqualität[^AQ] bieten.
+
+[^AQ]: Raspberry Pi onboard Sound: \url{http://www.crazy-audio.com/2013/11/quality-of-the-raspberry-pi-onboard-sound/}
+
+## Audioverstärkermodul
+
+## RGB--LEDs
+
+* Ansteuerung über GPIO möglich. Zu geringer Strom bei mehreren LEDs.
+* Transistorschaltung BC547 NPN anstatt BC557 PNP, da Rückflussstrom.
+
+Von der Hochschule wurden BC547C Transistoren bereitgestellt. Da der
+Hersteller unbekannt ist, wurden typische Durchschnittswerte für die
+Dimensionierung der Bauteile verwendet.  
+
+In der Regel sind die meisten BC547C Transistor Typen für einen max. Strom
+$I_{CE}$=100 mA konstruiert. Für die Berechnung des Basis--Vorwiderstandes ist der
+Stromverstärkungsfaktor $h_{FE}$[^HFE] benötigt. Je nach Hersteller variieren die
+Werten zwischen 200 und 500[^SEM][^ONSEMI][^FARI]. Da ein maximale Laststrom $I_{CE}$ pro Transistor
+beträgt 80 mA (3 LEDs je max. 20mA).
+
+[^HFE]:Stromverstärkungsfaktor: \url{http://www.learningaboutelectronics.com/Articles/What-is-hfe-of-a-transistor}
+
+Die Berechnung des Basisstroms:
+
+ $$I_{Basis} = \frac{I_{CE}}{h_{FE}} = \frac{0.08A}{300} \approx 270\mu A$$
+
+Der BC547C Transitor benötigt eine durchschnittliche  $U_{BE}$ = 0,7V. Die
+GPIO-Pins des *Raspberry Pi* haben eine Spannungspegel von 3.3V. Daraus ergibt
+sich folgende Berechnung des Basis--Vorwiderstandes:
+
+$$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{270mA}
+= 9629 \Omega \approx 10k \Omega $$
+
+[^SEM]: SEMTECH: \url{http://pdf1.alldatasheet.com/datasheet-pdf/view/42386/SEMTECH/BC547.html}
+[^ONSEMI]: On Semi: \url{https://www.arduino.cc/documents/datasheets/BC547.pdf}
+[^FARI]: Farichild Semiconductor:
+\url{https://www.fairchildsemi.com/datasheets/BC/BC547.pdf}
+
+\begin{figure}[h!]
+  \centering
+\includegraphics[width=0.7\textwidth]{images/transistorled.png}
+  \caption{Transistor--RGB--LED Schaltung}
+  \label{transled}
+\end{figure}
+
+## USB--Hub und Netzteil
+
+Der *Rapberry Pi* hat in unserer Revision nur zwei USB--Schnittstellen, diese
+sind bereits durch die Hardware--Komponenten USB--DAC (Soundkarte) und das
+WIFI--Modul belegt. Um den Anschluss eines externen Datenträgers, auch mit
+größerer Last wie beispielsweise einer Festplatte zu ermöglichen wird ein
+aktiver USB--Hub benötigt.
+
+Für diesen Einsatzzweck wird aus den Altbeständen ein *LogiLink 4 Port USB 2.0
+HUB* verwendet. Viele billig-Hubs arbeiten hier entgegen der USB--Spezifikation
+und speisen zusätzlich über die USB--Schnittstellen den *Raspberry Pi*. Dieses
+Verhalten wurde bemerkt, also der *Raspberry Pi* ohne Power--Connector alleine
+mit nur der USB--Verbindung zum Hub bootete.
+
+Da bei der Speisung über die USB--Schnittstelle die interne Sicherungschaltung
+des *Pi* umgangen werden, besteht hier die zusätzliche Gefahr eines
+Hardwaredefektes durch die Speisung einer zusätzlichen Spannungsquelle. Da in
+unserem Fall jedoch nur eine Spannungsquelle existiert, wird das Problem als
+vernachlässigbar klassifiziert.
+
+
+## Gehäuse
+
+Die Gehäuse--Farbe soll in hellelfenbeinweiß RAL 1015 einen dezenten
+,,Retro''--Look verschaffen.
+Plexiglas von Wolfgang
+Holzgehäuse des alten AEG Radios
+Knöpfe schwarz mit Alu-Optik
+
+### Platz im Gehäuse gering
+
+...
 
 ## Betriebssystem
 
-Mittlerweile gibt es für den Raspberry Pi viele offiziell zugeschnittene
+Mittlerweile gibt es für den *Raspberry Pi* viele offiziell zugeschnittene
 Betriebssysteme[^OS]. Bei den den Linux Distributionen ist *RASPBIAN* eine der
 bekanntesten Distribution -- welches auf *Debian* basiert.
 
@@ -186,134 +395,24 @@ mit dem Profil `wlan0-Phobos`.
 [^INSTALL]: Arch Linux Installation für Raspberry Pi: https://archlinuxarm.org/platforms/armv6/raspberry-pi#installation
 
 
-## Hardware
-
-
-### Raspberry Pi
-
-Der vorhandene Raspberry ist aus dem Jahr 2012. Die genaue Hardware--Revision kann
-auf Linux unter ``proc`` ausgelesen werden, siehe auch [@gay2014raspberry]:
-
-```bash
-
-    $ cat /proc/cpuinfo 
-    processor       : 0
-    model name      : ARMv6-compatible processor rev 7 (v6l)
-    BogoMIPS        : 697.95
-    Features        : half thumb fastmult vfp edsp java tls 
-    CPU implementer : 0x41
-    CPU architecture: 7
-    CPU variant     : 0x0
-    CPU part        : 0xb76
-    CPU revision    : 7
-
-    Hardware        : BCM2708
-    Revision        : 0003
-    Serial          : 00000000b8b9a4c2
-```
-
-Laut Tabelle unter [@gay2014raspberry] handelt es sich hierbei um das Modell B
-Revision 1+ mit 256MB RAM.
-
-Je nach Raspberry Revision sind die Pins teilweise unterschiedlich belegt. Seit
-Modell B, Revision 2.0 ist noch zusätzlich der P5 Header dazu gekommen.
-
-### LCD--Anzeige
-
-Um dem Benutzer Informationen beispielsweise über das aktuell gespielte Lied
-anzeigen zu können, soll eine LCD--Anzeige verbaut werden. In den privaten
-Altbeständen finden sich folgende drei hd44780--kompatible Modelle:
-
-* Blaues Display, 4x20 Zeichen, Bolymin BC204A
-* Blaues Display, 2x16 Zeichen, Bolymin BC1602A
-* Grünes Display, 4x20 Zeichen, Dispalytech 204B 
-
-Wir haben uns für das blaue 4x20 Display --- aufgrund der größeren Anzeigefläche und
-Farbe --- entschieden.
-
-#### Anschlussmöglichkeiten
-
-Ein LCD Display kann an den Raspberry PI über auf verschiedene Art und Weise
-angeschlossen werden. Die zwei Grundlegenden Schnittstellen wären:
-
-* GPIO (parallel)
-* I2C--Bus (seriell)
-* SPI--Bus (seriell)
-
-Da für den seriellen Betrieb beispielsweise über den I2C--Bus ein zusätzlicher
-Logik--Adapter benötigt wird, wird die parallele Ansteuerung über die GPIO--Pins
-bevorzugt.
-
-\includegraphics[width=\linewidth]{images/lcdraspi.png}
-
-
-Das Display arbeitet mit einer Logik--Spannung von 5V. Da die GPIO--Pins jedoch
-eine High--Logik von 3,3V aufweisen, würde man hier in der Regel einen
-Pegelwandler bei bidirektionaler Kommunikation benötigen. Da wir aber nur auf
-das Display zugreifen und die GPIO--Pins nicht schreiben zugegriffen wird kann
-eine operation des Displays auch mit 3.3V erfolgen, falls die GPIO--Pegel
-ausreichen um die Logik des Displays anzusteuern.
-
-Die Hintergrundbeleuchtung des Displays wurde direkt über ein Potentiometer mit
-10K$\Omega$ an die 5V Spannungsversogrung angeschlossen.
-
-Laut Datenblatt kann die Hintergrundbeleuchtung entweder mit 3.4V ohne
-Vorwiderstand oder mit 5V bei einem 48$\Omega$ Widerstand betrieben werden. Damit das
-Display beim herunter geregeltem Potentiometer keinen Schaden nimmt, wurden
-zusätzlich zwei Widerstände mit 100$\Omega$ (parallel geschaltet) zwischen Display
-und Potentiometer gehängt.
-
-Das der resultierende Gesamtwiderstand ohne Potentiometer beträgt in diesem Fall
-$\approx$ 50 $\Omega$:
-
-$$  R_{ges} = \frac{R_1 \times R_2}{R_1 + R_2} = \frac{100\Omega \times 100\Omega}{100\Omega + 100\Omega} = 50\Omega $$
-
-### Rotary--Switch
-
-* Switch von der FH: ALPS irgendwas...funktioniert, aber
-* Switch bestellt: ALPS irgendwas mit
-
-
-### Soundkarte
-
-Die interne Soundkarte des *Raspberry Pi* ist über eine triviale
-Pulsweitenmodulation realisiert. Die 'einfache' Schaltung soll hier eine sehr
-niedrige Audioqualität bieten.
-
-
-### Audioverstärkermodul
-
-### RGB--LEDs
-
-* Ansteuerung über GPIO möglich. Zu geringer Strom bei mehreren LEDs.
-* Transistorschaltung BC547 NPN anstatt BC557 PNP, da Rückflussstrom.
-
-\includegraphics[width=\linewidth]{images/transistorled.png}
-
-### USB--Hub
-
-### Netzteil
-
-### Gehäuse
-
-Die Gehäuse--Farbe soll in hellelfenbeinweiß RAL 1015 einen dezenten
-,,Retro''--Look verschaffen.
-Plexiglas von Wolfgang
-Holzgehäuse des alten AEG Radios
-Knöpfe schwarz mit Alu-Optik
-
-#### Platz im Gehäuse gering
-
-...
-
 
 # Hardwaredesign
 
 ## GPIO--Schnittstelle
 
-\includegraphics[width=\linewidth]{images/gpio.png}
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.7\textwidth]{images/gpio.png}
+  \caption{GPIO-Header des Raspberry Pi Modell B Rev 1.0+}
+  \label{gpio}
+\end{figure}
+
+
+
 
 Bildquelle: \url{http://www.raspberrypi-spy.co.uk/2012/06/simple-guide-to-the-rpi-gpio-header-and-pins/#prettyPhoto}
+
+Die \ref{gpio} ist
 
 ### GPIO--Pinbelegung
 
