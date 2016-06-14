@@ -110,18 +110,25 @@ type MenuManager struct {
 	rotateActions        []Action
 	releaseActions       []Action
 	currValue, lastValue int
+	activeWindow         string
 	rotary               *util.Rotary
 }
 
-func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
+func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, error) {
 	rty, err := util.NewRotary()
 	if err != nil {
+		return nil, err
+	}
+
+	// Switch to mpd initially:
+	if _, err := lw.Formatf("switch %s", initialWin); err != nil {
 		return nil, err
 	}
 
 	mgr := &MenuManager{
 		Menus:        make(map[string]*Menu),
 		TimedActions: make(map[time.Duration]Action),
+		activeWindow: "mpd",
 		lw:           lw,
 		rotary:       rty,
 	}
@@ -211,6 +218,13 @@ func NewMenuManager(lw *display.LineWriter) (*MenuManager, error) {
 	return mgr, nil
 }
 
+func (mgr *MenuManager) ActiveWindow() string {
+	mgr.Lock()
+	defer mgr.Unlock()
+
+	return mgr.activeWindow
+}
+
 func (mgr *MenuManager) Direction() int {
 	mgr.Lock()
 	defer mgr.Unlock()
@@ -260,6 +274,7 @@ func (mgr *MenuManager) SwitchTo(name string) error {
 		return err
 	}
 
+	mgr.activeWindow = name
 	return nil
 }
 
@@ -305,6 +320,7 @@ func Run(ctx context.Context) error {
 		Port: 7778,
 	}
 
+	log.Printf("Connecting to displayd...")
 	lw, err := display.Connect(cfg)
 	if err != nil {
 		return err
@@ -312,33 +328,28 @@ func Run(ctx context.Context) error {
 
 	defer lw.Close()
 
-	// Switch to mpd initially:
-	if _, err := lw.Formatf("switch mpd"); err != nil {
-		return err
-	}
-
-	msg := util.Center("... booting ...", 20) // TODO
+	msg := util.Center("... startup ...", 20) // TODO
 	if _, err := lw.Formatf("line mpd 2 %s", msg); err != nil {
 		return err
 	}
 
-	mgr, err := NewMenuManager(lw)
+	log.Printf("Creating menus...")
+	mgr, err := NewMenuManager(lw, "mpd")
 	if err != nil {
 		return err
 	}
 
 	// Some flags to coordinate actions:
-	togglePlayback := false
-	currentWindow := "mpd"
+	ignoreRelease := false
 
-	switcher := func(mgr *MenuManager, lw *display.LineWriter, name string) func() error {
+	switcher := func(name string) func() error {
 		return func() error {
-			currentWindow = name
 			return mgr.SwitchTo(name)
 		}
 	}
 
 	// Start auxillary services:
+	log.Printf("Starting background services...")
 	go mpdinfo.Run(&mpdinfo.Config{
 		Host:        "localhost",
 		Port:        6600,
@@ -351,21 +362,21 @@ func Run(ctx context.Context) error {
 
 	mainMenu := []*Entry{
 		{
-			"Show status", switcher(mgr, lw, "mpd"),
+			"Show status", switcher("mpd"),
 		}, {
-			"Playlists", switcher(mgr, lw, "playlists"),
+			"Playlists", switcher("playlists"),
 		}, {
 			"Toggle PartyMode", nil, // TODO
 		}, {
-			"System info", switcher(mgr, lw, "sysinfo"),
+			"System info", switcher("sysinfo"),
 		}, {
-			"Clock", switcher(mgr, lw, "clock"),
+			"Clock", switcher("clock"),
 		}, {
 			"Switch Mono/Stereo", nil, // TODO
 		}, {
 			"Stop playback", nil, // TODO
 		}, {
-			"Power", switcher(mgr, lw, "menu-power"),
+			"Power", switcher("menu-power"),
 		},
 	}
 
@@ -375,7 +386,7 @@ func Run(ctx context.Context) error {
 		}, {
 			"Reboot", nil, // TODO
 		}, {
-			"Exit", switcher(mgr, lw, "menu-main"),
+			"Exit", switcher("menu-main"),
 		},
 	}
 
@@ -383,7 +394,7 @@ func Run(ctx context.Context) error {
 		{
 			"Schuhu?", nil, // TODO: Play actual shuhu.
 		}, {
-			"Exit", switcher(mgr, lw, "menu-main"),
+			"Exit", switcher("menu-main"),
 		},
 	}
 
@@ -403,37 +414,36 @@ func Run(ctx context.Context) error {
 	}
 
 	mgr.AddTimedAction(10*time.Millisecond, func() error {
-		togglePlayback = true
 		return nil
 	})
 
 	mgr.AddTimedAction(500*time.Millisecond, func() error {
-		togglePlayback = false
 		return mgr.SwitchTo("menu-main")
 	})
 
 	mgr.AddTimedAction(2*time.Second, func() error {
-		togglePlayback = false
 		return mgr.SwitchTo("menu-power")
 	})
 
 	mgr.AddTimedAction(10*time.Second, func() error {
-		togglePlayback = false
 		return mgr.SwitchTo("menu-easteregg")
 	})
 
 	mgr.ReleaseAction(func() error {
-		switch currentWindow {
+		if ignoreRelease {
+			return nil
+		}
+
+		ignoreRelease = false
+
+		switch currWin := mgr.ActiveWindow(); currWin {
 		case "mpd":
-			if togglePlayback {
-				log.Printf("TOGGLE PLAYBACK!!!")
-				togglePlayback = false
-			}
+			log.Printf("TOGGLE PLAYBACK!!!")
 		default:
 			// This is a bit of a hack:
 			// Enable "click to exit window" on most non-menu windows:
-			if !strings.Contains(currentWindow, "menu") {
-				return switcher(mgr, lw, "main-menu")()
+			if !strings.Contains(currWin, "menu") {
+				return mgr.SwitchTo("menu-main")
 			}
 		}
 
@@ -441,7 +451,10 @@ func Run(ctx context.Context) error {
 	})
 
 	mgr.RotateAction(func() error {
-		// TODO: check if in default
+		if mgr.ActiveWindow() != "mpd" {
+			return nil
+		}
+
 		log.Printf("rotate action")
 		switch mgr.Direction() {
 		case DirectionRight:
@@ -453,6 +466,7 @@ func Run(ctx context.Context) error {
 		return nil
 	})
 
+	log.Printf("Waiting for a silent death...")
 	<-ctx.Done()
 
 	return mgr.Close()

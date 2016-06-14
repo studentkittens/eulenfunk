@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"log"
 	"os/signal"
 
 	"github.com/studentkittens/eulenfunk/display"
@@ -17,11 +18,11 @@ import (
 func main() {
 	killCtx, cancel := context.WithCancel(context.Background())
 
-	// Handle Interrupt:
-	signals := make(chan os.Signal)
-	signal.Notify(signals, os.Interrupt)
-
 	go func() {
+		// Handle Interrupt:
+		signals := make(chan os.Signal)
+		signal.Notify(signals, os.Interrupt)
+
 		<-signals
 		cancel()
 	}()
@@ -63,6 +64,7 @@ func main() {
 		Usage: "Handle window rendering and input control",
 		Flags: []cli.Flag{}, // TODO
 		Action: func(ctx *cli.Context) error {
+			log.Printf("Starting ui...")
 			return menu.Run(killCtx)
 		},
 	}, {
@@ -209,7 +211,7 @@ func main() {
 					Width:        ctx.Parent().Int("width"),
 					Height:       ctx.Parent().Int("height"),
 					DriverBinary: ctx.String("driver"),
-				})
+				}, killCtx)
 			},
 		},
 		},

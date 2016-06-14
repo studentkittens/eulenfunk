@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/net/context"
 )
 
 /////////////////////////
@@ -333,7 +335,7 @@ func (srv *Server) renderToDriver() {
 	}
 }
 
-func NewServer(cfg *Config) (*Server, error) {
+func NewServer(cfg *Config, ctx context.Context) (*Server, error) {
 	cmd := exec.Command(cfg.DriverBinary)
 	stdinPipe, err := cmd.StdinPipe()
 	if err != nil {
@@ -352,9 +354,16 @@ func NewServer(cfg *Config) (*Server, error) {
 	}
 
 	go func() {
+		// Update the screen with about 7Hz
+		ticker := time.NewTicker(150 * time.Millisecond)
+
 		for {
-			srv.renderToDriver()
-			time.Sleep(150 * time.Millisecond)
+			select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					srv.renderToDriver()
+			}
 		}
 	}()
 
@@ -527,7 +536,7 @@ func handleConn(srv *Server, conn net.Conn) {
 	}
 }
 
-func RunDaemon(cfg *Config) error {
+func RunDaemon(cfg *Config, ctx context.Context) error {
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	lsn, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -538,10 +547,7 @@ func RunDaemon(cfg *Config) error {
 
 	defer lsn.Close()
 
-	// sigint := make(chan os.Signal)
-	// signal.Notify(sigint, os.Interrupt)
-
-	srv, err := NewServer(cfg)
+	srv, err := NewServer(cfg, ctx)
 	if err != nil {
 		return err
 	}
@@ -549,10 +555,10 @@ func RunDaemon(cfg *Config) error {
 	for {
 		// Check if we were interrupted:
 		select {
+		case <-ctx.Done():
+			return nil
 		case <-srv.Quit:
 			return nil
-		// case <-sigint:
-		// 	return nil
 		default:
 			// We may continue normally.
 		}
