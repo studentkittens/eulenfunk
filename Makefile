@@ -4,7 +4,7 @@ BIN=/usr/bin
 all: build
 
 build:
-	go build .
+	go install
 	@cd driver && $(MAKE) --no-print-directory
 
 install: build
