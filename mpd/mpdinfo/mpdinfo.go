@@ -53,10 +53,10 @@ func displayStats(conn net.Conn, stats mpd.Attrs) error {
 	dbPlaytimeDays := float64(dbPlaytimeSecs) / (60 * 60 * 24)
 
 	block := []string{
-		fmt.Sprintf("%8s: %s", "Artists", stats["artist"]),
+		fmt.Sprintf("%8s: %s", "Artists", stats["artists"]),
 		fmt.Sprintf("%8s: %s", "Albums", stats["albums"]),
 		fmt.Sprintf("%8s: %s", "Songs", stats["songs"]),
-		fmt.Sprintf("%8s: %.2f", "Playtime", dbPlaytimeDays),
+		fmt.Sprintf("%8s: %.2f days", "Playtime", dbPlaytimeDays),
 	}
 
 	for idx, line := range block {
