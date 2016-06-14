@@ -4,18 +4,20 @@ import (
 	"log"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/studentkittens/eulenfunk/display"
 )
 
-func RunSysinfo(lw *display.LineWriter, width int, killCh <-chan bool) {
+func RunSysinfo(lw *display.LineWriter, width int, ctx context.Context) {
 	for {
 		select {
-		case <-killCh:
+		case <-ctx.Done():
 			return
 		default:
 		}
 
-		if _, err := lw.Formatf("line sysinfo 2 Im a raspberry. Schuhu!"); err != nil {
+		if _, err := lw.Formatf("line sysinfo 2 I make Schuhu!"); err != nil {
 			log.Printf("Failed to print sysinfo: %v", err)
 		}
 

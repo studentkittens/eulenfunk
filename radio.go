@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/studentkittens/eulenfunk/display"
 	"github.com/studentkittens/eulenfunk/lightd"
@@ -10,10 +11,27 @@ import (
 	"github.com/studentkittens/eulenfunk/mpd/menu"
 	"github.com/studentkittens/eulenfunk/mpd/mpdinfo"
 	"github.com/urfave/cli"
+	"golang.org/x/net/context"
 )
 
 func main() {
+	killCtx, cancel := context.WithCancel(context.Background())
+
+	// Handle Interrupt:
+	signals := make(chan os.Signal)
+	signal.Notify(signals, os.Interrupt)
+
+	go func() {
+		<-signals
+		cancel()
+	}()
+
 	app := cli.NewApp()
+	app.Author = "Waldsoft"
+	app.Email = "sahib@online.de"
+	app.Usage = "Control the higher level eulenfunk services"
+
+	app.Version = "0.0.1"
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   "mpd-host,H",
@@ -28,6 +46,7 @@ func main() {
 			EnvVar: "MPD_PORT",
 		},
 	}
+
 	app.Commands = []cli.Command{{
 		Name:  "mpdinfo",
 		Usage: "Send mpd infos to the display server",
@@ -37,14 +56,14 @@ func main() {
 			return mpdinfo.Run(&mpdinfo.Config{
 				"localhost", 6600, // MPD Config
 				"localhost", 7778, // Display server config
-			})
+			}, killCtx)
 		},
 	}, {
-		Name:  "menu",
-		Usage: "Handle menu rendering and input",
+		Name:  "ui",
+		Usage: "Handle window rendering and input control",
 		Flags: []cli.Flag{}, // TODO
 		Action: func(ctx *cli.Context) error {
-			return menu.Run()
+			return menu.Run(killCtx)
 		},
 	}, {
 		Name:  "lightd",

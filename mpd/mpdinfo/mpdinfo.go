@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/fhs/gompd/mpd"
+	"golang.org/x/net/context"
 )
 
 type Config struct {
@@ -107,7 +108,7 @@ func formatSong(currSong, status mpd.Attrs) ([]string, error) {
 	return block, nil
 }
 
-func Run(cfg *Config) error {
+func Run(cfg *Config, ctx context.Context) error {
 	client, err := mpd.Dial("tcp", fmt.Sprintf("%s:%d", cfg.Host, cfg.Port))
 	if err != nil {
 		log.Printf("Failed to connect to mpd: %v", err)
@@ -138,8 +139,15 @@ func Run(cfg *Config) error {
 
 	// sync extra every few seconds:
 	go func() {
-		for range time.NewTicker(1 * time.Second).C {
-			updateCh <- true
+		ticker := time.NewTicker(1 * time.Second)
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				updateCh <- true
+			}
 		}
 	}()
 
@@ -149,7 +157,7 @@ func Run(cfg *Config) error {
 			"tcp",
 			fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
 			"",
-			"player",
+			"player", // TODO: more events?
 		)
 
 		if err != nil {
@@ -159,31 +167,41 @@ func Run(cfg *Config) error {
 
 		defer w.Close()
 
-		for range w.Event {
-			updateCh <- true
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-w.Event:
+				updateCh <- true
+			}
 		}
 	}()
 
-	for range updateCh {
-		song, err := client.CurrentSong()
-		if err != nil {
-			log.Printf("Unable to fetch current song: %v", err)
-			continue
-		}
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-updateCh:
+			song, err := client.CurrentSong()
+			if err != nil {
+				log.Printf("Unable to fetch current song: %v", err)
+				continue
+			}
 
-		status, err := client.Status()
-		if err != nil {
-			log.Printf("Unable to fetch status: %v", err)
-			continue
-		}
+			status, err := client.Status()
+			if err != nil {
+				log.Printf("Unable to fetch status: %v", err)
+				continue
+			}
 
-		block, err := format(song, status)
-		if err != nil {
-			log.Printf("Failed to format current status: %v", err)
-			continue
-		}
+			block, err := format(song, status)
+			if err != nil {
+				log.Printf("Failed to format current status: %v", err)
+				continue
+			}
 
-		textCh <- block
+			textCh <- block
+		}
 	}
 
 	return nil

@@ -143,8 +143,12 @@ func (ln *Line) Render() []byte {
 
 // Window consists of a fixed number of lines and a handle name
 type Window struct {
-	Name          string
-	Lines         []*Line
+	Name  string
+	Lines []*Line
+
+	// NLines is the number of lines a window has
+	// (might be less than len(Lines) due to op-truncate)
+	NLines        int
 	LineOffset    int
 	Width, Height int
 	DriverPipe    io.Writer
@@ -161,6 +165,7 @@ func NewWindow(name string, driverPipe io.Writer, w, h int) *Window {
 	for i := 0; i < h; i++ {
 		ln := NewLine(i, w, driverPipe)
 		win.Lines = append(win.Lines, ln)
+		win.NLines++
 	}
 
 	return win
@@ -187,6 +192,7 @@ func (win *Window) SetLine(pos int, text string) error {
 		}
 
 		win.Lines = newLines
+		win.NLines = len(win.Lines)
 	}
 
 	win.Lines[pos].SetText(text)
@@ -194,7 +200,7 @@ func (win *Window) SetLine(pos int, text string) error {
 }
 
 func (win *Window) SetScrollDelay(pos int, delay time.Duration) error {
-	if pos < 0 || pos >= len(win.Lines) {
+	if pos < 0 || pos >= win.NLines {
 		return fmt.Errorf("Bad line position %d", pos)
 	}
 
@@ -208,7 +214,7 @@ func (win *Window) Move(n int) {
 		return
 	}
 
-	max := len(win.Lines) - win.Height
+	max := win.NLines - win.Height
 
 	if win.LineOffset+n > max {
 		win.LineOffset = max
@@ -224,6 +230,29 @@ func (win *Window) Move(n int) {
 	return
 }
 
+func (win *Window) Truncate(n int) {
+	oldN := win.NLines
+
+	switch {
+	case n < 0:
+		win.LineOffset = 0
+	case n > len(win.Lines):
+		win.NLines = len(win.Lines)
+	default:
+		win.NLines = n
+	}
+
+	diff := win.NLines - oldN
+	if diff < 0 {
+		win.Move(diff)
+	}
+
+	// Clear remaining lines:
+	for i := win.NLines; i < oldN; i++ {
+		win.Lines[i].SetText("")
+	}
+}
+
 func (win *Window) Switch() {
 	for _, line := range win.Lines {
 		line.Redraw()
@@ -234,8 +263,8 @@ func (win *Window) Render() []byte {
 	buf := &bytes.Buffer{}
 
 	hi := win.LineOffset + win.Height
-	if hi > len(win.Lines) {
-		hi = len(win.Lines)
+	if hi > win.NLines {
+		hi = win.NLines
 	}
 
 	for _, line := range win.Lines[win.LineOffset:hi] {
@@ -274,6 +303,10 @@ func (srv *Server) renderToDriver() {
 	if srv.Active == nil {
 		return
 	}
+
+	// TODO: Make this nicer, possibly just
+	//       render single lines and don't split what Render()
+	//       did?
 
 	lines, pos := srv.Active.Render(), 0
 	width := srv.Config.Width
@@ -382,6 +415,13 @@ func (srv *Server) Move(window string, n int) {
 	srv.createOrLookupWindow(window).Move(n)
 }
 
+func (srv *Server) Truncate(window string, n int) {
+	srv.Lock()
+	defer srv.Unlock()
+
+	srv.createOrLookupWindow(window).Truncate(n)
+}
+
 func (srv *Server) Render() []byte {
 	srv.Lock()
 	defer srv.Unlock()
@@ -458,7 +498,16 @@ func handleConn(srv *Server, conn net.Conn) {
 			}
 
 			srv.Move(name, pos)
+		case "truncate":
+			name, pos := "", 0
+			if _, err := fmt.Sscanf(line, "truncate %s %d", &name, &pos); err != nil {
+				log.Printf("Failed to parse move command `%s`: %v", line, err)
+				continue
+			}
+
+			srv.Truncate(name, pos)
 		case "render":
+			// NOTE: This is only used for --dump, not for the actual driver.
 			if _, err := conn.Write(srv.Render()); err != nil {
 				log.Printf("Failed to respond rendered display: %v", err)
 				continue
