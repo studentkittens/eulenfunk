@@ -408,14 +408,6 @@ func Run(ctx context.Context) error {
 		},
 	}
 
-	easterEggMenu := []*Entry{
-		{
-			"Schuhu?", nil, // TODO: Play actual shuhu.
-		}, {
-			"Exit", switcher("menu-main"),
-		},
-	}
-
 	if err := mgr.AddMenu("menu-main", mainMenu); err != nil {
 		log.Printf("Add main-menu failed: %v", err)
 		return err
@@ -426,25 +418,24 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
-	if err := mgr.AddMenu("menu-easteregg", easterEggMenu); err != nil {
-		log.Printf("Add main-easteregg failed: %v", err)
-		return err
-	}
-
 	mgr.AddTimedAction(10*time.Millisecond, func() error {
 		return nil
 	})
 
 	mgr.AddTimedAction(500*time.Millisecond, func() error {
+		ignoreRelease = true
 		return mgr.SwitchTo("menu-main")
 	})
 
 	mgr.AddTimedAction(2*time.Second, func() error {
+		ignoreRelease = true
 		return mgr.SwitchTo("menu-power")
 	})
 
 	mgr.AddTimedAction(10*time.Second, func() error {
-		return mgr.SwitchTo("menu-easteregg")
+		ignoreRelease = true
+		cmd := sysCommand("mpv", "--ao=alsa", "--vo=null", "/root/hoot.mp3")
+		return cmd()
 	})
 
 	mgr.ReleaseAction(func() error {

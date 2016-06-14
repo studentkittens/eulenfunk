@@ -226,16 +226,16 @@ func main() {
 				EnvVar: "AMBI_MUSIC_DIR",
 			},
 			cli.StringFlag{
-				Name:   "mood-dir,d",
+				Name:   "mood-dir,i",
 				Value:  "",
 				Usage:  "MPD port to connect to",
 				EnvVar: "AMBI_MOOD_DIR",
 			},
 			cli.StringFlag{
-				Name:   "binary,b",
+				Name:   "driver,b",
 				Value:  "catlight",
 				Usage:  "MPD port to connect to",
-				EnvVar: "AMBI_BINARY",
+				EnvVar: "AMBI_DRIVER",
 			},
 			cli.BoolFlag{
 				Name:  "update-mood-db,u",
@@ -256,7 +256,7 @@ func main() {
 				MusicDir:           musicDir,
 				MoodDir:            moodyDir,
 				UpdateMoodDatabase: ctx.Bool("update-mood-db"),
-				BinaryName:         ctx.String("binary"),
+				BinaryName:         ctx.String("driver"),
 			})
 		},
 	},
