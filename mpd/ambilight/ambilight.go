@@ -196,7 +196,7 @@ func createBlend(c1, c2 TimedColor, N int) []TimedColor {
 		l = (l*l)/2 + (l / 2)
 
 		// Convert back to (gamma corrected) RGB for catlight:
-		r, g, b := colorful.Hcl(h, c, l).FastLinearRgb()
+		r, g, b := colorful.Hcl(h, c, l).LinearRgb()
 		colors = append(colors, TimedColor{
 			uint8(r * 255), uint8(g * 255), uint8(b * 255),
 			((c1.Duration + c2.Duration) / 2) / time.Duration(N),
