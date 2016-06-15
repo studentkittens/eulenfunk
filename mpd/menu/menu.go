@@ -22,6 +22,8 @@ type Entry struct {
 	Action Action
 }
 
+// TODO: Add State Entries that darw a [x] when set or [ ] when not
+
 type Menu struct {
 	Name    string
 	Entries []*Entry
@@ -165,6 +167,8 @@ func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, er
 	}()
 
 	go func() {
+		actionExecd := make(map[time.Duration]bool)
+
 		for duration := range rty.Pressed {
 			log.Printf("Pressed for %s", duration)
 			mgr.Lock()
@@ -172,19 +176,22 @@ func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, er
 			// Find the action with smallest non-negative diff:
 			var diff time.Duration
 			var action Action
+			var actionTime time.Duration
 
 			for after, timedAction := range mgr.TimedActions {
 				newDiff := duration - after
 				if after <= duration && (action == nil || newDiff < diff) {
 					diff = duration - after
 					action = timedAction
+					actionTime = after
 				}
 			}
 
 			mgr.Unlock()
 
-			if action != nil {
+			if action != nil && !actionExecd[actionTime] {
 				action()
+				actionExecd[actionTime] = true
 			}
 		}
 	}()
@@ -327,6 +334,31 @@ func sysCommand(name string, args ...string) func() error {
 	}
 }
 
+func drawStartupScreen(lw *display.LineWriter) error {
+	startupScreen := []string{
+		"/ / / / / / / / / / / / / / / /",
+		"WELCOME TO EULENFUNK",
+		" GUT. ECHT. ANDERS. ",
+		"/ / / / / / / / / / / / / / / /",
+	}
+
+	for idx, line := range startupScreen {
+		if _, err := lw.Formatf("line mpd %d %s", idx, line); err != nil {
+			return err
+		}
+	}
+
+	if _, err := lw.Formatf("scroll mpd 0 150ms"); err != nil {
+		return err
+	}
+
+	if _, err := lw.Formatf("scroll mpd 3 200ms"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func Run(ctx context.Context) error {
 	// TODO: pass config
 	cfg := &display.Config{
@@ -342,8 +374,8 @@ func Run(ctx context.Context) error {
 
 	defer lw.Close()
 
-	msg := util.Center("... startup ...", 20) // TODO
-	if _, err := lw.Formatf("line mpd 2 %s", msg); err != nil {
+	if err := drawStartupScreen(lw); err != nil {
+		log.Printf("Failed to draw startup screen: %v", err)
 		return err
 	}
 
@@ -422,7 +454,7 @@ func Run(ctx context.Context) error {
 		return nil
 	})
 
-	mgr.AddTimedAction(500*time.Millisecond, func() error {
+	mgr.AddTimedAction(400*time.Millisecond, func() error {
 		ignoreRelease = true
 		return mgr.SwitchTo("menu-main")
 	})
@@ -432,10 +464,11 @@ func Run(ctx context.Context) error {
 		return mgr.SwitchTo("menu-power")
 	})
 
-	mgr.AddTimedAction(10*time.Second, func() error {
+	mgr.AddTimedAction(8*time.Second, func() error {
 		ignoreRelease = true
-		cmd := sysCommand("mpv", "--ao=alsa", "--vo=null", "/root/hoot.mp3")
-		return cmd()
+		cmd := sysCommand("aplay", "/root/hoot.wav")
+		go cmd()
+		return nil
 	})
 
 	mgr.ReleaseAction(func() error {
