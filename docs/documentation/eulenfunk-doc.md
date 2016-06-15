@@ -25,7 +25,7 @@ date: \today
 Das vorliegende Projekt, ist im Rahmen einer Studienarbeit im Fach
 Hardwaresysteme an der Hochschule Augsburg entstanden. Da die Autoren nicht aus
 dem Bereich der *Technischen Informatik* sind, wurden jegliche
-hardwarebezogenenen soweit möglich nach bestem Wissen und Grundlagen--Wissen umgesetzt.
+hardwarebezogenenen Arbeiten nach bestem Grundlagenwissen umgesetzt.
 
 Diese Studienarbeit soll einen Überblick über die verwendeten, beziehungsweise
 benötigten Komponenten für den Bau eines *Raspberry Pi*--Internetradios
@@ -103,19 +103,24 @@ ein möglichst optisch und klanglich ansprechendes Internetradio zu entwickeln.
 Als Basis für das Projekt dient ein defektes Analog--Radio und ein Raspberry Pi
 aus dem Jahr 2012.
 
-# Anforderungen an das Projekt
+# Projektspezifikation
 
-## Spezifikation 
-
-### Anschlussmöglichkeiten
+## Hardwareanforderungen
 
 Das Radio soll dem Benutzer folgende Hardwarekonfigurationsmöglichkeiten bieten:
 
-* Anschluß aktiver Lautsprecher möglich
 * Anschluß passive Lautsprecher/Kopfhörer möglich 
 * Verwendung des Internen Lautsprechers des alten Radios
+* Dimmbare RGB--LED Statusanzeige 
 
-### Optische Erscheinungsform
+## Softwareanforderungen
+
+Die Software soll generisch gehalten werden um eine möglichst einfache
+Erweiterbarkeit zu  gewährleisten. 
+
+Hier was zu Menu--Steuerung schrieben und Umfang?
+
+## Optik-- und Usabilityanforderungen
 
 Die Eingabe--Peripherie soll möglichst einfach gehalten werden, um eine *schöne*
 Produkt--Optik zu gewährleisten. Folgende 
@@ -127,19 +132,14 @@ Produkt--Optik zu gewährleisten. Folgende
 Design soll im Grunde *minimalistisch*  gehalten werden, das heisst, es sollen
 nur so wenige ,,Bedienelemente'' wie nötig angebracht werden.
 
-### Anforderungen an die Software
-
-Die Software soll generisch gehalten werden um eine möglichst einfache
-Erweiterbarkeit zu  gewährleisten. 
-
-Hier was zu Menu--Steuerung schrieben und Umfang?
-
-### Kosten/Nutzen--Verhältnis
+## Kosten/Nutzen--Verhältnis
 
 Für die Erstellung des Projekts sollte bereits vorhandene Komponenten und
 Bauelemente wiederverwendet werden um den Kostenaufwand minimal zu halten.
 
-# Überblick möglicher Hardwarekomponenten
+# Hardware
+
+## Komponenten und Bauteile
 
 Folgende Hardwarekomponenten oder Bauteile sind bereits vorhanden oder müssen
 noch erworben werden:
@@ -152,12 +152,13 @@ noch erworben werden:
 * USB--Soundkarte (vorhanden)
 * WIFI--Adapter (vorhanden)
 * Netzteil (vorhanden, div. 5V)
+* Audioverstärker (muss erworben werden)
+* Drehregler (muss erworben werden)
 * Farbe und Kunststoffabdeckung für das neue Gehäuse (muss erworben werden)
 
 [^AEG]: AEG Küchenradio 4104: \url{https://www.amazon.de/AEG-MR-4104-Desgin-Uhrenradio-buche/dp/B000HD19W8}
 
 
-# Hardware-- und Softwarekonfiguration
 
 ## Raspberry Pi
 
@@ -187,6 +188,32 @@ Revision 1+ mit 256MB RAM.
 
 Je nach Raspberry Revision sind die Pins teilweise unterschiedlich belegt. Seit
 Modell B, Revision 2.0 ist noch zusätzlich der P5 Header dazu gekommen.
+
+### GPIO--Schnittstelle
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.7\textwidth]{images/gpio.png}
+  \caption{GPIO-Header des Raspberry Pi Modell B Rev 1.0+}
+  \label{gpio}
+\end{figure}
+
+
+
+
+Bildquelle: \url{http://www.raspberrypi-spy.co.uk/2012/06/simple-guide-to-the-rpi-gpio-header-and-pins/#prettyPhoto}
+
+Die \ref{gpio} ist
+
+#### GPIO--Pinbelegung
+
+* Grafik
+
+...
+
+* 3,3V vs 5V
+* Max. Strom
+* Max. verfügbare Pins
 
 ## LCD--Anzeige
 
@@ -396,43 +423,14 @@ mit dem Profil `wlan0-Phobos`.
 
 
 
-# Hardwaredesign
 
-## GPIO--Schnittstelle
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.7\textwidth]{images/gpio.png}
-  \caption{GPIO-Header des Raspberry Pi Modell B Rev 1.0+}
-  \label{gpio}
-\end{figure}
-
-
-
-
-Bildquelle: \url{http://www.raspberrypi-spy.co.uk/2012/06/simple-guide-to-the-rpi-gpio-header-and-pins/#prettyPhoto}
-
-Die \ref{gpio} ist
-
-### GPIO--Pinbelegung
-
-* Grafik
-
-...
-
-* 3,3V vs 5V
-* Max. Strom
-* Max. verfügbare Pins
-
-# Softwaredesign
+# Software
 
 ## Vorhandene Softwarelibraries
 
-## Grundlgender Aufbau
+## Überblick der einzelnen Komponenten
 
-# Überblick der einzelnen Komponenten?
-
-.. .
+## Softwarearchitektur
 
 ## Treiber--Software
 
