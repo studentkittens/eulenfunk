@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wiringPi.h>
-#include <softPwm.h>
+#include "softPwm.h"
 
 #define PIN_RED   7
 #define PIN_GREEN 9
@@ -19,19 +19,14 @@ static void usage(char *name) {
     fprintf(stderr, "  %s cat ....... read rgb tuples from stdin\n", name);
     fprintf(stderr, "  %s rgb  r g b  Set LED color to r,g,b\n", name);
     fprintf(stderr, "  %s hex #FFFFFF Set LED color from hexstring\n", name);
+    fprintf(stderr, "  %s fade ...... Show a fade for debugging\n", name);
     exit(1);
 }
 
 static void set_rgb(int r, int g, int b) { 
-    float pr = r / 255. * 100;
-    float pg = g / 255. * 100;
-    float pb = b / 255. * 100;
-
-    softPwmWrite(PIN_RED, pr);
-    softPwmWrite(PIN_GREEN, pg);
-    softPwmWrite(PIN_BLUE, pb);
-
-    printf("%f %f %f\n", pr, pg, pb);	
+    softPwmWrite(PIN_RED, r);
+    softPwmWrite(PIN_GREEN, g);
+    softPwmWrite(PIN_BLUE, b);
 }
 
 static int string_to_col(const char * arg) {
@@ -74,9 +69,9 @@ int main(int argc, char **argv) {
 	usage(argv[0]);
     }
 
-    softPwmCreate(PIN_RED, 0, 100);
-    softPwmCreate(PIN_GREEN, 0, 100);
-    softPwmCreate(PIN_BLUE, 0, 100);
+    softPwmCreate(PIN_RED, 0, 255);
+    softPwmCreate(PIN_GREEN, 0, 255);
+    softPwmCreate(PIN_BLUE, 0, 255);
 
     if(strcasecmp(argv[1], "cat") == 0) {
         const int size = 512;
@@ -115,6 +110,23 @@ int main(int argc, char **argv) {
                 }
             }
         }
+    } else if(strcasecmp(argv[1], "fade") == 0) {
+	for(int i = 0; i < 256; i++) {
+		set_rgb(i, 0, 0);
+		delay(10);
+	}
+	for(int i = 0; i < 256; i++) {
+		set_rgb(0, i, 0);
+		delay(10);
+	}
+	for(int i = 0; i < 256; i++) {
+		set_rgb(0, 0, i);
+		delay(10);
+	}
+	for(int i = 0; i < 256; i++) {
+		set_rgb(i, i, i);
+		delay(10);
+	}
     } else if(strcasecmp(argv[1], "rgb") == 0 && argc > 4) {
         set_rgb_from_arr((const char**)&argv[2]);
     } else if(strcasecmp(argv[1], "hex") == 0) {
