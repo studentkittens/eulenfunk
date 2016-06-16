@@ -19,16 +19,17 @@ import (
 type Action func() error
 
 type MenuLine interface {
-	Render(w int) string
+	Render(w int, active bool) string
 	Name() string
 	Action() error
+	Selectable() bool
 }
 
 type Separator struct {
 	Title string
 }
 
-func (sp *Separator) Render(w int) string {
+func (sp *Separator) Render(w int, active bool) string {
 	return util.Center(sp.Title, w, '-')
 }
 
@@ -40,19 +41,28 @@ func (sp *Separator) Action() error {
 	return nil
 }
 
+func (sp *Separator) Selectable() bool {
+	return false
+}
+
 type Entry struct {
 	Text       string
 	ActionFunc Action
 	State      string
 }
 
-func (en *Entry) Render(w int) string {
+func (en *Entry) Render(w int, active bool) string {
+	prefix := "  "
+	if active {
+		prefix = "> "
+	}
+
 	state := en.State
 	if state != "" {
 		state = " [" + state + "]"
 	}
 
-	return fmt.Sprintf("%-*s%s", w-len(state), en.Text, state)
+	return fmt.Sprintf("%s%-*s%s", prefix, w-len(state)-len(prefix), en.Text, state)
 }
 
 func (en *Entry) Name() string {
@@ -66,6 +76,12 @@ func (en *Entry) Action() error {
 
 	return nil
 }
+
+func (en *Entry) Selectable() bool {
+	return true
+}
+
+////////////////////////
 
 type Menu struct {
 	Name    string
@@ -99,17 +115,31 @@ func (mn *Menu) Scroll(move int) {
 	if mn.Cursor >= len(mn.Entries) {
 		mn.Cursor = len(mn.Entries) - 1
 	}
+
+	// Find the next selectable item:
+	for mn.Entries[mn.Cursor].Selectable() {
+		mn.Cursor++
+	}
+
+	// None found? Try to wrap around:
+	if mn.Cursor >= len(mn.Entries) {
+		mn.Cursor = 0
+
+		for mn.Entries[mn.Cursor].Selectable() {
+			mn.Cursor++
+		}
+	}
+
+	// Security check when no selectable item is there:
+	if mn.Cursor >= len(mn.Entries) {
+		mn.Cursor = 0
+	}
 }
 
 func (mn *Menu) Display() error {
 	for pos, entry := range mn.Entries {
-		prefix := "  "
-		if pos == mn.Cursor {
-			prefix = "> "
-		}
-
 		// TODO: pass config width
-		line := prefix + entry.Render(18)
+		line := entry.Render(20, pos == mn.Cursor)
 
 		if _, err := mn.lw.Formatf("line %s %d %s", mn.Name, pos, line); err != nil {
 			return err
