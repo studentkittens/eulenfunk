@@ -11,7 +11,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -521,11 +520,7 @@ func Watcher(server *Server) error {
 
 	log.Printf("Press CTRL-C to interrupt")
 
-	// Block until something fatal happens:
-	sigint := make(chan os.Signal)
-	signal.Notify(sigint, os.Interrupt)
-	<-sigint
-
+	<-server.Context.Done()
 	fmt.Println("\rInterrupted. Bye!")
 
 	// Attempt to clean up, close() should be propagated to the
@@ -542,8 +537,10 @@ func handleConn(server *Server, conn net.Conn) {
 	for scn.Scan() {
 		switch cmd := scn.Text(); cmd {
 		case "off":
+			log.Printf("Disabling ambilight...")
 			server.Enable(false)
 		case "on":
+			log.Printf("Enabling ambilight...")
 			server.Enable(true)
 		case "state":
 			resp := []byte("0\n")
@@ -555,6 +552,7 @@ func handleConn(server *Server, conn net.Conn) {
 				log.Printf("Failed to write back state response: %v", err)
 			}
 		case "quit":
+			log.Printf("Quitting ambilightd...")
 			server.Cancel()
 			return
 		case "close":
@@ -592,6 +590,7 @@ func createNetworkListener(server *Server) error {
 				break
 			}
 
+			log.Printf("Accepting connection from %s", conn.RemoteAddr())
 			go handleConn(server, conn)
 		}
 	}()
