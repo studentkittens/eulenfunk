@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	GLYPH_HBAR  = 0
+	GLYPH_HBAR  = 8
 	GLYPH_PLAY  = 1
 	GLYPH_PAUSE = 2
 	GLYPH_HEART = 3
