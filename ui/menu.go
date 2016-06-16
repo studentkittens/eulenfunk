@@ -404,6 +404,7 @@ func Run(ctx context.Context) error {
 
 	switcher := func(name string) func() error {
 		return func() error {
+			ignoreRelease = true
 			return mgr.SwitchTo(name)
 		}
 	}
