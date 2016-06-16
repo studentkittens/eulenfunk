@@ -431,6 +431,23 @@ func sysCommand(name string, args ...string) func() error {
 	}
 }
 
+func drawShutdownscreen(lw *display.LineWriter) error {
+	startupScreen := []string{
+		"SHUTTING DOWN - BYE!",
+		"                    ",
+		"PLEASE WAIT 1 MINUTE",
+		"BEFORE POWERING OFF!",
+	}
+
+	for idx, line := range startupScreen {
+		if _, err := lw.Formatf("line mpd %d %s", idx, line); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func drawStartupScreen(lw *display.LineWriter) error {
 	startupScreen := []string{
 		"/ / / / / / / / / / / / / / / /",
@@ -583,12 +600,18 @@ func Run(ctx context.Context) error {
 
 	powerMenu := []MenuLine{
 		&Entry{
-			Text:       "Poweroff",
-			ActionFunc: sysCommand("systemctl", "poweroff"),
+			Text: "Poweroff",
+			ActionFunc: func() error {
+				drawShutdownscreen(lw)
+				return sysCommand("systemctl", "poweroff")()
+			},
 		},
 		&Entry{
-			Text:       "Reboot",
-			ActionFunc: sysCommand("systemctl", "reboot"),
+			Text: "Reboot",
+			ActionFunc: func() error {
+				drawShutdownscreen(lw)
+				return sysCommand("systemctl", "reboot")()
+			},
 		},
 		&Entry{
 			Text:       "Exit",
