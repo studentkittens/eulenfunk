@@ -263,16 +263,12 @@ func main() {
 			},
 			cli.BoolFlag{
 				Name:  "quit",
-				Usage: "Close the catlight when ",
+				Usage: "Quit the ambilight daemon",
 			},
 		},
 		Action: func(ctx *cli.Context) error {
 			musicDir := ctx.String("music-dir")
 			moodyDir := ctx.String("mood-dir")
-
-			if musicDir == "" || moodyDir == "" {
-				return fmt.Errorf("Need both --music-dir and --mood-dir")
-			}
 
 			cfg := &ambilight.Config{
 				Host:               ctx.String("host"),
@@ -299,8 +295,14 @@ func main() {
 				case off:
 					return client.Enable(false)
 				case quit:
+					log.Printf("do quit")
 					return client.Quit()
 				}
+			}
+
+			if musicDir == "" || moodyDir == "" {
+				log.Printf("Need both --music-dir and --mood-dir")
+				return nil
 			}
 
 			return ambilight.RunDaemon(cfg, killCtx)
