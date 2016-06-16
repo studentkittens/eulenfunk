@@ -11,7 +11,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/studentkittens/eulenfunk/display"
-	"github.com/studentkittens/eulenfunk/mpd/mpdinfo"
+	"github.com/studentkittens/eulenfunk/ui/mpdinfo"
 	"github.com/studentkittens/eulenfunk/util"
 )
 

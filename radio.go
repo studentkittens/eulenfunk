@@ -6,11 +6,11 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/studentkittens/eulenfunk/ambilight"
 	"github.com/studentkittens/eulenfunk/display"
 	"github.com/studentkittens/eulenfunk/lightd"
-	"github.com/studentkittens/eulenfunk/mpd/ambilight"
-	"github.com/studentkittens/eulenfunk/mpd/menu"
-	"github.com/studentkittens/eulenfunk/mpd/mpdinfo"
+	"github.com/studentkittens/eulenfunk/ui"
+	"github.com/studentkittens/eulenfunk/ui/mpdinfo"
 	"github.com/urfave/cli"
 	"golang.org/x/net/context"
 )
