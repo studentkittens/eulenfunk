@@ -141,6 +141,8 @@ func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, er
 		rotary:       rty,
 	}
 
+	timedActionExecd := make(map[time.Duration]bool)
+
 	go func() {
 		for state := range rty.Button {
 			if mgr.Active == nil {
@@ -149,6 +151,10 @@ func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, er
 
 			if !state {
 				fmt.Println("Button released")
+				mgr.Lock()
+				timedActionExecd = make(map[time.Duration]bool)
+				mgr.Unlock()
+
 				for idx, action := range mgr.releaseActions {
 					if err := action(); err != nil {
 						log.Printf("release action %d failed: %v", idx, err)
@@ -172,7 +178,6 @@ func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, er
 	}()
 
 	go func() {
-		actionExecd := make(map[time.Duration]bool)
 
 		for duration := range rty.Pressed {
 			log.Printf("Pressed for %s", duration)
@@ -192,12 +197,16 @@ func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, er
 				}
 			}
 
-			mgr.Unlock()
-
-			if action != nil && !actionExecd[actionTime] {
+			if action != nil && !timedActionExecd[actionTime] {
+				// Call action() unlocked:
+				mgr.Unlock()
 				action()
-				actionExecd[actionTime] = true
+				mgr.Lock()
+
+				timedActionExecd[actionTime] = true
 			}
+
+			mgr.Unlock()
 		}
 	}()
 
@@ -414,7 +423,7 @@ func Run(ctx context.Context) error {
 	go RunSysinfo(lw, 20, ctx)
 
 	partyModeEntry := &Entry{
-		Text:  "Toggle PartyMode",
+		Text:  "PartyMode",
 		State: "On",
 	}
 
@@ -503,10 +512,9 @@ func Run(ctx context.Context) error {
 
 	mgr.ReleaseAction(func() error {
 		if ignoreRelease {
+			ignoreRelease = false
 			return nil
 		}
-
-		ignoreRelease = false
 
 		switch currWin := mgr.ActiveWindow(); currWin {
 		case "mpd":
