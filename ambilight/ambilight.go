@@ -473,7 +473,9 @@ func StatusUpdater(server *Server, updateCh <-chan bool, eventCh chan<- MPDEvent
 // It also triggers the logic by feeding mpd events to the go routine pipe.
 func Watcher(server *Server) error {
 	// Watch for 'player' events:
-	addr := fmt.Sprintf("%s:%d", server.Config.Host, server.Config.Port)
+	addr := fmt.Sprintf("%s:%d", server.Config.MPDHost, server.Config.MPDPort)
+
+	log.Printf("Watching on %s", addr)
 	w, err := mpd.NewWatcher("tcp", addr, "", "player")
 	if err != nil {
 		log.Fatalf("Failed to create watcher: %v", err)
@@ -517,6 +519,8 @@ func Watcher(server *Server) error {
 		}
 	}()
 
+	log.Printf("Press CTRL-C to interrupt")
+
 	// Block until something fatal happens:
 	sigint := make(chan os.Signal)
 	signal.Notify(sigint, os.Interrupt)
@@ -531,6 +535,8 @@ func Watcher(server *Server) error {
 }
 
 func handleConn(server *Server, conn net.Conn) {
+	defer conn.Close()
+
 	scn := bufio.NewScanner(conn)
 
 	for scn.Scan() {
@@ -571,6 +577,8 @@ func createNetworkListener(server *Server) error {
 	log.Printf("Listening on %v", addr)
 
 	go func() {
+		defer lsn.Close()
+
 		for {
 			select {
 			case <-server.Context.Done():
@@ -637,6 +645,8 @@ func RunDaemon(cfg *Config, ctx context.Context) error {
 
 		return err
 	}
+
+	log.Printf("Starting up...")
 
 	// Monitor MPD events and sync moodbar appropiately.
 	return Watcher(server)
