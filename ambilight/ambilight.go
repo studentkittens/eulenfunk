@@ -238,19 +238,29 @@ func createBlend(c1, c2 TimedColor, N int) []TimedColor {
 	return colors
 }
 
-// MoodbarRunner sets the current color and blends to it
-// by remembering the last color and calculating a gradient between both.
-func MoodbarRunner(server *Server, colors <-chan TimedColor) {
-	cfg := server.Config
+func createDriverPipe(cfg *Config) (io.WriteCloser, error) {
 	cmd := exec.Command(cfg.BinaryName, "cat")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		log.Printf("Cannot fork catlight: %v", err)
-		return
+		return nil, err
 	}
 
 	if err := cmd.Start(); err != nil {
 		log.Printf("Failed to start `catlight cat`: %v", err)
+		return nil, err
+	}
+
+	return stdin, nil
+}
+
+// MoodbarRunner sets the current color and blends to it
+// by remembering the last color and calculating a gradient between both.
+func MoodbarRunner(server *Server, colors <-chan TimedColor) {
+	cfg := server.Config
+
+	stdin, err := createDriverPipe(cfg)
+	if err != nil {
 		return
 	}
 
@@ -529,7 +539,7 @@ func Watcher(server *Server) error {
 	return nil
 }
 
-func handleConn(server *Server, conn net.Conn) {
+func handleConn(server *Server, driverStdin io.WriteCloser, conn net.Conn) {
 	defer conn.Close()
 
 	scn := bufio.NewScanner(conn)
@@ -539,6 +549,13 @@ func handleConn(server *Server, conn net.Conn) {
 		case "off":
 			log.Printf("Disabling ambilight...")
 			server.Enable(false)
+
+			// Wait a short amount to make sure other colors
+			// get flushed:
+			time.Sleep(100 * time.Millisecond)
+			if _, err := driverStdin.Write([]byte("0 0 0\n")); err != nil {
+				log.Printf("Failed to turn light off: %v", err)
+			}
 		case "on":
 			log.Printf("Enabling ambilight...")
 			server.Enable(true)
@@ -574,7 +591,13 @@ func createNetworkListener(server *Server) error {
 
 	log.Printf("Listening on %v", addr)
 
+	stdin, err := createDriverPipe(server.Config)
+	if err != nil {
+		return err
+	}
+
 	go func() {
+		defer stdin.Close()
 		defer lsn.Close()
 
 		for {
@@ -591,7 +614,7 @@ func createNetworkListener(server *Server) error {
 			}
 
 			log.Printf("Accepting connection from %s", conn.RemoteAddr())
-			go handleConn(server, conn)
+			go handleConn(server, stdin, conn)
 		}
 	}()
 
