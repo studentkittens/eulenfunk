@@ -93,8 +93,21 @@ func formatTimeSpec(tm time.Duration) string {
 	return fmt.Sprintf("%02d:", h) + f
 }
 
+func stateToUnicode(state string) string {
+	switch state {
+	case "play":
+		return "▶"
+	case "pause":
+		return "⏸"
+	case "stop":
+		return "⏹"
+	default:
+		return "?"
+	}
+}
+
 func formatStatusLine(currSong, status mpd.Attrs) string {
-	state := "[" + status["state"] + "]"
+	state := "[" + stateToUnicode(status["state"]) + "]"
 	elapsedStr := status["elapsed"]
 
 	elapsedSec, err := strconv.ParseFloat(elapsedStr, 64)

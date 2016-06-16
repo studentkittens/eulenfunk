@@ -3,18 +3,21 @@
 package ambilight
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log"
 	"math"
+	"net"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/net/context"
 
 	// External dependencies:
 	"github.com/fhs/gompd/mpd"
@@ -23,10 +26,16 @@ import (
 )
 
 type Config struct {
-	// Host of the mpd server
+	// MPDHost of the mpd server (usually localhost)
+	MPDHost string
+
+	// MPDPort of the mpd server (usually 6600)
+	MPDPort int
+
+	// Host of the ambilight command server
 	Host string
 
-	// Port of the mpd server
+	// Port of the command server
 	Port int
 
 	// MusicDir is the root path of the mpd database
@@ -40,6 +49,30 @@ type Config struct {
 
 	// Name of the RGB LED driver binary (`catlight` for my desktop)
 	BinaryName string
+}
+
+type Server struct {
+	sync.Mutex
+	Config  *Config
+	MPD     *mpd.Client
+	Context context.Context
+	Cancel  context.CancelFunc
+
+	enabled bool
+}
+
+func (srv *Server) Enabled() bool {
+	srv.Lock()
+	defer srv.Unlock()
+
+	return srv.enabled
+}
+
+func (srv *Server) Enable(enabled bool) {
+	srv.Lock()
+	defer srv.Unlock()
+
+	srv.enabled = enabled
 }
 
 // Current status of the MPD player:
@@ -75,16 +108,16 @@ func checkForMoodbar() {
 }
 
 // Walk over all music files and create a .mood file for each in mood-dir.
-func updateMoodDatabase(client *mpd.Client, cfg *Config) error {
-	if cfg.MoodDir == "" {
-		return fmt.Errorf("No mood bar directory given (-mood-dir)")
+func updateMoodDatabase(server *Server) error {
+	if server.Config.MoodDir == "" {
+		return fmt.Errorf("No mood bar directory given (--mood-dir)")
 	}
 
-	if err := os.MkdirAll(cfg.MoodDir, 0777); err != nil {
+	if err := os.MkdirAll(server.Config.MoodDir, 0777); err != nil {
 		return err
 	}
 
-	paths, err := client.GetFiles()
+	paths, err := server.MPD.GetFiles()
 	if err != nil {
 		return fmt.Errorf("Cannot get all files from mpd: %v", err)
 	}
@@ -111,15 +144,14 @@ func updateMoodDatabase(client *mpd.Client, cfg *Config) error {
 
 	for _, path := range paths {
 		moodName := strings.Replace(path, string(filepath.Separator), "|", -1)
-		moodPath := filepath.Join(cfg.MoodDir, moodName)
+		moodPath := filepath.Join(server.Config.MoodDir, moodName)
 
 		if _, err := os.Stat(moodPath); err == nil {
 			// Already exists, Skipping.
 			continue
 		}
 
-		dataPath := filepath.Join(cfg.MusicDir, path)
-
+		dataPath := filepath.Join(server.Config.MusicDir, path)
 		moodChan <- &MoodInfo{
 			MusicFile: dataPath,
 			MoodPath:  moodPath,
@@ -206,18 +238,29 @@ func createBlend(c1, c2 TimedColor, N int) []TimedColor {
 	return colors
 }
 
-// MoodbarRunner sets the current color and blends to it
-// by remembering the last color and calculating a gradient between both.
-func MoodbarRunner(cfg *Config, colors <-chan TimedColor) {
+func createDriverPipe(cfg *Config) (io.WriteCloser, error) {
 	cmd := exec.Command(cfg.BinaryName, "cat")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		log.Printf("Cannot fork catlight: %v", err)
-		return
+		return nil, err
 	}
 
 	if err := cmd.Start(); err != nil {
 		log.Printf("Failed to start `catlight cat`: %v", err)
+		return nil, err
+	}
+
+	return stdin, nil
+}
+
+// MoodbarRunner sets the current color and blends to it
+// by remembering the last color and calculating a gradient between both.
+func MoodbarRunner(server *Server, colors <-chan TimedColor) {
+	cfg := server.Config
+
+	stdin, err := createDriverPipe(cfg)
+	if err != nil {
 		return
 	}
 
@@ -236,6 +279,10 @@ func MoodbarRunner(cfg *Config, colors <-chan TimedColor) {
 				return
 			}
 
+			if !server.Enabled() {
+				continue
+			}
+
 			blendInterval := 2
 			if color.Duration > 20*time.Millisecond {
 				blendInterval = int(math.Sqrt(float64(color.Duration/time.Millisecond))) / 2
@@ -251,6 +298,10 @@ func MoodbarRunner(cfg *Config, colors <-chan TimedColor) {
 				colorValue := fmt.Sprintf("%d %d %d\n", color.R, color.G, color.B)
 				stdin.Write([]byte(colorValue))
 				time.Sleep(color.Duration)
+			} else {
+				// Blend is exhausted and no new colors available.
+				// Sleep a bit to spare CPU.
+				time.Sleep(50 * time.Millisecond)
 			}
 		}
 	}
@@ -361,17 +412,17 @@ func MoodbarAdjuster(eventCh <-chan MPDEvent, colorsCh chan<- TimedColor) {
 // StatusUpdater is triggerd on "player" events and fetches the current state infos
 // needed for the moodbar sync. It then proceeds to generate a MPDEvent that
 // MoodbarAdjuster will receive.
-func StatusUpdater(client *mpd.Client, cfg *Config, updateCh <-chan bool, eventCh chan<- MPDEvent) {
+func StatusUpdater(server *Server, updateCh <-chan bool, eventCh chan<- MPDEvent) {
 	lastSongID := ""
 
 	for range updateCh {
-		song, err := client.CurrentSong()
+		song, err := server.MPD.CurrentSong()
 		if err != nil {
 			log.Printf("Unable to fetch current song: %v", err)
 			continue
 		}
 
-		status, err := client.Status()
+		status, err := server.MPD.Status()
 		if err != nil {
 			log.Printf("Unable to fetch status: %v", err)
 			continue
@@ -413,7 +464,7 @@ func StatusUpdater(client *mpd.Client, cfg *Config, updateCh <-chan bool, eventC
 		// Send the appropiate event:
 		eventCh <- MPDEvent{
 			Path: filepath.Join(
-				cfg.MoodDir,
+				server.Config.MoodDir,
 				strings.Replace(song["file"], string(filepath.Separator), "|", -1),
 			),
 			SongChanged: songChanged,
@@ -429,9 +480,12 @@ func StatusUpdater(client *mpd.Client, cfg *Config, updateCh <-chan bool, eventC
 
 // Watcher instances and connects via channels the go routines that contain the actual logic.
 // It also triggers the logic by feeding mpd events to the go routine pipe.
-func Watcher(client *mpd.Client, cfg *Config) error {
+func Watcher(server *Server) error {
 	// Watch for 'player' events:
-	w, err := mpd.NewWatcher("tcp", fmt.Sprintf("%s:%d", cfg.Host, cfg.Port), "", "player")
+	addr := fmt.Sprintf("%s:%d", server.Config.MPDHost, server.Config.MPDPort)
+
+	log.Printf("Watching on %s", addr)
+	w, err := mpd.NewWatcher("tcp", addr, "", "player")
 	if err != nil {
 		log.Fatalf("Failed to create watcher: %v", err)
 		return err
@@ -456,9 +510,9 @@ func Watcher(client *mpd.Client, cfg *Config) error {
 	colorsCh := make(chan TimedColor)
 
 	// Start the respective go routines:
-	go MoodbarRunner(cfg, colorsCh)
+	go MoodbarRunner(server, colorsCh)
 	go MoodbarAdjuster(eventCh, colorsCh)
-	go StatusUpdater(client, cfg, updateCh, eventCh)
+	go StatusUpdater(server, updateCh, eventCh)
 
 	// Also sync extra every few seconds:
 	go func() {
@@ -474,11 +528,9 @@ func Watcher(client *mpd.Client, cfg *Config) error {
 		}
 	}()
 
-	// Block until something fatal happens:
-	sigint := make(chan os.Signal)
-	signal.Notify(sigint, os.Interrupt)
-	<-sigint
+	log.Printf("Press CTRL-C to interrupt")
 
+	<-server.Context.Done()
 	fmt.Println("\rInterrupted. Bye!")
 
 	// Attempt to clean up, close() should be propagated to the
@@ -487,10 +539,108 @@ func Watcher(client *mpd.Client, cfg *Config) error {
 	return nil
 }
 
-func RunDaemon(cfg *Config) error {
-	client, err := mpd.Dial("tcp", fmt.Sprintf("%s:%d", cfg.Host, cfg.Port))
+func handleConn(server *Server, driverStdin io.WriteCloser, conn net.Conn) {
+	defer conn.Close()
+
+	scn := bufio.NewScanner(conn)
+
+	for scn.Scan() {
+		switch cmd := scn.Text(); cmd {
+		case "off":
+			log.Printf("Disabling ambilight...")
+			server.Enable(false)
+
+			// Wait a short amount to make sure other colors
+			// get flushed:
+			time.Sleep(100 * time.Millisecond)
+			if _, err := driverStdin.Write([]byte("0 0 0\n")); err != nil {
+				log.Printf("Failed to turn light off: %v", err)
+			}
+		case "on":
+			log.Printf("Enabling ambilight...")
+			server.Enable(true)
+		case "state":
+			resp := []byte("0\n")
+			if server.Enabled() {
+				resp = []byte("1\n")
+			}
+
+			if _, err := conn.Write(resp); err != nil {
+				log.Printf("Failed to write back state response: %v", err)
+			}
+		case "quit":
+			log.Printf("Quitting ambilightd...")
+			server.Cancel()
+			return
+		case "close":
+			return
+		}
+	}
+
+	if err := scn.Err(); err != nil {
+		log.Printf("Failed to scan connection: %v", err)
+	}
+}
+
+func createNetworkListener(server *Server) error {
+	addr := fmt.Sprintf("%s:%d", server.Config.Host, server.Config.Port)
+	lsn, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatalf("Failed to connect to mpd: %v", err)
+		return err
+	}
+
+	log.Printf("Listening on %v", addr)
+
+	stdin, err := createDriverPipe(server.Config)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		defer stdin.Close()
+		defer lsn.Close()
+
+		for {
+			select {
+			case <-server.Context.Done():
+				break
+			default:
+			}
+
+			conn, err := lsn.Accept()
+			if err != nil {
+				log.Printf("Failed to accept connection: %v", err)
+				break
+			}
+
+			log.Printf("Accepting connection from %s", conn.RemoteAddr())
+			go handleConn(server, stdin, conn)
+		}
+	}()
+
+	return nil
+}
+
+func RunDaemon(cfg *Config, ctx context.Context) error {
+	addr := fmt.Sprintf("%s:%d", cfg.MPDHost, cfg.MPDPort)
+	mpdClient, err := mpd.Dial("tcp", addr)
+	if err != nil {
+		log.Fatalf("Failed to connect to mpd (%s): %v", addr, err)
+		return err
+	}
+
+	subCtx, cancel := context.WithCancel(ctx)
+
+	server := &Server{
+		Config:  cfg,
+		MPD:     mpdClient,
+		Context: subCtx,
+		Cancel:  cancel,
+	}
+
+	server.Enable(true)
+
+	if err := createNetworkListener(server); err != nil {
 		return err
 	}
 
@@ -499,7 +649,7 @@ func RunDaemon(cfg *Config) error {
 	// Make sure the mpd connection survives long timeouts:
 	go func() {
 		for range keepAlivePinger {
-			client.Ping()
+			mpdClient.Ping()
 			time.Sleep(1 * time.Minute)
 		}
 	}()
@@ -507,17 +657,19 @@ func RunDaemon(cfg *Config) error {
 	// Close pinger and client on exit:
 	defer func() {
 		close(keepAlivePinger)
-		client.Close()
+		mpdClient.Close()
 	}()
 
 	if cfg.UpdateMoodDatabase {
-		if err := updateMoodDatabase(client, cfg); err != nil {
+		if err := updateMoodDatabase(server); err != nil {
 			log.Fatalf("Failed to update the mood db: %v", err)
 		}
 
 		return err
 	}
 
+	log.Printf("Starting up...")
+
 	// Monitor MPD events and sync moodbar appropiately.
-	return Watcher(client, cfg)
+	return Watcher(server)
 }

@@ -23,8 +23,8 @@ func RunClock(lw *display.LineWriter, width int, ctx context.Context) {
 		hur, min, sec := now.Clock()
 		yer, mon, day := now.Date()
 
-		tm := util.Center(fmt.Sprintf("%02d:%02d:%02d", hur, min, sec), width)
-		dt := util.Center(fmt.Sprintf("%d %s %d", day, mon.String(), yer), width)
+		tm := util.Center(fmt.Sprintf("%02d:%02d:%02d", hur, min, sec), width, ' ')
+		dt := util.Center(fmt.Sprintf("%d %s %d", day, mon.String(), yer), width, ' ')
 
 		if _, err := lw.Formatf("line clock 1 %s", tm); err != nil {
 			log.Printf("Failed to send line 1 of clock: %v", err)
