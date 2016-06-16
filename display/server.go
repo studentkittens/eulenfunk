@@ -15,6 +15,50 @@ import (
 	"golang.org/x/net/context"
 )
 
+const (
+	GLYPH_HOURGLASS = 0
+	GLYPH_PLAY      = 1
+	GLYPH_PAUSE     = 2
+	GLYPH_HEART     = 3
+	GLYPH_CROSS     = 4
+	GLYPH_CHECK     = 5
+)
+
+var UnicodeToLCDCustom = map[rune]byte{
+	'▶': GLYPH_PLAY,
+	'⏸': GLYPH_PAUSE,
+	'❤': GLYPH_HEART,
+	'×': GLYPH_CROSS,
+	'✓': GLYPH_CHECK,
+	'ä': 133,
+	'Ä': 143,
+	'ü': 130,
+	'Ü': 153,
+	'ö': 149,
+	'Ö': 154,
+}
+
+func encode(s string) []byte {
+	// Iterate by rune:
+	encoded := []byte{}
+
+	for _, rn := range s {
+		b, ok := UnicodeToLCDCustom[rn]
+		if !ok {
+			if rn > 255 {
+				// Multibyte chars would be messed up anyways:
+				b = '?'
+			} else {
+				b = byte(rn)
+			}
+		}
+
+		encoded = append(encoded, b)
+	}
+
+	return encoded
+}
+
 /////////////////////////
 // LINE IMPLEMENTATION //
 /////////////////////////
@@ -87,17 +131,17 @@ func (ln *Line) SetText(text string) {
 	ln.Lock()
 	defer ln.Unlock()
 
-	if len(text) > len(ln.buf) {
-		text += " -*- "
+	encodedText := encode(text)
+	if len(encodedText) > len(ln.buf) {
+		text += " -*- " // TODO: nicer scrolling custom char
 	}
 
 	// Check if we need to re-render...
-	btext := []byte(text)
-	if !bytes.Equal(btext, ln.text) {
+	if !bytes.Equal(encodedText, ln.text) {
 		ln.scrollPos = 0
 	}
 
-	ln.text = btext
+	ln.text = encodedText
 	ln.redraw()
 }
 
