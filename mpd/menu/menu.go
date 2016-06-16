@@ -15,14 +15,13 @@ import (
 	"github.com/studentkittens/eulenfunk/util"
 )
 
-type Action func() error
-
 type Entry struct {
 	Text   string
 	Action Action
+	State  string
 }
 
-// TODO: Add State Entries that darw a [x] when set or [ ] when not
+type Action func() error
 
 type Menu struct {
 	Name    string
@@ -64,13 +63,19 @@ func (mn *Menu) Scroll(move int) {
 
 func (mn *Menu) Display() error {
 	for pos, entry := range mn.Entries {
-		line := entry.Text
-
+		prefix := "  "
 		if pos == mn.Cursor {
-			line = "> " + line
-		} else {
-			line = "  " + line
+			prefix = "> "
 		}
+
+		state := entry.State
+		if state != "" {
+			state = " [" + state + "]"
+		}
+
+		// TODO: get correct width.
+		midLen := 20 - len(prefix) - len(state)
+		line := fmt.Sprintf("%s%-*s%s", prefix, midLen, entry.Text, entry.State)
 
 		if _, err := mn.lw.Formatf("line %s %d %s", mn.Name, pos, line); err != nil {
 			return err
@@ -408,35 +413,60 @@ func Run(ctx context.Context) error {
 	go RunClock(lw, 20, ctx) // TODO: get width?
 	go RunSysinfo(lw, 20, ctx)
 
+	partyModeEntry := &Entry{
+		Text:  "Toggle PartyMode",
+		State: "On",
+	}
+
+	// partyModeEntry.Action = func() error {
+	// 	switch partyModeEntry.State {
+	// 	case "On":
+	// 		partyModeEntry.State == "Off"
+	// 	case
+	// 	}
+	// 	return nil
+	// }
+
 	mainMenu := []*Entry{
 		{
-			"Show status", switcher("mpd"),
+			Text:   "Show status",
+			Action: switcher("mpd"),
 		}, {
-			"Playlists", switcher("playlists"),
+			Text:   "Playlists",
+			Action: switcher("playlists"),
+		}, partyModeEntry,
+		{
+			Text:   "Clock",
+			Action: switcher("clock"),
 		}, {
-			"Toggle PartyMode", nil, // TODO
+			Text:   "System info",
+			Action: switcher("sysinfo"),
 		}, {
-			"Clock", switcher("clock"),
+			Text:   "Statistics",
+			Action: switcher("stats"),
 		}, {
-			"System info", switcher("sysinfo"),
+			Text:   "Switch Mono/Stereo",
+			Action: nil, // TODO
 		}, {
-			"Statistics", switcher("stats"),
+			Text:   "Toggle stop",
+			Action: mpdCommand("stop", mpdCmdCh),
+			State:  "play",
 		}, {
-			"Switch Mono/Stereo", nil, // TODO
-		}, {
-			"Stop playback", mpdCommand("stop", mpdCmdCh),
-		}, {
-			"Power", switcher("menu-power"),
+			Text:   "Power",
+			Action: switcher("menu-power"),
 		},
 	}
 
 	powerMenu := []*Entry{
 		{
-			"Poweroff", sysCommand("systemctl", "poweroff"),
+			Text:   "Poweroff",
+			Action: sysCommand("systemctl", "poweroff"),
 		}, {
-			"Reboot", sysCommand("systemctl", "reboot"),
+			Text:   "Reboot",
+			Action: sysCommand("systemctl", "reboot"),
 		}, {
-			"Exit", switcher("menu-main"),
+			Text:   "Exit",
+			Action: switcher("menu-main"),
 		},
 	}
 
