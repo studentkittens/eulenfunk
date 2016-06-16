@@ -16,26 +16,29 @@ import (
 )
 
 const (
-	GLYPH_HOURGLASS = 0
-	GLYPH_PLAY      = 1
-	GLYPH_PAUSE     = 2
-	GLYPH_HEART     = 3
-	GLYPH_CROSS     = 4
-	GLYPH_CHECK     = 5
+	GLYPH_HBAR  = 0
+	GLYPH_PLAY  = 1
+	GLYPH_PAUSE = 2
+	GLYPH_HEART = 3
+	GLYPH_CROSS = 4
+	GLYPH_CHECK = 5
+	GLYPH_STOP  = 6
 )
 
 var UnicodeToLCDCustom = map[rune]byte{
+	'━': GLYPH_HBAR,
 	'▶': GLYPH_PLAY,
 	'⏸': GLYPH_PAUSE,
 	'❤': GLYPH_HEART,
 	'×': GLYPH_CROSS,
 	'✓': GLYPH_CHECK,
-	'ä': 133,
-	'Ä': 143,
-	'ü': 130,
-	'Ü': 153,
-	'ö': 149,
-	'Ö': 154,
+	'⏹': GLYPH_STOP,
+	'ä': 132,
+	'Ä': 142,
+	'ü': 129,
+	'Ü': 152,
+	'ö': 148,
+	'Ö': 153,
 }
 
 func encode(s string) []byte {

@@ -30,7 +30,7 @@ type Separator struct {
 }
 
 func (sp *Separator) Render(w int, active bool) string {
-	return util.Center(strings.ToUpper(" "+sp.Title+" "), w, '=')
+	return util.Center(strings.ToUpper(" "+sp.Title+" "), w, '━')
 }
 
 func (sp *Separator) Name() string {
@@ -54,7 +54,7 @@ type Entry struct {
 func (en *Entry) Render(w int, active bool) string {
 	prefix := "  "
 	if active {
-		prefix = "> "
+		prefix = "❤ "
 	}
 
 	state := en.State
@@ -524,8 +524,8 @@ func Run(ctx context.Context) error {
 	go RunSysinfo(lw, 20, ctx)
 
 	partyModeEntry := &Entry{
-		Text:  "PartyMode",
-		State: "On",
+		Text:  "Party!",
+		State: "✓",
 	}
 
 	partyModeEntry.ActionFunc = func() error {
@@ -550,9 +550,9 @@ func Run(ctx context.Context) error {
 		}
 
 		if enabled {
-			partyModeEntry.State = "off"
+			partyModeEntry.State = "×"
 		} else {
-			partyModeEntry.State = "on"
+			partyModeEntry.State = "✓"
 		}
 
 		return mgr.Display()
@@ -568,7 +568,6 @@ func Run(ctx context.Context) error {
 			Text:       "Playlists",
 			ActionFunc: switcher("playlists"),
 		},
-		partyModeEntry,
 		&Entry{
 			Text:       "Clock",
 			ActionFunc: switcher("clock"),
@@ -582,14 +581,15 @@ func Run(ctx context.Context) error {
 			ActionFunc: switcher("stats"),
 		},
 		&Separator{"OPTIONS"},
+		partyModeEntry,
 		&Entry{
 			Text:       "Switch Mono/Stereo",
 			ActionFunc: nil, // TODO
 		},
 		&Entry{
-			Text:       "Toggle stop",
+			Text:       "Playback",
 			ActionFunc: mpdCommand("stop", mpdCmdCh),
-			State:      "play",
+			State:      "⏹",
 		},
 		&Separator{"SYSTEM"},
 		&Entry{

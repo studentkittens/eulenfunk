@@ -23,26 +23,27 @@ extern void lcdCharDef(const int fd, int index, unsigned char data [8]);
 
 // Glyph indices (max 8)
 enum {
-	GLYPH_HOURGLASS = 0,
+	GLYPH_HBAR = 0,
 	GLYPH_PLAY = 1,
 	GLYPH_PAUSE= 2,
 	GLYPH_HEART= 3,
 	GLYPH_CROSS = 4,
-	GLYPH_CHECK = 5
+	GLYPH_CHECK = 5,
+	GLYPH_STOP = 6
 };
 
 // See also: 
 // https://omerk.github.io/lcdchargen/
 
-static uint8_t GlyphDataHourglass[8] = {
+static uint8_t GlyphDataHBar[8] = {
+    0b00000,
+	0b00000,
 	0b11111,
-	0b00100,
-	0b01110,
-	0b11011,
-	0b11011,
-	0b01110,
-	0b00100,
-	0b11111
+	0b11111,
+	0b11111,
+	0b11111,
+	0b00000,
+	0b00000
 };
 
 static uint8_t GlyphDataPlay[8] = {
@@ -100,6 +101,16 @@ static uint8_t GlyphDataCheck[8] = {
 	0b00000
 };
 
+static uint8_t GlyphDataStop[8] = {
+	0b00000,
+	0b00000,
+	0b00000,
+	0b01110,
+	0b01110,
+	0b01110,
+	0b00000,
+	0b00000
+};
 
 static int read_from_stdin(int handle) {
 	const int n = LCD_WIDTH + 4 + 1;
@@ -226,12 +237,13 @@ int main(int argc, char **argv) {
 	lcdClear(handle);
 
 	// Custom glyph definitions:
-	lcdCharDef(handle, GLYPH_HOURGLASS, GlyphDataHourglass);
-	lcdCharDef(handle, GLYPH_PLAY,      GlyphDataPlay);
-	lcdCharDef(handle, GLYPH_PAUSE,     GlyphDataPause);
-	lcdCharDef(handle, GLYPH_HEART,     GlyphDataHeart);
-	lcdCharDef(handle, GLYPH_CROSS,     GlyphDataCross);
-	lcdCharDef(handle, GLYPH_CHECK,     GlyphDataCheck);
+	lcdCharDef(handle, GLYPH_HBAR,  GlyphDataHBar);
+	lcdCharDef(handle, GLYPH_PLAY,  GlyphDataPlay);
+	lcdCharDef(handle, GLYPH_PAUSE, GlyphDataPause);
+	lcdCharDef(handle, GLYPH_HEART, GlyphDataHeart);
+	lcdCharDef(handle, GLYPH_CROSS, GlyphDataCross);
+	lcdCharDef(handle, GLYPH_CHECK, GlyphDataCheck);
+	lcdCharDef(handle, GLYPH_STOP,  GlyphDataStop);
 
 	if(argc >= 2) {
 		if(!strcmp("print-charset", argv[1])) {
