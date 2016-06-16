@@ -42,7 +42,7 @@ func (mn *Menu) AddEntry(entry *Entry) {
 	mn.Entries = append(mn.Entries, entry)
 }
 
-func (mn *Menu) ActiveName() string {
+func (mn *Menu) ActiveEntryName() string {
 	if len(mn.Entries) == 0 {
 		return ""
 	}
@@ -170,15 +170,18 @@ func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, er
 			active := mgr.Active
 			mgr.Unlock()
 
-			if err := active.Click(); err != nil {
-				name := active.ActiveName()
-				log.Printf("Action for menu entry `%s` failed: %v", name, err)
+			// Check if we're actually in a menu:
+			if mgr.ActiveWindow() == active.Name {
+			// if strings.HasPrefix(mgr.ActiveWindow(), "menu-") {
+				if err := active.Click(); err != nil {
+					name := active.ActiveEntryName()
+					log.Printf("Action for menu entry `%s` failed: %v", name, err)
+				}
 			}
 		}
 	}()
 
 	go func() {
-
 		for duration := range rty.Pressed {
 			log.Printf("Pressed for %s", duration)
 			mgr.Lock()
