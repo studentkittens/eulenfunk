@@ -30,7 +30,7 @@ type Separator struct {
 }
 
 func (sp *Separator) Render(w int, active bool) string {
-	return util.Center(sp.Title, w, '-')
+	return util.Center(strings.ToUpper(" " + sp.Title + " "), w, '=')
 }
 
 func (sp *Separator) Name() string {
@@ -106,28 +106,37 @@ func (mn *Menu) ActiveEntryName() string {
 	return mn.Entries[mn.Cursor].Name()
 }
 
+func (mn *Menu) scrollToNextSelectable(up bool) {
+	for mn.Cursor >= 0 && mn.Cursor < len(mn.Entries) && !mn.Entries[mn.Cursor].Selectable() {
+		if up {
+			mn.Cursor++
+		} else {
+			mn.Cursor--;
+		}
+	}
+}
+
 func (mn *Menu) Scroll(move int) {
 	mn.Cursor += move
 	if mn.Cursor < 0 {
 		mn.Cursor = 0
 	}
 
-	if mn.Cursor >= len(mn.Entries) {
-		mn.Cursor = len(mn.Entries) - 1
-	}
-
 	// Find the next selectable item:
-	for mn.Entries[mn.Cursor].Selectable() {
+	for mn.Cursor < len(mn.Entries) && !mn.Entries[mn.Cursor].Selectable() {
 		mn.Cursor++
 	}
 
+	attempt := mn.Cursor
+	
+	up := move >= 0
+	mn.scrollToNextSelectable(up)
+
 	// None found? Try to wrap around:
 	if mn.Cursor >= len(mn.Entries) {
-		mn.Cursor = 0
+		mn.Cursor = attempt
+		mn.scrollToNextSelectable(!up)
 
-		for mn.Entries[mn.Cursor].Selectable() {
-			mn.Cursor++
-		}
 	}
 
 	// Security check when no selectable item is there:
@@ -140,6 +149,7 @@ func (mn *Menu) Display() error {
 	for pos, entry := range mn.Entries {
 		// TODO: pass config width
 		line := entry.Render(20, pos == mn.Cursor)
+		log.Printf("ACtive %t %d == %d %s", pos == mn.Cursor, pos, mn.Cursor, line)
 
 		if _, err := mn.lw.Formatf("line %s %d %s", mn.Name, pos, line); err != nil {
 			return err
@@ -398,6 +408,9 @@ func (mgr *MenuManager) AddMenu(name string, entries []MenuLine) error {
 		mgr.Active = menu
 		mgr.Active.Display()
 	}
+
+	// Pre-select first selectable entry:
+	menu.Scroll(0)
 
 	mgr.Menus[name] = menu
 	return nil
