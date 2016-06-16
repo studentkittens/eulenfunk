@@ -17,9 +17,7 @@ func NewClient(cfg *Config) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{
-		conn: conn,
-	}, nil
+	return &Client{conn: conn}, nil
 }
 
 func (cl *Client) send(s string) error {

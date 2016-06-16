@@ -608,6 +608,8 @@ func RunDaemon(cfg *Config, ctx context.Context) error {
 		Cancel:  cancel,
 	}
 
+	server.Enable(true)
+
 	if err := createNetworkListener(server); err != nil {
 		return err
 	}
