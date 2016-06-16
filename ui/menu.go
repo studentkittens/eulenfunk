@@ -30,7 +30,7 @@ type Separator struct {
 }
 
 func (sp *Separator) Render(w int, active bool) string {
-	return util.Center(strings.ToUpper(" " + sp.Title + " "), w, '=')
+	return util.Center(strings.ToUpper(" "+sp.Title+" "), w, '=')
 }
 
 func (sp *Separator) Name() string {
@@ -111,37 +111,29 @@ func (mn *Menu) scrollToNextSelectable(up bool) {
 		if up {
 			mn.Cursor++
 		} else {
-			mn.Cursor--;
+			mn.Cursor--
 		}
+	}
+
+	if mn.Cursor < 0 {
+		mn.Cursor = 0
+	}
+
+	if mn.Cursor >= len(mn.Entries) {
+		mn.Cursor = len(mn.Entries) - 1
+		mn.scrollToNextSelectable(!up)
 	}
 }
 
 func (mn *Menu) Scroll(move int) {
 	mn.Cursor += move
-	if mn.Cursor < 0 {
-		mn.Cursor = 0
-	}
 
-	// Find the next selectable item:
-	for mn.Cursor < len(mn.Entries) && !mn.Entries[mn.Cursor].Selectable() {
-		mn.Cursor++
-	}
-
-	attempt := mn.Cursor
-	
 	up := move >= 0
 	mn.scrollToNextSelectable(up)
 
-	// None found? Try to wrap around:
-	if mn.Cursor >= len(mn.Entries) {
-		mn.Cursor = attempt
+	// Check if we succeeded:
+	if !mn.Entries[mn.Cursor].Selectable() {
 		mn.scrollToNextSelectable(!up)
-
-	}
-
-	// Security check when no selectable item is there:
-	if mn.Cursor >= len(mn.Entries) {
-		mn.Cursor = 0
 	}
 }
 
@@ -246,7 +238,7 @@ func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, er
 
 			// Check if we're actually in a menu:
 			if mgr.ActiveWindow() == active.Name {
-			// if strings.HasPrefix(mgr.ActiveWindow(), "menu-") {
+				// if strings.HasPrefix(mgr.ActiveWindow(), "menu-") {
 				if err := active.Click(); err != nil {
 					name := active.ActiveEntryName()
 					log.Printf("Action for menu entry `%s` failed: %v", name, err)
