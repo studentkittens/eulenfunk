@@ -30,7 +30,7 @@ func (cl *Client) send(s string) error {
 }
 
 func (cl *Client) Enabled() (bool, error) {
-	if err := cl.send("quit"); err != nil {
+	if err := cl.send("state"); err != nil {
 		return false, err
 	}
 

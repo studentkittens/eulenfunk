@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -261,6 +262,10 @@ func main() {
 				Usage: "Disable the ambilight temporarily if it runs elsewhere",
 			},
 			cli.BoolFlag{
+				Name:  "state",
+				Usage: "Print the current state of ambilight (on/off)",
+			},
+			cli.BoolFlag{
 				Name:  "quit",
 				Usage: "Quit the ambilight daemon",
 			},
@@ -280,8 +285,8 @@ func main() {
 				BinaryName:         ctx.String("driver"),
 			}
 
-			on, off, quit := ctx.Bool("on"), ctx.Bool("off"), ctx.Bool("quit")
-			if on || off || quit {
+			on, off, quit, state := ctx.Bool("on"), ctx.Bool("off"), ctx.Bool("quit"), ctx.Bool("state")
+			if on || off || quit || state {
 				client, err := ambilight.NewClient(cfg)
 				if err != nil {
 					log.Printf("Failed to connect to ambilightd: %v", err)
@@ -293,6 +298,19 @@ func main() {
 					return client.Enable(true)
 				case off:
 					return client.Enable(false)
+				case state:
+					enabled, err := client.Enabled()
+					if err != nil {
+						log.Printf("Failed to get state: %v", err)
+						return err
+					}
+
+					if enabled {
+						fmt.Println("on")
+					} else {
+						fmt.Println("off")
+					}
+					return nil
 				case quit:
 					log.Printf("do quit")
 					return client.Quit()
