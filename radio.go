@@ -220,26 +220,50 @@ func main() {
 		Usage: "Control the ambilight feature",
 		Flags: []cli.Flag{
 			cli.StringFlag{
+				Name:   "host,H",
+				Value:  "localhost",
+				Usage:  "Host of the internal control server",
+				EnvVar: "AMBI_HOST",
+			},
+			cli.IntFlag{
+				Name:   "port,p",
+				Value:  4444,
+				Usage:  "Port of the internal control server",
+				EnvVar: "AMBI_PORT",
+			},
+			cli.StringFlag{
 				Name:   "music-dir,m",
 				Value:  "",
-				Usage:  "MPD port to connect to",
+				Usage:  "Root directory where mpd thins the music is",
 				EnvVar: "AMBI_MUSIC_DIR",
 			},
 			cli.StringFlag{
 				Name:   "mood-dir,i",
 				Value:  "",
-				Usage:  "MPD port to connect to",
+				Usage:  "Where the mood files are stored",
 				EnvVar: "AMBI_MOOD_DIR",
 			},
 			cli.StringFlag{
 				Name:   "driver,b",
 				Value:  "catlight",
-				Usage:  "MPD port to connect to",
+				Usage:  "Which driver to output the RGB values on",
 				EnvVar: "AMBI_DRIVER",
 			},
 			cli.BoolFlag{
 				Name:  "update-mood-db,u",
 				Usage: "Update the mood database and exit afterwards",
+			},
+			cli.BoolFlag{
+				Name:  "on",
+				Usage: "Enable the ambilight if it runs elsewhere",
+			},
+			cli.BoolFlag{
+				Name:  "off",
+				Usage: "Disable the ambilight temporarily if it runs elsewhere",
+			},
+			cli.BoolFlag{
+				Name:  "quit",
+				Usage: "Close the catlight when ",
 			},
 		},
 		Action: func(ctx *cli.Context) error {
@@ -250,14 +274,36 @@ func main() {
 				return fmt.Errorf("Need both --music-dir and --mood-dir")
 			}
 
-			return ambilight.RunDaemon(&ambilight.Config{
-				Host:               ctx.GlobalString("mpd-host"),
-				Port:               ctx.GlobalInt("mpd-port"),
+			cfg := &ambilight.Config{
+				Host:               ctx.String("host"),
+				Port:               ctx.Int("port"),
+				MPDHost:            ctx.GlobalString("mpd-host"),
+				MPDPort:            ctx.GlobalInt("mpd-port"),
 				MusicDir:           musicDir,
 				MoodDir:            moodyDir,
 				UpdateMoodDatabase: ctx.Bool("update-mood-db"),
 				BinaryName:         ctx.String("driver"),
-			})
+			}
+
+			on, off, quit := ctx.Bool("on"), ctx.Bool("off"), ctx.Bool("quit")
+			if on || off || quit {
+				client, err := ambilight.NewClient(cfg)
+				if err != nil {
+					log.Printf("Failed to connect to ambilightd: %v", err)
+					return err
+				}
+
+				switch {
+				case on:
+					return client.Enable(true)
+				case off:
+					return client.Enable(false)
+				case quit:
+					return client.Quit()
+				}
+			}
+
+			return ambilight.RunDaemon(cfg, killCtx)
 		},
 	},
 	}

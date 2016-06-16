@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/studentkittens/eulenfunk/ambilight"
 	"github.com/studentkittens/eulenfunk/display"
 	"github.com/studentkittens/eulenfunk/ui/mpdinfo"
 	"github.com/studentkittens/eulenfunk/util"
@@ -74,8 +75,8 @@ func (mn *Menu) Display() error {
 		}
 
 		// TODO: get correct width.
-		midLen := 20 - len(prefix) - len(state)
-		line := fmt.Sprintf("%s%-*s%s", prefix, midLen, entry.Text, entry.State)
+		midLen := 20 - len(prefix) - len(state) + 1
+		line := fmt.Sprintf("%s%-*s%s", prefix, midLen, entry.Text, state)
 
 		if _, err := mn.lw.Formatf("line %s %d %s", mn.Name, pos, line); err != nil {
 			return err
@@ -238,6 +239,13 @@ func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, er
 	}()
 
 	return mgr, nil
+}
+
+func (mgr *MenuManager) Display() error {
+	mgr.Lock()
+	defer mgr.Unlock()
+
+	return mgr.Active.Display()
 }
 
 func (mgr *MenuManager) ActiveWindow() string {
@@ -428,14 +436,35 @@ func Run(ctx context.Context) error {
 		State: "On",
 	}
 
-	// partyModeEntry.Action = func() error {
-	// 	switch partyModeEntry.State {
-	// 	case "On":
-	// 		partyModeEntry.State == "Off"
-	// 	case
-	// 	}
-	// 	return nil
-	// }
+	partyModeEntry.Action = func() error {
+		client, err := ambilight.NewClient(&ambilight.Config{
+			Host: "localhost",
+			Port: 4444,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		defer client.Close()
+
+		enabled, err := client.Enabled()
+		if err != nil {
+			return err
+		}
+
+		if err := client.Enable(!enabled); err != nil {
+			return err
+		}
+
+		if enabled {
+			partyModeEntry.State = "off"
+		} else {
+			partyModeEntry.State = "on"
+		}
+
+		return mgr.Display()
+	}
 
 	mainMenu := []*Entry{
 		{
