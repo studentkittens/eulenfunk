@@ -88,7 +88,7 @@ nur schwer bzw. vereinzelt zu finden sind:
 * Unterstützung bestimmter WLAN--Authentifizierungsstandards
 * Einhängen von benutzerdefinierten Shares wie *Samba*, *NFS*, *SSHFS*
 * Unterstützung verschiedener *lossy* und *lossless* Formate *OGG VORBIS*, *FLAC*, u.a.
-* Integration verschiedener Dienste wie beispielsweise *Spotify*
+* Integration verschiedener Dienste wie beispielsweise *Spotify* möglich
 * Benutzerdefinierte Anzeigemöglichkeiten (Uhrzeit, Wetter, et. cetera.)
 
 
@@ -111,7 +111,11 @@ Das Radio soll dem Benutzer folgende Hardwarekonfigurationsmöglichkeiten bieten
 
 * Anschluß passive Lautsprecher/Kopfhörer möglich 
 * Verwendung des Internen Lautsprechers des alten Radios
-* Dimmbare RGB--LED Statusanzeige 
+* Statusinformationen über aktuelles Lied beispielsweise über LCD
+* LED als Statusanzeige und Moodbarvisualisierung[^MOODBAR]
+* USB--Anschlussmöglichkeit für externe Datenträger
+
+[^MOODBAR]: Moodbar: \url{https://en.wikipedia.org/wiki/Moodbar}
 
 ## Softwareanforderungen
 
@@ -317,7 +321,7 @@ Der BC547C Transitor benötigt eine durchschnittliche  $U_{BE}$ = 0,7V. Die
 GPIO-Pins des *Raspberry Pi* haben eine Spannungspegel von 3.3V. Daraus ergibt
 sich folgende Berechnung des Basis--Vorwiderstandes:
 
-$$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{270mA}
+$$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{270\mu A}
 = 9629 \Omega \approx 10k \Omega $$
 
 [^SEM]: SEMTECH: \url{http://pdf1.alldatasheet.com/datasheet-pdf/view/42386/SEMTECH/BC547.html}
@@ -331,6 +335,18 @@ $$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{270mA}
   \caption{Transistor--RGB--LED Schaltung}
   \label{transled}
 \end{figure}
+
+
+Die Ansteuerung der Transistoren beziehungsweise die Ansteuerung von LED über
+GPIO erfolgt binär. Das heisst, dass die LED entweder aus (GPIO low) oder an
+sein kann (GPIO high).
+
+In der ,,analogen'' Welt ist es möglich eine LED über das Senken der Spannung zu
+dimmen. Um ein Dimmen in der digitalen Welt zu erreichen wird ein
+Modulationsverfahren angwandt, welches Pulsweitenmodulation heisst. Hierbei
+wird...elch? Weitere Informationen finden sich auch unter @richardson2014make
+@gay2014raspberry und @gay2014mastering. Software PWM in @gay2014experimenting.
+Hier beispielsweise 6% CPU--Last pro GPIO--Pin. 
 
 ## USB--Hub und Netzteil
 
@@ -348,9 +364,8 @@ mit nur der USB--Verbindung zum Hub bootete.
 
 Da bei der Speisung über die USB--Schnittstelle die interne Sicherungschaltung
 des *Pi* umgangen werden, besteht hier die zusätzliche Gefahr eines
-Hardwaredefektes durch die Speisung einer zusätzlichen Spannungsquelle. Da in
-unserem Fall jedoch nur eine Spannungsquelle existiert, wird das Problem als
-vernachlässigbar klassifiziert.
+Hardwaredefektes durch die Speisung einer zusätzlichen Spannungsquelle. Weitere
+Informationen zu dem Problem finden sich unter @suehle2014hacks.
 
 
 ## Gehäuse
@@ -368,20 +383,30 @@ Knöpfe schwarz mit Alu-Optik
 ## Betriebssystem
 
 Mittlerweile gibt es für den *Raspberry Pi* viele offiziell zugeschnittene
-Betriebssysteme[^OS]. Bei den den Linux Distributionen ist *RASPBIAN* eine der
-bekanntesten Distribution -- welches auf *Debian* basiert.
+Betriebssysteme[^OS]. Bei den den Linux Distributionen ist *Raspbian* eine der
+bekanntesten Distribution -- welche auf *Debian* basiert. *Raspbian* bringt ein
+komplettes Linux--basiertes System mit grafischer Benutzeroberfläche mit sich. 
 
-Da *Debian* seinen Fokus auf ,,Stabilität'' hat, sind die Pakete der
-Distribution des Öfteren älter. Ein weiterer ,,Nachteil'' sind aktuell feste
-Release--Zyklen, wünschenswert wäre eine Rolling--Release Distribution, welche
-nur einmalig installiert werden muss und kontinuierlich auf den aktuellsten
-Stand geupdated werden kann.
+Neben den unter[^OS] genannten Distributionen gibt es mittlerweile auch Windows
+10 IoT (Internet of Things) für den *Rapberry Pi*. Dieses speziell für den
+Embedded Bereich ausgerichtete Windwos benötigt jedoch eine ARMv7--CPU als
+Mindestanforderung, was unseren ,,alten Raspberry'' ausschließen würde.
+Desweiteren wäre für uns eine propritäre Lösung ein K.O.--Kriterium, da
+diese alle Vorteile von Freier Software zu nichte machen würde.
 
-Eine bekannter Vertreter von Rolling--Release--Distributionen ist *Arch Linux*,
-von welcher es auch einen ARM--Port[^ARCH] gibt. Ein weiterer Vorteil ist bei
-*Arch Linux* das *AUR* (Arch User Repository)[^AUR], dieses erlaubt es eigene Software
-auf eine schnelle und unkomplizierte Weise der Allgemeinheit zur Verfügung zu
-stellen.
+[^WINIOT]: ARMv7 für Win 10 IoT:  \url{http://raspberrypi.stackexchange.com/questions/39715/can-you-put-windows-10-iot-core-on-raspberry-pi-zero}
+
+### Wahl des Betriebbsystems
+
+*Arch Linux ARM* ist eine minimalistische und sehr performante
+Linux--Distribution welche im Gegensatz zu *Raspbian* ohne Desktopumgebung
+geliefert wird (vgl. @schmidt2014raspberry) Desweiteren ist *Arch Linux* ein
+bekannter Vertreter von Rolling--Release--Distributionen. Ein weiterer Vorteil
+für unseren Einsatzzweck hier ist bei *Arch Linux* das *AUR* (Arch User
+Repository)[^AUR], dieses erlaubt es eigene Software auf eine schnelle und
+unkomplizierte Weise der Allgemeinheit zur Verfügung zu stellen.
+
+### Einrichtung des Grundsystems
 
 Nach der Installation und dem ersten Booten des Grundsystems muss die
 Netzwerk--Schnittstelle konfiguriert werden. Arch Linux ARM bietet mit *netctl*
@@ -453,8 +478,48 @@ Von Elchen kopiert.
 
 Ja?
 
+## Erweiterungen und alternative Ansätze
+
+### Audio--Visualisierung
+
+Beim Projekt *Eulenfunk* wird die Visualisierung von Musik aufgrund der
+begrenzten Zeit und Hardwareressourcen des *Raspberry Pi *über eine
+vorberechnete Moodbar--Datei realisiert. Dieser Ansatz funktioniert bei nicht
+live gestreamter Musik gut. Bei live gestreamter Musik könnte für die
+Visualisierung eine Fast--Fourier--Transformation in Echtzeit durchgeführt
+werden. Da jedoch die Ressourcen des *Raspberry Pi* sehr begrenzt sollte hier
+auf die Verwendung einer GPU--beschleunigte--FFT[^FFT] zurückgegriffen werden.
+
+Ein alternativer Ansatz wäre auch die Realisierung einer Musik--Visualisierung
+mittels Hardwarekomponenten. Ein möglicher Ansatz aus hardwarebasierten
+Hochpass-- und Tiefpassfiltern in Form einer Disco--Beleuchtung wird unter @2014projekte beschrieben.
+
+### Echtzeit--Uhr
+
+Der *Raspberry Pi* besitzt keine Hardware--Uhr. Aufgrund der Tatsache dass es
+sich bei *Eulenfunk* um eine Internet--Radio handelt wurde auf eine Echtzeituhr
+(real time clock, RTC) verzichtet, da sich die Uhr *Eulenfunk* aufgrund der
+permanenten Internetverbindung mittels NTP[^NTP] über das Internet
+synchronisieren kann. Eine Erweiterung um eine Echtzeituhr wird in
+@horan2013practical und @gay2014experimenting ausführlich beschreiben.
+
+[^NTP]: Network Time Protocol:
+\url{https://de.wikipedia.org/wiki/Network_Time_Protocol}
+[^FFT]: GPU--beschleunigte FFT auf dem Raspberry Pi:
+\url{http://www.aholme.co.uk/GPU_FFT/Main.htm}
+
 ## Mögliche Verbesserungen?
 
-* Alpine Linux da RAM--only Betrieb möglich
+### Alpine Linux 
+
+Die relativ junge Linux--Distribution *Alpine Linux*[^APL] wäre eine Mögliche
+Verbesserung für den Einsatz des Internetradios. Diese Distribution hat ihren
+Fokus auf Ressourceneffizienz und Systemsicherheit. Ein weiterer Vorteil wäre
+der `diskless mode`, welcher das Komplette Betriebssystem in den Arbeitsspeicher
+lädt. In diesem Modus müssen Änderungen mit einem commit-Tool explizit auf die
+Festplatte geschrieben werden. Das hätte den Vorteil, dass man die Abnutzung des
+Flash--Speichers, durch unnötige Schreib/Lese--Vogänge, minimieren würde.
+
+[^APL]: Alpine Linux für Raspberry Pi: \url{https://wiki.alpinelinux.org/wiki/Raspberry_Pi}
 
 # Literaturverzeichnis
