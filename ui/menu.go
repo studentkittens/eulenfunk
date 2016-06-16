@@ -16,17 +16,60 @@ import (
 	"github.com/studentkittens/eulenfunk/util"
 )
 
-type Entry struct {
-	Text   string
-	Action Action
-	State  string
+type Action func() error
+
+type MenuLine interface {
+	Render(w int) string
+	Name() string
+	Action() error
 }
 
-type Action func() error
+type Separator struct {
+	Title string
+}
+
+func (sp *Separator) Render(w int) string {
+	return util.Center(sp.Title, w, '-')
+}
+
+func (sp *Separator) Name() string {
+	return sp.Title
+}
+
+func (sp *Separator) Action() error {
+	return nil
+}
+
+type Entry struct {
+	Text       string
+	ActionFunc Action
+	State      string
+}
+
+func (en *Entry) Render(w int) string {
+	state := en.State
+	if state != "" {
+		state = " [" + state + "]"
+	}
+
+	return fmt.Sprintf("%-*s%s", w-len(state), en.Text, state)
+}
+
+func (en *Entry) Name() string {
+	return en.Text
+}
+
+func (en *Entry) Action() error {
+	if en.ActionFunc != nil {
+		return en.ActionFunc()
+	}
+
+	return nil
+}
 
 type Menu struct {
 	Name    string
-	Entries []*Entry
+	Entries []MenuLine
 	Cursor  int
 
 	lw *display.LineWriter
@@ -39,16 +82,12 @@ func NewMenu(name string, lw *display.LineWriter) (*Menu, error) {
 	}, nil
 }
 
-func (mn *Menu) AddEntry(entry *Entry) {
-	mn.Entries = append(mn.Entries, entry)
-}
-
 func (mn *Menu) ActiveName() string {
 	if len(mn.Entries) == 0 {
 		return ""
 	}
 
-	return mn.Entries[mn.Cursor].Text
+	return mn.Entries[mn.Cursor].Name()
 }
 
 func (mn *Menu) Scroll(move int) {
@@ -69,14 +108,8 @@ func (mn *Menu) Display() error {
 			prefix = "> "
 		}
 
-		state := entry.State
-		if state != "" {
-			state = " [" + state + "]"
-		}
-
-		// TODO: get correct width.
-		midLen := 20 - len(prefix) - len(state) + 1
-		line := fmt.Sprintf("%s%-*s%s", prefix, midLen, entry.Text, state)
+		// TODO: pass config width
+		line := prefix + entry.Render(18)
 
 		if _, err := mn.lw.Formatf("line %s %d %s", mn.Name, pos, line); err != nil {
 			return err
@@ -315,7 +348,7 @@ func (mgr *MenuManager) AddTimedAction(after time.Duration, action Action) {
 	mgr.TimedActions[after] = action
 }
 
-func (mgr *MenuManager) AddMenu(name string, entries []*Entry) error {
+func (mgr *MenuManager) AddMenu(name string, entries []MenuLine) error {
 	mgr.Lock()
 	defer mgr.Unlock()
 
@@ -325,7 +358,7 @@ func (mgr *MenuManager) AddMenu(name string, entries []*Entry) error {
 	}
 
 	for _, entry := range entries {
-		menu.AddEntry(entry)
+		menu.Entries = append(menu.Entries, entry)
 	}
 
 	if mgr.Active == nil {
@@ -436,7 +469,7 @@ func Run(ctx context.Context) error {
 		State: "On",
 	}
 
-	partyModeEntry.Action = func() error {
+	partyModeEntry.ActionFunc = func() error {
 		client, err := ambilight.NewClient(&ambilight.Config{
 			Host: "localhost",
 			Port: 4444,
@@ -466,46 +499,58 @@ func Run(ctx context.Context) error {
 		return mgr.Display()
 	}
 
-	mainMenu := []*Entry{
-		{
-			Text:   "Show status",
-			Action: switcher("mpd"),
-		}, {
-			Text:   "Playlists",
-			Action: switcher("playlists"),
-		}, partyModeEntry,
-		{
-			Text:   "Clock",
-			Action: switcher("clock"),
-		}, {
-			Text:   "System info",
-			Action: switcher("sysinfo"),
-		}, {
-			Text:   "Statistics",
-			Action: switcher("stats"),
-		}, {
-			Text:   "Switch Mono/Stereo",
-			Action: nil, // TODO
-		}, {
-			Text:   "Toggle stop",
-			Action: mpdCommand("stop", mpdCmdCh),
-			State:  "play",
-		}, {
-			Text:   "Power",
-			Action: switcher("menu-power"),
+	mainMenu := []MenuLine{
+		&Separator{"MODES"},
+		&Entry{
+			Text:       "Music status",
+			ActionFunc: switcher("mpd"),
+		},
+		&Entry{
+			Text:       "Playlists",
+			ActionFunc: switcher("playlists"),
+		},
+		partyModeEntry,
+		&Entry{
+			Text:       "Clock",
+			ActionFunc: switcher("clock"),
+		},
+		&Entry{
+			Text:       "System info",
+			ActionFunc: switcher("sysinfo"),
+		},
+		&Entry{
+			Text:       "Statistics",
+			ActionFunc: switcher("stats"),
+		},
+		&Separator{"OPTIONS"},
+		&Entry{
+			Text:       "Switch Mono/Stereo",
+			ActionFunc: nil, // TODO
+		},
+		&Entry{
+			Text:       "Toggle stop",
+			ActionFunc: mpdCommand("stop", mpdCmdCh),
+			State:      "play",
+		},
+		&Separator{"SYSTEM"},
+		&Entry{
+			Text:       "Power",
+			ActionFunc: switcher("menu-power"),
 		},
 	}
 
-	powerMenu := []*Entry{
-		{
-			Text:   "Poweroff",
-			Action: sysCommand("systemctl", "poweroff"),
-		}, {
-			Text:   "Reboot",
-			Action: sysCommand("systemctl", "reboot"),
-		}, {
-			Text:   "Exit",
-			Action: switcher("menu-main"),
+	powerMenu := []MenuLine{
+		&Entry{
+			Text:       "Poweroff",
+			ActionFunc: sysCommand("systemctl", "poweroff"),
+		},
+		&Entry{
+			Text:       "Reboot",
+			ActionFunc: sysCommand("systemctl", "reboot"),
+		},
+		&Entry{
+			Text:       "Exit",
+			ActionFunc: switcher("menu-main"),
 		},
 	}
 
