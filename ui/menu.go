@@ -115,13 +115,13 @@ func (mn *Menu) scrollToNextSelectable(up bool) {
 		}
 	}
 
+	// Clamp value if nothing suitable was found in that direction:
 	if mn.Cursor < 0 {
 		mn.Cursor = 0
 	}
 
 	if mn.Cursor >= len(mn.Entries) {
 		mn.Cursor = len(mn.Entries) - 1
-		mn.scrollToNextSelectable(!up)
 	}
 }
 
@@ -281,8 +281,12 @@ func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, er
 
 	go func() {
 		for value := range rty.Value {
-
 			mgr.Lock()
+			if mgr.Active == nil {
+				mgr.Unlock()
+				continue
+			}
+
 			mgr.lastValue = mgr.currValue
 			mgr.currValue = value
 			diff := mgr.currValue - mgr.lastValue
