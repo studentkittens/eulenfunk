@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"golang.org/x/net/context"
 
@@ -62,7 +63,8 @@ func (en *Entry) Render(w int, active bool) string {
 		state = " [" + state + "]"
 	}
 
-	return fmt.Sprintf("%s%-*s%s", prefix, w-len(state)-len(prefix), en.Text, state)
+	m := w - utf8.RuneCountInString(state) - utf8.RuneCountInString(prefix)
+	return fmt.Sprintf("%s%-*s%s", prefix, m, en.Text, state)
 }
 
 func (en *Entry) Name() string {
