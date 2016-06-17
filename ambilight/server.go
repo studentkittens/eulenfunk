@@ -20,9 +20,9 @@ import (
 	"golang.org/x/net/context"
 
 	// External dependencies:
-	"github.com/fhs/gompd/mpd"
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/studentkittens/eulenfunk/lightd"
+	"github.com/studentkittens/eulenfunk/ui/mpd"
 )
 
 type Config struct {
@@ -54,7 +54,7 @@ type Config struct {
 type Server struct {
 	sync.Mutex
 	Config  *Config
-	MPD     *mpd.Client
+	MPD     *mpd.ReMPD
 	Context context.Context
 	Cancel  context.CancelFunc
 
@@ -117,7 +117,7 @@ func updateMoodDatabase(server *Server) error {
 		return err
 	}
 
-	paths, err := server.MPD.GetFiles()
+	paths, err := server.MPD.Client().GetFiles()
 	if err != nil {
 		return fmt.Errorf("Cannot get all files from mpd: %v", err)
 	}
@@ -416,13 +416,13 @@ func StatusUpdater(server *Server, updateCh <-chan bool, eventCh chan<- MPDEvent
 	lastSongID := ""
 
 	for range updateCh {
-		song, err := server.MPD.CurrentSong()
+		song, err := server.MPD.Client().CurrentSong()
 		if err != nil {
 			log.Printf("Unable to fetch current song: %v", err)
 			continue
 		}
 
-		status, err := server.MPD.Status()
+		status, err := server.MPD.Client().Status()
 		if err != nil {
 			log.Printf("Unable to fetch status: %v", err)
 			continue
@@ -485,20 +485,9 @@ func Watcher(server *Server) error {
 	addr := fmt.Sprintf("%s:%d", server.Config.MPDHost, server.Config.MPDPort)
 
 	log.Printf("Watching on %s", addr)
-	w, err := mpd.NewWatcher("tcp", addr, "", "player")
-	if err != nil {
-		log.Fatalf("Failed to create watcher: %v", err)
-		return err
-	}
+	watcher := mpd.NewReWatcher(server.Config.MPDHost, server.Config.MPDPort, "player")
 
-	defer w.Close()
-
-	// Log mpd errors, but don't handle them more than that:
-	go func() {
-		for err := range w.Error {
-			log.Println("Error:", err)
-		}
-	}()
+	defer watcher.Close()
 
 	// Watcher -> StatusUpdater
 	updateCh := make(chan bool)
@@ -523,7 +512,7 @@ func Watcher(server *Server) error {
 
 	// ..but directly react on a changed player event:
 	go func() {
-		for range w.Event {
+		for range watcher.Events {
 			updateCh <- true
 		}
 	}()
@@ -622,18 +611,12 @@ func createNetworkListener(server *Server) error {
 }
 
 func RunDaemon(cfg *Config, ctx context.Context) error {
-	addr := fmt.Sprintf("%s:%d", cfg.MPDHost, cfg.MPDPort)
-	mpdClient, err := mpd.Dial("tcp", addr)
-	if err != nil {
-		log.Fatalf("Failed to connect to mpd (%s): %v", addr, err)
-		return err
-	}
-
+	MPD := mpd.NewReMPD(cfg.MPDHost, cfg.MPDPort)
 	subCtx, cancel := context.WithCancel(ctx)
 
 	server := &Server{
 		Config:  cfg,
-		MPD:     mpdClient,
+		MPD:     MPD,
 		Context: subCtx,
 		Cancel:  cancel,
 	}
@@ -649,7 +632,7 @@ func RunDaemon(cfg *Config, ctx context.Context) error {
 	// Make sure the mpd connection survives long timeouts:
 	go func() {
 		for range keepAlivePinger {
-			mpdClient.Ping()
+			MPD.Client().Ping()
 			time.Sleep(1 * time.Minute)
 		}
 	}()
@@ -657,15 +640,16 @@ func RunDaemon(cfg *Config, ctx context.Context) error {
 	// Close pinger and client on exit:
 	defer func() {
 		close(keepAlivePinger)
-		mpdClient.Close()
+		MPD.Client().Close()
 	}()
 
 	if cfg.UpdateMoodDatabase {
 		if err := updateMoodDatabase(server); err != nil {
-			log.Fatalf("Failed to update the mood db: %v", err)
+			log.Printf("Failed to update the mood db: %v", err)
+			return err
 		}
 
-		return err
+		return nil
 	}
 
 	log.Printf("Starting up...")

@@ -23,7 +23,7 @@ type Client struct {
 	sync.Mutex
 
 	Config    *Config
-	MPD       *mpd.Client
+	MPD       *ReMPD
 	LW        *display.LineWriter
 	Status    mpd.Attrs
 	CurrSong  mpd.Attrs
@@ -151,7 +151,7 @@ func (cl *Client) updatePlaylists() error {
 	cl.Lock()
 	defer cl.Unlock()
 
-	spl, err := cl.MPD.ListPlaylists()
+	spl, err := cl.MPD.Client().ListPlaylists()
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (cl *Client) TogglePlayback() error {
 	cl.Lock()
 	defer cl.Unlock()
 
-	mpd := cl.MPD
+	mpd := cl.MPD.Client()
 	var err error
 
 	switch cl.Status["state"] {
@@ -205,42 +205,42 @@ func (cl *Client) Next() error {
 	cl.Lock()
 	defer cl.Unlock()
 
-	return cl.MPD.Next()
+	return cl.MPD.Client().Next()
 }
 
 func (cl *Client) Prev() error {
 	cl.Lock()
 	defer cl.Unlock()
 
-	return cl.MPD.Previous()
+	return cl.MPD.Client().Previous()
 }
 
 func (cl *Client) Play() error {
 	cl.Lock()
 	defer cl.Unlock()
 
-	return cl.MPD.Pause(false)
+	return cl.MPD.Client().Pause(false)
 }
 
 func (cl *Client) Pause() error {
 	cl.Lock()
 	defer cl.Unlock()
 
-	return cl.MPD.Pause(true)
+	return cl.MPD.Client().Pause(true)
 }
 
 func (cl *Client) Stop() error {
 	cl.Lock()
 	defer cl.Unlock()
 
-	return cl.MPD.Stop()
+	return cl.MPD.Client().Stop()
 }
 
 func (cl *Client) Outputs() ([]string, error) {
 	cl.Lock()
 	defer cl.Unlock()
 
-	outputs, err := cl.MPD.ListOutputs()
+	outputs, err := cl.MPD.Client().ListOutputs()
 	if err != nil {
 		return nil, err
 	}
@@ -266,12 +266,15 @@ func (cl *Client) SwitchToOutput(enableMe string) error {
 	defer cl.Unlock()
 
 	for id, name := range names {
-		fn := cl.MPD.DisableOutput
+		var err error
+
 		if name == enableMe {
-			fn = cl.MPD.EnableOutput
+			err = cl.MPD.Client().EnableOutput(id)
+		} else {
+			err = cl.MPD.Client().DisableOutput(id)
 		}
 
-		if err := fn(id); err != nil {
+		if err != nil {
 			return err
 		}
 	}
@@ -280,12 +283,7 @@ func (cl *Client) SwitchToOutput(enableMe string) error {
 }
 
 func NewClient(cfg *Config) (*Client, error) {
-	mpdClient, err := mpd.Dial("tcp", fmt.Sprintf("%s:%d", cfg.Host, cfg.Port))
-	if err != nil {
-		log.Printf("Failed to connect to mpd: %v", err)
-		return nil, err
-	}
-
+	MPD := NewReMPD(cfg.Host, cfg.Port)
 	lw, err := display.Connect(&display.Config{
 		Host: cfg.DisplayHost,
 		Port: cfg.DisplayPort,
@@ -308,7 +306,7 @@ func NewClient(cfg *Config) (*Client, error) {
 
 	return &Client{
 		Config: cfg,
-		MPD:    mpdClient,
+		MPD:    MPD,
 		LW:     lw,
 	}, nil
 }
@@ -322,7 +320,7 @@ func (cl *Client) Run(ctx context.Context) {
 		case <-ctx.Done():
 			break
 		case <-ticker.C:
-			cl.MPD.Ping()
+			cl.MPD.Client().Ping()
 		}
 	}()
 
@@ -365,26 +363,18 @@ func (cl *Client) Run(ctx context.Context) {
 
 	// Also sync on every mpd event:
 	go func() {
-		w, err := mpd.NewWatcher(
-			"tcp",
-			fmt.Sprintf("%s:%d", cl.Config.Host, cl.Config.Port),
-			"",
-			"player",
-			"stored_playlist",
+		watcher := NewReWatcher(
+			cl.Config.Host, cl.Config.Port,
+			"player", "stored_playlist",
 		)
 
-		if err != nil {
-			log.Printf("Failed to create watcher: %v", err)
-			return
-		}
-
-		defer w.Close()
+		defer watcher.Close()
 
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case ev := <-w.Event:
+			case ev := <-watcher.Events:
 				updateCh <- ev
 			}
 		}
@@ -402,7 +392,7 @@ func (cl *Client) Run(ctx context.Context) {
 					continue
 				}
 			case "stats":
-				stats, err := cl.MPD.Stats()
+				stats, err := cl.MPD.Client().Stats()
 				if err != nil {
 					log.Printf("Failed to fetch statistics: %v", err)
 					continue
@@ -413,13 +403,13 @@ func (cl *Client) Run(ctx context.Context) {
 					continue
 				}
 			case "player":
-				song, err := cl.MPD.CurrentSong()
+				song, err := cl.MPD.Client().CurrentSong()
 				if err != nil {
 					log.Printf("Unable to fetch current song: %v", err)
 					continue
 				}
 
-				status, err := cl.MPD.Status()
+				status, err := cl.MPD.Client().Status()
 				if err != nil {
 					log.Printf("Unable to fetch status: %v", err)
 					continue
