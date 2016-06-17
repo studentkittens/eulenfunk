@@ -5,7 +5,7 @@ Requires=mpd.service radio-lightd.service
 PartOf=mpd.service radio-lightd.service
 
 [Service]
-ExecStart=/usr/bin/eulenfunk ambilight --music-dir /music --mood-dir /var/moody --driver radio-led
+ExecStart=/root/go/bin/eulenfunk ambilight --music-dir /music --mood-dir /var/moody --driver radio-led
 Restart=on-failure
 
 [Install]

@@ -9,7 +9,9 @@ build:
 
 install: build
 	cp config/radio-sysinfo.sh $(BIN)
-	cp eulenfunk $(BIN)
+	cp config/systemd/*.service /usr/lib/systemd/system
+	systemctl daemon-reload
+
 	cp driver/radio-led $(BIN)
 	cp driver/radio-lcd $(BIN)
 	cp driver/radio-rotary $(BIN)

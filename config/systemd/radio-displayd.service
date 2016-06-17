@@ -2,7 +2,7 @@
 Description=Server to render the LCD 4x20 matrix
 
 [Service]
-ExecStart=/usr/bin/eulenfunk display server --binary radio-lcd
+ExecStart=/root/go/bin/eulenfunk display server --driver radio-lcd
 Restart=on-failure
 
 [Install]

@@ -2,7 +2,7 @@
 Description=LED locking and effect service
 
 [Service]
-ExecStart=/usr/bin/eulenfunk lightd --driver radio-led
+ExecStart=/root/go/bin/eulenfunk lightd --driver radio-led
 Restart=on-failure
 
 [Install]
