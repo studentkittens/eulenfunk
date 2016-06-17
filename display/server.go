@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"golang.org/x/net/context"
 )
@@ -73,6 +74,7 @@ type Line struct {
 	Pos         int
 	ScrollDelay time.Duration
 
+	// TODO: rather use runes:
 	text       []byte
 	buf        []byte
 	scrollPos  int
@@ -130,13 +132,22 @@ func (ln *Line) Redraw() {
 	ln.redraw()
 }
 
-func (ln *Line) SetText(text string) {
+func (ln *Line) SetText(text string, useEncoding bool) {
 	ln.Lock()
 	defer ln.Unlock()
 
-	encodedText := encode(text)
-	if len(encodedText) > len(ln.buf) {
-		text += " -*- " // TODO: nicer scrolling custom char
+	if utf8.RuneCountInString(text) > len(ln.buf) {
+		text += " ━━ "
+	}
+
+	var encodedText []byte
+
+	if useEncoding {
+		encodedText = encode(text)
+	} else {
+		// Just take the incoming encoding,
+		// might render weirdly on LCD though.
+		encodedText = []byte(text)
 	}
 
 	// Check if we need to re-render...
@@ -200,14 +211,17 @@ type Window struct {
 	LineOffset    int
 	Width, Height int
 	DriverPipe    io.Writer
+
+	UseEncoding bool
 }
 
-func NewWindow(name string, driverPipe io.Writer, w, h int) *Window {
+func NewWindow(name string, driverPipe io.Writer, w, h int, useEncoding bool) *Window {
 	win := &Window{
-		Name:       name,
-		Width:      w,
-		Height:     h,
-		DriverPipe: driverPipe,
+		Name:        name,
+		Width:       w,
+		Height:      h,
+		DriverPipe:  driverPipe,
+		UseEncoding: useEncoding,
 	}
 
 	for i := 0; i < h; i++ {
@@ -243,7 +257,7 @@ func (win *Window) SetLine(pos int, text string) error {
 		win.NLines = len(win.Lines)
 	}
 
-	win.Lines[pos].SetText(text)
+	win.Lines[pos].SetText(text, win.UseEncoding)
 	return nil
 }
 
@@ -297,7 +311,7 @@ func (win *Window) Truncate(n int) {
 
 	// Clear remaining lines:
 	for i := win.NLines; i < oldN; i++ {
-		win.Lines[i].SetText("")
+		win.Lines[i].SetText("", win.UseEncoding)
 	}
 }
 
@@ -333,6 +347,7 @@ type Config struct {
 	Width        int
 	Height       int
 	DriverBinary string
+	NoEncoding   bool
 }
 
 type Server struct {
@@ -421,7 +436,12 @@ func (srv *Server) createOrLookupWindow(name string) *Window {
 
 	if !ok {
 		log.Printf("Creating new window `%s`", name)
-		win = NewWindow(name, srv.DriverPipe, srv.Config.Width, srv.Config.Height)
+		win = NewWindow(
+			name,
+			srv.DriverPipe,
+			srv.Config.Width, srv.Config.Height,
+			!srv.Config.NoEncoding,
+		)
 		srv.Windows[name] = win
 	}
 

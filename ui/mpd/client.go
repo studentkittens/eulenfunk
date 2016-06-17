@@ -1,13 +1,14 @@
-package mpdinfo
+package mpd
 
 import (
 	"fmt"
 	"log"
-	"net"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/fhs/gompd/mpd"
+	"github.com/studentkittens/eulenfunk/display"
 	"golang.org/x/net/context"
 )
 
@@ -18,9 +19,20 @@ type Config struct {
 	DisplayPort int
 }
 
-func displayInfo(conn net.Conn, block []string) error {
+type Client struct {
+	sync.Mutex
+
+	Config    *Config
+	MPD       *mpd.Client
+	LW        *display.LineWriter
+	Status    mpd.Attrs
+	CurrSong  mpd.Attrs
+	Playlists []string
+}
+
+func displayInfo(lw *display.LineWriter, block []string) error {
 	for idx, line := range block {
-		if _, err := conn.Write([]byte(fmt.Sprintf("line mpd %d %s\n", idx, line))); err != nil {
+		if _, err := lw.Formatf("line mpd %d %s", idx, line); err != nil {
 			log.Printf("Failed to send line to display server: %v", err)
 			return err
 		}
@@ -29,22 +41,7 @@ func displayInfo(conn net.Conn, block []string) error {
 	return nil
 }
 
-func displayPlaylists(conn net.Conn, playlists []mpd.Attrs) error {
-	if _, err := conn.Write([]byte("truncate playlists 0")); err != nil {
-		return err
-	}
-
-	for idx, playlist := range playlists {
-		line := fmt.Sprintf("line playlists %d %02d %s", idx, idx+1, playlist["playlist"])
-		if _, err := conn.Write([]byte(line)); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func displayStats(conn net.Conn, stats mpd.Attrs) error {
+func displayStats(lw *display.LineWriter, stats mpd.Attrs) error {
 	dbPlaytimeSecs, err := strconv.Atoi(stats["db_playtime"])
 	if err != nil {
 		return err
@@ -60,7 +57,7 @@ func displayStats(conn net.Conn, stats mpd.Attrs) error {
 	}
 
 	for idx, line := range block {
-		if _, err := conn.Write([]byte(fmt.Sprintf("line stats %d %s\n", idx, line))); err != nil {
+		if _, err := lw.Formatf("line stats %d %s", idx, line); err != nil {
 			log.Printf("Failed to send line to display server: %v", err)
 			return err
 		}
@@ -93,7 +90,7 @@ func formatTimeSpec(tm time.Duration) string {
 	return fmt.Sprintf("%02d:", h) + f
 }
 
-func stateToUnicode(state string) string {
+func StateToUnicode(state string) string {
 	switch state {
 	case "play":
 		return "▶"
@@ -107,7 +104,7 @@ func stateToUnicode(state string) string {
 }
 
 func formatStatusLine(currSong, status mpd.Attrs) string {
-	state := "[" + stateToUnicode(status["state"]) + "]"
+	state := StateToUnicode(status["state"])
 	elapsedStr := status["elapsed"]
 
 	elapsedSec, err := strconv.ParseFloat(elapsedStr, 64)
@@ -150,71 +147,173 @@ func formatSong(currSong, status mpd.Attrs) ([]string, error) {
 	return block, nil
 }
 
-func commandHandler(client *mpd.Client, cmdCh <-chan string) {
-	for cmd := range cmdCh {
-		var err error
+func (cl *Client) updatePlaylists() error {
+	cl.Lock()
+	defer cl.Unlock()
 
-		switch cmd {
-		case "next":
-			err = client.Next()
-		case "prev":
-			err = client.Previous()
-		case "play":
-			err = client.Pause(false)
-		case "pause":
-			err = client.Pause(true)
-		case "toggle":
-			status, err := client.Status()
-			if err != nil {
-				log.Printf("Failed to fetch status: %v", err)
-				continue
-			}
-
-			switch status["state"] {
-			case "play":
-				err = client.Pause(true)
-			case "pause":
-				err = client.Pause(false)
-			case "stop":
-				err = client.Play(0)
-			}
-		case "stop":
-			err = client.Stop()
-		}
-
-		if err != nil {
-			log.Printf("Executung `%s` failed: %v", cmd, err)
-		}
+	spl, err := cl.MPD.ListPlaylists()
+	if err != nil {
+		return err
 	}
+
+	cl.Playlists = nil
+
+	for _, playlist := range spl {
+		cl.Playlists = append(cl.Playlists, playlist["playlist"])
+	}
+
+	return nil
 }
 
-func Run(cfg *Config, ctx context.Context, cmdCh chan string) error {
-	client, err := mpd.Dial("tcp", fmt.Sprintf("%s:%d", cfg.Host, cfg.Port))
+func (cl *Client) ListPlaylists() []string {
+	cl.Lock()
+	defer cl.Unlock()
+
+	// Copy slice since it might be modified by updatePlaylists:
+	n := make([]string, len(cl.Playlists))
+	copy(n, cl.Playlists)
+	return n
+}
+
+func (cl *Client) TogglePlayback() error {
+	cl.Lock()
+	defer cl.Unlock()
+
+	mpd := cl.MPD
+	var err error
+
+	switch cl.Status["state"] {
+	case "play":
+		err = mpd.Pause(true)
+	case "pause":
+		err = mpd.Pause(false)
+	case "stop":
+		err = mpd.Play(0)
+	}
+
+	return err
+}
+
+func (cl *Client) CurrentState() string {
+	cl.Lock()
+	defer cl.Unlock()
+
+	return cl.Status["state"]
+}
+
+func (cl *Client) Next() error {
+	cl.Lock()
+	defer cl.Unlock()
+
+	return cl.MPD.Next()
+}
+
+func (cl *Client) Prev() error {
+	cl.Lock()
+	defer cl.Unlock()
+
+	return cl.MPD.Previous()
+}
+
+func (cl *Client) Play() error {
+	cl.Lock()
+	defer cl.Unlock()
+
+	return cl.MPD.Pause(false)
+}
+
+func (cl *Client) Pause() error {
+	cl.Lock()
+	defer cl.Unlock()
+
+	return cl.MPD.Pause(true)
+}
+
+func (cl *Client) Stop() error {
+	cl.Lock()
+	defer cl.Unlock()
+
+	return cl.MPD.Stop()
+}
+
+func (cl *Client) Outputs() ([]string, error) {
+	cl.Lock()
+	defer cl.Unlock()
+
+	outputs, err := cl.MPD.ListOutputs()
+	if err != nil {
+		return nil, err
+	}
+
+	names := []string{}
+
+	for _, output := range outputs {
+		names = append(names, output["outputname"])
+	}
+
+	return names, nil
+}
+
+func (cl *Client) SwitchToOutput(enableMe string) error {
+	// Disable all other outputs on the way:
+	// (one output is enough for our usecase)
+	names, err := cl.Outputs()
+	if err != nil {
+		return err
+	}
+
+	cl.Lock()
+	defer cl.Unlock()
+
+	for id, name := range names {
+		fn := cl.MPD.DisableOutput
+		if name == enableMe {
+			fn = cl.MPD.EnableOutput
+		}
+
+		if err := fn(id); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func NewClient(cfg *Config) (*Client, error) {
+	mpdClient, err := mpd.Dial("tcp", fmt.Sprintf("%s:%d", cfg.Host, cfg.Port))
 	if err != nil {
 		log.Printf("Failed to connect to mpd: %v", err)
-		return err
+		return nil, err
 	}
 
-	dispAddr := fmt.Sprintf("%s:%d", cfg.DisplayHost, cfg.DisplayPort)
-	dispConn, err := net.Dial("tcp", dispAddr)
+	lw, err := display.Connect(&display.Config{
+		Host: cfg.DisplayHost,
+		Port: cfg.DisplayPort,
+	})
+
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err := dispConn.Write([]byte("switch mpd\n")); err != nil {
-		log.Printf("Failed to send hello to display server: %v", err)
+	if _, err := lw.Formatf("switch mpd"); err != nil {
+		log.Printf("Failed to send initial switch to display server: %v", err)
 	}
 
 	// Make the first 3 lines scrolling:
 	for idx := 0; idx < 3; idx++ {
-		cmd := fmt.Sprintf("scroll mpd %d 400ms\n", idx)
-		if _, err := dispConn.Write([]byte(cmd)); err != nil {
+		if _, err := lw.Formatf("scroll mpd %d 400ms", idx); err != nil {
 			log.Printf("Failed to set scroll: %v", err)
 		}
 	}
 
-	go commandHandler(client, cmdCh)
+	return &Client{
+		Config: cfg,
+		MPD:    mpdClient,
+		LW:     lw,
+	}, nil
+}
 
+func (cl *Client) Run(ctx context.Context) {
 	// Make sure the mpd connection survives long timeouts:
 	go func() {
 		ticker := time.NewTicker(1 * time.Minute)
@@ -223,7 +322,7 @@ func Run(cfg *Config, ctx context.Context, cmdCh chan string) error {
 		case <-ctx.Done():
 			break
 		case <-ticker.C:
-			client.Ping()
+			cl.MPD.Ping()
 		}
 	}()
 
@@ -247,6 +346,8 @@ func Run(cfg *Config, ctx context.Context, cmdCh chan string) error {
 		}
 	}()
 
+	// Update the stats periodically by faking
+	// a "stats" event (not a real event):
 	go func() {
 		updateCh <- "stats"
 
@@ -266,7 +367,7 @@ func Run(cfg *Config, ctx context.Context, cmdCh chan string) error {
 	go func() {
 		w, err := mpd.NewWatcher(
 			"tcp",
-			fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+			fmt.Sprintf("%s:%d", cl.Config.Host, cl.Config.Port),
 			"",
 			"player",
 			"stored_playlist",
@@ -292,43 +393,42 @@ func Run(cfg *Config, ctx context.Context, cmdCh chan string) error {
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			return
 		case ev := <-updateCh:
 			switch ev {
 			case "stored_playlist":
-				spl, err := client.ListPlaylists()
-				if err != nil {
-					log.Printf("Failed to list stored playlists: %v", err)
-					continue
-				}
-
-				if err := displayPlaylists(dispConn, spl); err != nil {
-					log.Printf("Failed to display playlists: %v", err)
+				if err := cl.updatePlaylists(); err != nil {
+					log.Printf("Failed to update playlists: %v", err)
 					continue
 				}
 			case "stats":
-				stats, err := client.Stats()
+				stats, err := cl.MPD.Stats()
 				if err != nil {
 					log.Printf("Failed to fetch statistics: %v", err)
 					continue
 				}
 
-				if err := displayStats(dispConn, stats); err != nil {
+				if err := displayStats(cl.LW, stats); err != nil {
 					log.Printf("Failed to display playlists: %v", err)
 					continue
 				}
 			case "player":
-				song, err := client.CurrentSong()
+				song, err := cl.MPD.CurrentSong()
 				if err != nil {
 					log.Printf("Unable to fetch current song: %v", err)
 					continue
 				}
 
-				status, err := client.Status()
+				status, err := cl.MPD.Status()
 				if err != nil {
 					log.Printf("Unable to fetch status: %v", err)
 					continue
 				}
+
+				cl.Lock()
+				cl.Status = status
+				cl.CurrSong = song
+				cl.Unlock()
 
 				block, err := format(song, status)
 				if err != nil {
@@ -336,13 +436,11 @@ func Run(cfg *Config, ctx context.Context, cmdCh chan string) error {
 					continue
 				}
 
-				if err := displayInfo(dispConn, block); err != nil {
+				if err := displayInfo(cl.LW, block); err != nil {
 					log.Printf("Failed to display status info: %v", err)
 					continue
 				}
 			}
 		}
 	}
-
-	return nil
 }

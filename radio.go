@@ -10,7 +10,7 @@ import (
 	"github.com/studentkittens/eulenfunk/display"
 	"github.com/studentkittens/eulenfunk/lightd"
 	"github.com/studentkittens/eulenfunk/ui"
-	"github.com/studentkittens/eulenfunk/ui/mpdinfo"
+	"github.com/studentkittens/eulenfunk/ui/mpd"
 	"github.com/urfave/cli"
 	"golang.org/x/net/context"
 )
@@ -50,14 +50,22 @@ func main() {
 
 	app.Commands = []cli.Command{{
 		Name:  "mpdinfo",
-		Usage: "Send mpd infos to the display server",
+		Usage: "Send mpd infos to the display server on the `mpd` window",
 		Flags: []cli.Flag{}, // TODO
 		Action: func(ctx *cli.Context) error {
-			// TODO: check for running mpd (also for ambilight/mpdinfo)
-			return mpdinfo.Run(&mpdinfo.Config{
+			// TODO: check for running mpd
+			client, err := mpd.NewClient(&mpd.Config{
 				"localhost", 6600, // MPD Config
 				"localhost", 7778, // Display server config
-			}, killCtx, nil)
+			})
+
+			if err != nil {
+				log.Printf("Failed to create mpd client: %v", err)
+				return err
+			}
+
+			client.Run(killCtx)
+			return nil
 		},
 	}, {
 		Name:  "ui",
@@ -203,6 +211,11 @@ func main() {
 					Usage:  "Driver program that takes the display output",
 					EnvVar: "DISPLAY_DRIVER",
 				},
+				cli.BoolFlag{
+					Name:   "no-encoding",
+					Usage:  "Disables special encoding for optimized LCD output for testing",
+					EnvVar: "DISPLAY_NO_ENCODING",
+				},
 			},
 			Action: func(ctx *cli.Context) error {
 				return display.RunDaemon(&display.Config{
@@ -210,6 +223,7 @@ func main() {
 					Port:         ctx.Parent().Int("port"),
 					Width:        ctx.Parent().Int("width"),
 					Height:       ctx.Parent().Int("height"),
+					NoEncoding:   ctx.Bool("no-encoding"),
 					DriverBinary: ctx.String("driver"),
 				}, killCtx)
 			},

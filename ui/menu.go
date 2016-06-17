@@ -13,12 +13,13 @@ import (
 
 	"github.com/studentkittens/eulenfunk/ambilight"
 	"github.com/studentkittens/eulenfunk/display"
-	"github.com/studentkittens/eulenfunk/ui/mpdinfo"
+	"github.com/studentkittens/eulenfunk/ui/mpd"
 	"github.com/studentkittens/eulenfunk/util"
 )
 
 type Action func() error
 
+// TODO: find better name
 type MenuLine interface {
 	Render(w int, active bool) string
 	Name() string
@@ -420,13 +421,6 @@ func (mgr *MenuManager) Close() error {
 
 //////////////////////////////////////
 
-func mpdCommand(name string, mpdCmdCh chan<- string) func() error {
-	return func() error {
-		mpdCmdCh <- name
-		return nil
-	}
-}
-
 func sysCommand(name string, args ...string) func() error {
 	return func() error {
 		return exec.Command(name, args...).Run()
@@ -434,14 +428,15 @@ func sysCommand(name string, args ...string) func() error {
 }
 
 func drawShutdownscreen(lw *display.LineWriter) error {
-	startupScreen := []string{
+	// TODO: Make these screens
+	shutdownScreen := []string{
 		"SHUTTING DOWN - BYE!",
 		"                    ",
 		"PLEASE WAIT 1 MINUTE",
 		"BEFORE POWERING OFF!",
 	}
 
-	for idx, line := range startupScreen {
+	for idx, line := range shutdownScreen {
 		if _, err := lw.Formatf("line mpd %d %s", idx, line); err != nil {
 			return err
 		}
@@ -474,6 +469,135 @@ func drawStartupScreen(lw *display.LineWriter) error {
 
 	return nil
 }
+
+func boolToGlyph(b bool) string {
+	if b {
+		return "✓"
+	} else {
+		return ""
+	}
+}
+
+func createPartyModeEntry(mgr *MenuManager) (*Entry, error) {
+	client, err := ambilight.NewClient(&ambilight.Config{
+		Host: "localhost",
+		Port: 4444,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	enabled, err := client.Enabled()
+	if err != nil {
+		return nil, err
+	}
+
+	partyModeEntry := &Entry{
+		Text:  "Party!",
+		State: boolToGlyph(enabled),
+	}
+
+	partyModeEntry.ActionFunc = func() error {
+		defer client.Close()
+
+		enabled, err := client.Enabled()
+		if err != nil {
+			return err
+		}
+
+		if err := client.Enable(!enabled); err != nil {
+			return err
+		}
+
+		partyModeEntry.State = boolToGlyph(enabled)
+
+		// TODO: Just all DIsplay() after each action automatically?
+		return mgr.Display()
+	}
+
+	return partyModeEntry, nil
+}
+
+func createOutputEntry(mgr *MenuManager, MPD *mpd.Client) (*Entry, error) {
+	outputs, err := MPD.Outputs()
+	if err != nil {
+		return nil, err
+	}
+
+	initialOutput := ""
+	if len(outputs) > 0 {
+		initialOutput = outputs[0]
+	}
+
+	outputEntry := &Entry{
+		Text:  "Output",
+		State: initialOutput,
+	}
+
+	outputEntry.ActionFunc = func() error {
+		outputs, err := MPD.Outputs()
+		if err != nil {
+			return err
+		}
+
+		idx := 0
+		for id, output := range outputs {
+			if output == outputEntry.State {
+				idx = id
+				break
+			}
+		}
+
+		newOutput := outputs[(idx+1)%len(outputs)]
+		outputEntry.State = newOutput
+
+		return MPD.SwitchToOutput(newOutput)
+	}
+
+	return outputEntry, nil
+}
+
+func createPlaybackEntry(mgr *MenuManager, MPD *mpd.Client) (*Entry, error) {
+	playbackEntry := &Entry{
+		Text:  "Playback",
+		State: mpd.StateToUnicode(MPD.CurrentState()),
+	}
+
+	order := []string{"play", "pause", "stop"}
+
+	playbackEntry.ActionFunc = func() error {
+		idx := 0
+		currState := MPD.CurrentState()
+		for orderIdx, state := range order {
+			if state == currState {
+				idx = orderIdx
+				break
+			}
+		}
+
+		newState := order[(idx+1)%len(order)]
+		playbackEntry.State = mpd.StateToUnicode(newState)
+
+		var err error
+		switch newState {
+		case "play":
+			err = MPD.Play()
+		case "pause":
+			err = MPD.Pause()
+		case "stop":
+			err = MPD.Stop()
+		}
+
+		return err
+	}
+
+	return playbackEntry, nil
+}
+
+/////////////////////////
+// MENU MAINLOOP LOGIC //
+/////////////////////////
 
 func Run(ctx context.Context) error {
 	// TODO: pass config
@@ -511,54 +635,45 @@ func Run(ctx context.Context) error {
 		}
 	}
 
-	mpdCmdCh := make(chan string)
-
 	// Start auxillary services:
 	log.Printf("Starting background services...")
-	go mpdinfo.Run(&mpdinfo.Config{
+	MPD, err := mpd.NewClient(&mpd.Config{
 		Host:        "localhost",
 		Port:        6600,
 		DisplayHost: "localhost",
 		DisplayPort: 7778,
-	}, ctx, mpdCmdCh)
+	})
 
+	if err != nil {
+		log.Printf("Failed to create mpd client: %v", err)
+		return err
+	}
+
+	go MPD.Run(ctx)
 	go RunClock(lw, 20, ctx) // TODO: get width?
 	go RunSysinfo(lw, 20, ctx)
 
-	partyModeEntry := &Entry{
-		Text:  "Party!",
-		State: "✓",
+	// Create some special entries with extended logic:
+
+	outputEntry, err := createOutputEntry(mgr, MPD)
+	if err != nil {
+		log.Printf("Failed to create output entry: %v", err)
+		return err
 	}
 
-	partyModeEntry.ActionFunc = func() error {
-		client, err := ambilight.NewClient(&ambilight.Config{
-			Host: "localhost",
-			Port: 4444,
-		})
-
-		if err != nil {
-			return err
-		}
-
-		defer client.Close()
-
-		enabled, err := client.Enabled()
-		if err != nil {
-			return err
-		}
-
-		if err := client.Enable(!enabled); err != nil {
-			return err
-		}
-
-		if enabled {
-			partyModeEntry.State = "×"
-		} else {
-			partyModeEntry.State = "✓"
-		}
-
-		return mgr.Display()
+	partyModeEntry, err := createPartyModeEntry(mgr)
+	if err != nil {
+		log.Printf("Failed to create party-mode entry: %v", err)
+		return err
 	}
+
+	playbackEntry, err := createPlaybackEntry(mgr, MPD)
+	if err != nil {
+		log.Printf("Failed to create playback entry: %v", err)
+		return err
+	}
+
+	// Define the menu structure:
 
 	mainMenu := []MenuLine{
 		&Separator{"MODES"},
@@ -584,19 +699,16 @@ func Run(ctx context.Context) error {
 		},
 		&Separator{"OPTIONS"},
 		partyModeEntry,
-		&Entry{
-			Text:       "Switch Mono/Stereo",
-			ActionFunc: nil, // TODO
-		},
-		&Entry{
-			Text:       "Playback",
-			ActionFunc: mpdCommand("stop", mpdCmdCh),
-			State:      "⏹",
-		},
+		outputEntry,
+		playbackEntry,
 		&Separator{"SYSTEM"},
 		&Entry{
-			Text:       "Power",
+			Text:       "Powermenu",
 			ActionFunc: switcher("menu-power"),
+		},
+		&Entry{
+			Text:       "About",
+			ActionFunc: switcher("about"),
 		},
 	}
 
@@ -660,7 +772,9 @@ func Run(ctx context.Context) error {
 
 		switch currWin := mgr.ActiveWindow(); currWin {
 		case "mpd":
-			mpdCmdCh <- "toggle"
+			if err := MPD.TogglePlayback(); err != nil {
+				log.Printf("Failed to toggle playback: %v", err)
+			}
 		default:
 			// This is a bit of a hack:
 			// Enable "click to exit window" on most non-menu windows:
@@ -681,10 +795,14 @@ func Run(ctx context.Context) error {
 		switch mgr.Direction() {
 		case DirectionRight:
 			log.Printf("Play next")
-			mpdCmdCh <- "next"
+			if err := MPD.Next(); err != nil {
+				log.Printf("Failed to skip to next: %v", err)
+			}
 		case DirectionLeft:
 			log.Printf("Play prev")
-			mpdCmdCh <- "prev"
+			if err := MPD.Next(); err != nil {
+				log.Printf("Failed to skip to prev: %v", err)
+			}
 		}
 
 		return nil

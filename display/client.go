@@ -55,7 +55,6 @@ func (lw *LineWriter) Close() error {
 	return lw.conn.Close()
 }
 
-// TODO: cleanup and move to a new client.go
 func Connect(cfg *Config) (*LineWriter, error) {
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	conn, err := net.Dial("tcp", addr)
