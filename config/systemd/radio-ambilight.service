@@ -2,9 +2,10 @@
 Description=MPD client that lets the LED blink to the music
 After=mpd.service radio-lightd.service
 Requires=mpd.service radio-lightd.service
+PartOf=mpd.service radio-lightd.service
 
 [Service]
-ExecStart=/usr/bin/eulenfunk ambilight
+ExecStart=/usr/bin/eulenfunk ambilight --music-dir /music --mood-dir /var/moody --driver radio-led
 Restart=on-failure
 
 [Install]

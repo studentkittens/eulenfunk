@@ -40,6 +40,7 @@ var UnicodeToLCDCustom = map[rune]byte{
 	'Ü': 152,
 	'ö': 148,
 	'Ö': 153,
+	'ß': 224,
 }
 
 func encode(s string) []byte {
