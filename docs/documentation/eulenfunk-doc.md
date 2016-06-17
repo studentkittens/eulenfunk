@@ -110,9 +110,10 @@ aus dem Jahr 2012.
 Das Radio soll dem Benutzer folgende Hardwarekonfigurationsmöglichkeiten bieten:
 
 * Anschluß passive Lautsprecher/Kopfhörer möglich 
+* Lautstärkeregelung über Hardware möglich
 * Verwendung des Internen Lautsprechers des alten Radios
 * Statusinformationen über aktuelles Lied beispielsweise über LCD
-* LED als Statusanzeige und Moodbarvisualisierung[^MOODBAR]
+* LEDs als Statusanzeige und/oder als Visualisierungsvariante von Musik[^MOODBAR]
 * USB--Anschlussmöglichkeit für externe Datenträger
 
 [^MOODBAR]: Moodbar: \url{https://en.wikipedia.org/wiki/Moodbar}
@@ -192,6 +193,8 @@ Revision 1+ mit 256MB RAM.
 
 Je nach Raspberry Revision sind die Pins teilweise unterschiedlich belegt. Seit
 Modell B, Revision 2.0 ist noch zusätzlich der P5 Header dazu gekommen.
+Abbildung \ref{gpio}[^SRC] zeigt die GPIO--Header des *Raspberry Pi* Modell B Revision
+1+.
 
 ### GPIO--Schnittstelle
 
@@ -203,47 +206,60 @@ Modell B, Revision 2.0 ist noch zusätzlich der P5 Header dazu gekommen.
 \end{figure}
 
 
+[^SRC]: Bildquelle:
+\url{http://www.raspberrypi-spy.co.uk/2012/06/simple-guide-to-the-rpi-gpio-header-and-pins/\#prettyPhoto}
 
 
-Bildquelle: \url{http://www.raspberrypi-spy.co.uk/2012/06/simple-guide-to-the-rpi-gpio-header-and-pins/#prettyPhoto}
+#### GPIO--Pinbelegung und Funktionalität
 
-Die \ref{gpio} ist
+Die GPIO--Pins des *Raspberry Pi* haben eine Logikspannung von 3.3V und sind pro
+GPIO--Pin mit max. 16mA belastbar. Der der gesamte GPIO--Header sollte mit nicht
+mehr als 50mA belastet werden, da es darüber hinaus zu Hardwareschäden kommen
+kann (siehe auch @gay2014raspberry).
 
-#### GPIO--Pinbelegung
+Die Ansteuerung Ansteuerung von LED über GPIO erfolgt binär. Das heisst, dass
+die LED entweder aus (GPIO low) oder an sein kann (GPIO high).
 
-* Grafik
-
-...
-
-* 3,3V vs 5V
-* Max. Strom
-* Max. verfügbare Pins
+TODO: ELCH?
+In der ,,analogen'' Welt ist es jedoch möglich eine LED über das Senken der
+Spannung zu dimmen. Um ein Dimmen in der digitalen Welt zu erreichen wird ein
+Modulationsverfahren angwandt, welches Pulsweitenmodulation heisst. Hierbei
+wird...elch? Weitere Informationen finden sich auch unter @richardson2014make
+@gay2014raspberry und @gay2014mastering. Software PWM in @gay2014experimenting.
+Hier beispielsweise 6% CPU--Last pro GPIO--Pin. 
 
 ## LCD--Anzeige
 
 Um dem Benutzer Informationen beispielsweise über das aktuell gespielte Lied
 anzeigen zu können, soll eine LCD--Anzeige verbaut werden. In den privaten
-Altbeständen finden sich folgende drei hd44780--kompatible Modelle:
+Altbeständen finden sich folgende drei Hitachi hd44780--kompatible Modelle:
 
-* Blaues Display, 4x20 Zeichen, Bolymin BC204A
+* Blaues Display, 4x20 Zeichen, Bolymin BC2004A
 * Blaues Display, 2x16 Zeichen, Bolymin BC1602A
 * Grünes Display, 4x20 Zeichen, Dispalytech 204B 
 
-Wir haben uns für das blaue 4x20 Display --- aufgrund der größeren Anzeigefläche und
-Farbe --- entschieden.
+Für *Eulenfunk* wurde das blaue 4x20 Display --- aufgrund der größeren
+Anzeigefläche und Farbe --- gewählt.
 
 ### Anschlussmöglichkeiten
 
 Ein LCD Display kann an den Raspberry PI über auf verschiedene Art und Weise
-angeschlossen werden. Die zwei Grundlegenden Schnittstellen wären:
+angeschlossen werden. Anschlussmöglichkeiten für eine LCD--Anzeige wären
+beispielsweise: 
 
-* GPIO (parallel)
+* GPIO direkt (parallel)
 * I2C--Bus (seriell)
 * SPI--Bus (seriell)
 
-Da für den seriellen Betrieb beispielsweise über den I2C--Bus ein zusätzlicher
-Logik--Adapter benötigt wird, wird die parallele Ansteuerung über die GPIO--Pins
-bevorzugt.
+Die serielle Anschlussmöglichkeit bietet den Vorteil dass weniger Datenleitungen
+(GPIO--Pins) verwendet werden. Für den parallelen Betrieb des Displays werden
+mindestens sechs GPIO--Pins benötigt, für den seriellen Anschluss über I2C
+lediglich nur zwei. 
+
+Da für den seriellen Betrieb beispielsweise über den I2C--Bus zusätzliche
+Hardware benötigt wird, wird die parallele Ansteuerung über die GPIO--Pins
+bevorzugt. Für weitere Informationen zum seriellen Betrieb über I2C siehe auch
+@horan2013practical.
 
 \begin{figure}[h!]
   \centering
@@ -252,21 +268,26 @@ bevorzugt.
   \label{lcd}
 \end{figure}
 
-Das Display arbeitet mit einer Logik--Spannung von 5V. Da die GPIO--Pins jedoch
+Das Display arbeitet mit einer Logik--Spannung von 3.3V - 5V. Da die GPIO--Pins jedoch
 eine High--Logik von 3,3V aufweisen, würde man hier in der Regel einen
-Pegelwandler bei bidirektionaler Kommunikation benötigen. Da wir aber nur auf
-das Display zugreifen und die GPIO--Pins nicht schreiben zugegriffen wird kann
-eine operation des Displays auch mit 3.3V erfolgen, falls die GPIO--Pegel
-ausreichen um die Logik des Displays anzusteuern.
+Pegelwandler bei bidirektionaler Kommunikation und 5V benötigen. Da wir aber nur auf
+das Display zugreifen und die GPIO--Pins nicht schreibend zugegriffen wird kann
+ein Betrieb des Displays auch mit 5V erfolgen. Beim 3.3V Betrieb welcher laut
+Datenblatt auch möglich sein soll, hat das Display leider nur eine sehr
+schwachen beziehungsweise unzureichenden Darstellungskontrast gehabt, weswegen
+der 5V Betrieb gewählt wurde. 
 
 Die Hintergrundbeleuchtung des Displays wurde direkt über ein Potentiometer mit
-10K$\Omega$ an die 5V Spannungsversogrung angeschlossen.
+10K$\Omega$ an die 5V Spannungsversogrung angeschlossen. Es wurde hier dierekt
+die Speisung vom Netzteil gewählt um den GPIO--Header nicht unnötig zu belasten.
 
-Laut Datenblatt kann die Hintergrundbeleuchtung entweder mit 3.4V ohne
-Vorwiderstand oder mit 5V bei einem 48$\Omega$ Widerstand betrieben werden. Damit das
+Laut Datenblatt[^LCD] kann die Hintergrundbeleuchtung entweder mit 3.4V ohne
+Vorwiderstand oder mit 5V bei einem 27$\Omega$ Widerstand betrieben werden. Damit das
 Display beim herunter geregeltem Potentiometer keinen Schaden nimmt, wurden
-zusätzlich zwei Widerstände mit 100$\Omega$ (parallel geschaltet) zwischen Display
+zusätzlich zwei Widerstände mit 100$\Omega$ (parallel geschaltet = 50$\Omega$) zwischen Display
 und Potentiometer gehängt.
+
+[^LCD]: Datenblatt Bolymin BC2004A: \url{http://www.dema.net/pdf/bolymin/BC2004A-series_VER04.pdf}
 
 Das der resultierende Gesamtwiderstand ohne Potentiometer beträgt in diesem Fall
 $\approx$ 50 $\Omega$:
@@ -275,9 +296,23 @@ $$  R_{ges} = \frac{R_1 \times R_2}{R_1 + R_2} = \frac{100\Omega \times 100\Omeg
 
 ## Rotary--Switch
 
-* Switch von der FH: ALPS irgendwas...funktioniert, aber
-* Switch bestellt: ALPS irgendwas mit
+Für eine minimale Anzahl an Bedienelementen zu erhalten, wird bei *Eulenfunk*
+ein Drehimpulsgeber mit Schalter gewählt. Für erste Testzwecke wurde vom Herrn
+Schäferling ein *ALPS STEC12E08* bereitgestellt. Dieser wurde im Laufe der
+Entwciklung durch einen *ALPS STEC11B09*[^ALPS] ersetzt, da dieser mittels Mutter und
+Schraube am Gehäuse besser befästigt werden kann. 
 
+Der verwendete Drehimpulsgeber hat insgesamt fünf Anschlüsse. Zwei
+Signalleitungen (A und B), zwei mal *GND* (für Drehgeber und Schalter jeweils
+eine) und einen Anschluss für den Schalter. Beim drehen eines Drehimpulsgebers
+wird ein Rechtecksignal generiert. Je nach Muster der beiden Datensignale A oder
+B, kann entschieden werden ob es sich um eine Rechts-- oder Linksdrehung
+handelt. Weitere Hintergrundinformationen zu Drehimpulsgeber siehe auch
+@2014projekte.
+
+Abbildung \ref{alps} zeigt den Anschluss des Drehimpulsgebers am *Raspberry Pi*. 
+
+[^ALPS]: Drehimpulsgeber ALPS STEC11B09: \url{https://www.reichelt.de/Drehimpulsgeber/STEC11B09/3/index.html?ACTION=3&GROUPID=3714&ARTICLE=73915}
 
 \begin{figure}[h!]
   \centering
@@ -289,45 +324,108 @@ $$  R_{ges} = \frac{R_1 \times R_2}{R_1 + R_2} = \frac{100\Omega \times 100\Omeg
 ## Soundkarte
 
 Die interne Soundkarte des *Raspberry Pi* ist über eine triviale
-Pulsweitenmodulation realisiert. Die einfache Schaltung soll hier eine sehr
-niedrige Audioqualität[^AQ] bieten.
+Pulsweitenmodulation realisiert. Die einfache Schaltung soll hier laut
+Internetquellen[^AQ]eine sehr niedrige Audioqualität bieten.
 
+Aus diesem Grund wird bei *Eulenfunk* auf das USB--Audio--Interface *BEHRINGER
+U-PHONO UFO202*[^DAC] gesetzt. 
+
+[^DAC]:BEHRINGER U-PHONO UFO202 Audio Interface: \url{http://www.produktinfo.conrad.com/datenblaetter/1300000-1399999/001370864-an-01-de-BEHRINGER_UFO_202_AUDIOINTERFACE.pdf}
 [^AQ]: Raspberry Pi onboard Sound: \url{http://www.crazy-audio.com/2013/11/quality-of-the-raspberry-pi-onboard-sound/}
 
 ## Audioverstärkermodul
 
-## RGB--LEDs
+Da eine Soundkarte in der Regel zu wenig Leistung hat um einem Lautsprecher
+,,vernünftig'' anzusteuern wird ein Audioverstärker benötigt. Da neben dem
+Anschluss von externen Lautsprechern auch eine Lautstärkeregelung über ein Poti
+erfolgen soll, ist die Entscheidung einfachheitshalber auf ein
+Audioverstärker--Modul auf Basis vom PAM8403[^POW] Stereo-Verstärker mit Potentiometer gefallen.
 
-* Ansteuerung über GPIO möglich. Zu geringer Strom bei mehreren LEDs.
-* Transistorschaltung BC547 NPN anstatt BC557 PNP, da Rückflussstrom.
+[^POW]: Verstärkermodul: \url{https://www.amazon.de/5V-Audioverstärker-Digitalendstufenmodul-Zweikanalige-Stereo-Verstärker-Potentiometer/dp/B01ELT81A6}
 
-Von der Hochschule wurden BC547C Transistoren bereitgestellt. Da der
-Hersteller unbekannt ist, wurden typische Durchschnittswerte für die
-Dimensionierung der Bauteile verwendet.  
+## LED--Transistorschaltung
 
-In der Regel sind die meisten BC547C Transistor Typen für einen max. Strom
+Die Ansteuerun einer LED mittels GPIO--Pin ist recht simpel. Sollen jedoch
+mehrere LEDs angesteuert werden, so wird in der Regel pro LED ein GPIO--Pin
+benötigt. LEDs sollten nie ohne Vorwiderstand an den *Raspberry Pi*
+angeschlossen werden, da durch den hohen Stromfluss die LED beschädigt werden
+könnte. Desweiteren muss bei LEDs auch auf die Polung geachtet werden, die
+abgeflachte Seite --- meist mit dem kürzerem Beinchen -- ist in der Regel die
+Kathode (Minuspol). Abbildung \ref{led} zeigt exemplarisch den Anschluss einer
+*classic LED rot*[^LEDS], mit einer Flussspannung von $U_{LED}$ $\approx$ 2V, die mit
+einem Strom von $I_{LED}$ = 20 mA gespeist werden soll. Die Berechnung des
+Vorwiderstandes erfolgt nach folgender Formel:
+
+$$R_{LED} = \frac{U_{GPIO}-U_{LED}}{I_{LED}} = \frac{3.3V - 2V}{20mA}   \approx 65\Omega$$
+
+[^LEDS]: Datenblatt mit verschiedenen LED--Typen: \url{https://www.led-tech.de/de/5mm-LEDs_DB-4.pdf}
+
+**Hinweis:** Da ein GPIO--Pin aber mit nur max. 16mA belastet werden sollten,
+sollte in unserem Beispiel durch 16mA anstatt 20mA geteilt werden um den max.
+Stromfluss auf 16mA zu begrenzen. In diesem Fall würden wir auf $\approx$ 82$\Omega$ kommen.
+
+Da Widerstände meistens in fest vorgegebenen Größen vorhanden sind, kann im Fall
+eines nicht exakt existierenden Widerstandswertes einfach der nächsthöhere
+Widerstandswert genommen werden. Im Beispiel wird ein $100\Omega$ Widerstand
+verwendet. 
+
+Weitere Beispiele und Grundlagen zur Reihen-- und Parallelschaltung von LEDs
+können online beispielsweise unter *led-treiber.de*[^LED] eingesehen werden.
+
+\begin{figure}[h!]
+  \centering
+\includegraphics[width=0.5\textwidth]{images/led.png}
+  \caption{Anschluss eine roten LED mit Vorwiderstand am Raspberry Pi GPIO--Pin}
+  \label{led}
+\end{figure}
+
+Je nach Typ und Farbe ist der benötigte Strom um ein vielfaches höher wie in
+unserem Beipsiel. Die in \ref{led} abgebildete LED kann vom GPIO--Pin nur einen
+max. Strom von 16 mA beziehen
+
+In *Eulenfunk* sollen mehrere intensiv leuchtende LEDs verbaut werden. Da die
+GPIO--Pins in ihrer Leistung sehr begrenzt ist, würde es sich anbeiten eine
+externe Stromquelle zu verwenden. Um die Speisung über eine externe Stromquelle
+zu ermöglichen kann eine Transistorschaltung verwendet werden (vgl. @traled). 
+
+Für die Transistorschaltung wurden vom Herrn Schäferling NPN (BC547C) und PNP
+(BC557C) bereitgestellt. Für den ersten Testaufbau wurde der PNP--Transistor und
+eine RGB--LED[^RGBGM] mit gemeinsamen Minuspol verwendet. Beim Test--Aufbau mit einem
+PNP--Transistor ist aufgefallen, dass die LED ständig geleuchtet hat. Eine kurze
+Recherche hat ergeben, dass der Transistor permanent durchgeschaltet war, weil die
+Spannung an der Basis (GPIO--Pin, 3,3V) geringer war die die Betriebsspannung
+für die LED (5V). 
+
+Der zweite Anlauf mit dem NPN--Transistor BC547C und einer RGB--LED[^RGBGP] mit
+gemeinsamen Pluspol hat das gewünsche Ergebnis geliefert.
+
+Da der Hersteller für die von der Hochschule bereitgestellten Transistoren
+ubekannt ist, wurden typische Durchschnittswerte für die Dimensionierung der
+Restlichen Bauteile verwendet.
+
+Wie es aussieht sind die meisten BC547C Transistor Typen für einen max. Strom
 $I_{CE}$=100 mA konstruiert. Für die Berechnung des Basis--Vorwiderstandes ist der
 Stromverstärkungsfaktor $h_{FE}$[^HFE] benötigt. Je nach Hersteller variieren die
-Werten zwischen 200 und 500[^SEM][^ONSEMI][^FARI]. Da ein maximale Laststrom $I_{CE}$ pro Transistor
-beträgt 80 mA (3 LEDs je max. 20mA).
+Werten zwischen 200[^SEM] und 400[^FARI]. Da der maximale Laststrom $I_{CE}$ pro Transistor
+beträgt 80 mA (3 LEDs je max. 20mA), sieht die Berechnung des Basisstroms wie
+folgt aus:
 
+[^LED]: Beispiele zur Ansteuerung von LEDs: \url{http://www.led-treiber.de/html/vorwiderstand.html}
 [^HFE]:Stromverstärkungsfaktor: \url{http://www.learningaboutelectronics.com/Articles/What-is-hfe-of-a-transistor}
+[^RGBGM]: RGB-LED Common Cathode: \url{http://download.impolux.de/datasheet/LEDs/LED 0870 RGB 5mm klar 10000mcd.pdf}
+[^RGBGP]: RGB-LED Common Anode: \url{http://download.impolux.de/datasheet/LEDs/LED 09258 RGB 5mm klar 10000mcd_GP.pdf}
 
-Die Berechnung des Basisstroms:
 
  $$I_{Basis} = \frac{I_{CE}}{h_{FE}} = \frac{0.08A}{300} \approx 270\mu A$$
 
-Der BC547C Transitor benötigt eine durchschnittliche  $U_{BE}$ = 0,7V. Die
-GPIO-Pins des *Raspberry Pi* haben eine Spannungspegel von 3.3V. Daraus ergibt
-sich folgende Berechnung des Basis--Vorwiderstandes:
+Der BC547C Transitor benötigt eine durchschnittliche  $U_{BE}$ = 0,7V zum
+durchschalten. Die GPIO-Pins des *Raspberry Pi* haben einen Spannungspegel von
+3.3V. Daraus ergibt sich folgende Berechnung des Basis--Vorwiderstandes:
 
-$$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{270\mu A}
-= 9629 \Omega \approx 10k \Omega $$
+$$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{270\mu A} = 9629 \Omega \approx 10k \Omega $$
 
 [^SEM]: SEMTECH: \url{http://pdf1.alldatasheet.com/datasheet-pdf/view/42386/SEMTECH/BC547.html}
-[^ONSEMI]: On Semi: \url{https://www.arduino.cc/documents/datasheets/BC547.pdf}
-[^FARI]: Farichild Semiconductor:
-\url{https://www.fairchildsemi.com/datasheets/BC/BC547.pdf}
+[^FARI]: Farichild Semiconductor: \url{https://www.fairchildsemi.com/datasheets/BC/BC547.pdf}
 
 \begin{figure}[h!]
   \centering
@@ -336,17 +434,13 @@ $$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{270\mu
   \label{transled}
 \end{figure}
 
+Die in Abbildung \ref{transled} gelisteten LED--Vorwiderstände ergeben sich
+aufgrund der verschiedenen Spannungen der unterschiedlichen Farben[^RGBGP]. Die
+Berechnung für den Vorwiderstand pro LED schaut am Beispiel der Farbe blau
+($U_{LED} = 3,15V, I_{LED} = 20mA$) wie folgt aus:
 
-Die Ansteuerung der Transistoren beziehungsweise die Ansteuerung von LED über
-GPIO erfolgt binär. Das heisst, dass die LED entweder aus (GPIO low) oder an
-sein kann (GPIO high).
+$$R_{LED} = \frac{U_{Betriebsspannung} - U_{LED}}{I_{LED}} = \frac{5V - 3,15V}{20mA} =92.5 \approx 100\Omega$$
 
-In der ,,analogen'' Welt ist es möglich eine LED über das Senken der Spannung zu
-dimmen. Um ein Dimmen in der digitalen Welt zu erreichen wird ein
-Modulationsverfahren angwandt, welches Pulsweitenmodulation heisst. Hierbei
-wird...elch? Weitere Informationen finden sich auch unter @richardson2014make
-@gay2014raspberry und @gay2014mastering. Software PWM in @gay2014experimenting.
-Hier beispielsweise 6% CPU--Last pro GPIO--Pin. 
 
 ## USB--Hub und Netzteil
 
@@ -383,9 +477,10 @@ Knöpfe schwarz mit Alu-Optik
 ## Betriebssystem
 
 Mittlerweile gibt es für den *Raspberry Pi* viele offiziell zugeschnittene
-Betriebssysteme[^OS]. Bei den den Linux Distributionen ist *Raspbian* eine der
-bekanntesten Distribution -- welche auf *Debian* basiert. *Raspbian* bringt ein
-komplettes Linux--basiertes System mit grafischer Benutzeroberfläche mit sich. 
+Betriebssysteme[^OS] (vgl. @dembowski2013raspberry). Bei den den Linux
+Distributionen ist *Raspbian* eine der bekanntesten Distribution -- welche auf
+*Debian* basiert. *Raspbian* bringt ein komplettes Linux--basiertes System mit
+grafischer Benutzeroberfläche mit sich. 
 
 Neben den unter[^OS] genannten Distributionen gibt es mittlerweile auch Windows
 10 IoT (Internet of Things) für den *Rapberry Pi*. Dieses speziell für den
@@ -447,7 +542,19 @@ mit dem Profil `wlan0-Phobos`.
 [^INSTALL]: Arch Linux Installation für Raspberry Pi: https://archlinuxarm.org/platforms/armv6/raspberry-pi#installation
 
 
+### Abspielsoftware
 
+Für den Betrieb des Internetradios soll der Music--Player--Daemon verwendet
+werden, da *Eulenfunk* auf einem eigens entwickeltem MPD--Client basieren soll
+(mehr zur Eulenkfunk Software siehe Kapitel Software).
+Andere Projekte greifen oft auf Abspielsoftware wie den MOC oder Mplayer zu. 
+
+
+```bash
+    # Installation des MPD
+    [root@eulenfunk ~]$ pacman -Sy mpd mpc ncmpc
+
+```
 
 # Software
 
@@ -488,7 +595,8 @@ vorberechnete Moodbar--Datei realisiert. Dieser Ansatz funktioniert bei nicht
 live gestreamter Musik gut. Bei live gestreamter Musik könnte für die
 Visualisierung eine Fast--Fourier--Transformation in Echtzeit durchgeführt
 werden. Da jedoch die Ressourcen des *Raspberry Pi* sehr begrenzt sollte hier
-auf die Verwendung einer GPU--beschleunigte--FFT[^FFT] zurückgegriffen werden.
+auf die Verwendung einer GPU--beschleunigte--FFT[^FFT] zurückgegriffen werden
+(vgl. @Sabarinath2015).
 
 Ein alternativer Ansatz wäre auch die Realisierung einer Musik--Visualisierung
 mittels Hardwarekomponenten. Ein möglicher Ansatz aus hardwarebasierten
