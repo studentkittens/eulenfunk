@@ -70,10 +70,19 @@ func main() {
 	}, {
 		Name:  "ui",
 		Usage: "Handle window rendering and input control",
-		Flags: []cli.Flag{}, // TODO
+		Flags: []cli.Flag{}, // TODO: introduce flags for UI
 		Action: func(ctx *cli.Context) error {
 			log.Printf("Starting ui...")
-			return menu.Run(killCtx)
+			return ui.Run(&ui.Config{
+				Width:         20,
+				Height:        4,
+				DisplayHost:   "localhost",
+				DisplayPort:   7778,
+				MPDHost:       "localhost",
+				MPDPort:       6600,
+				AmbilightHost: "localhost",
+				AmbilightPort: 4444,
+			}, killCtx)
 		},
 	}, {
 		Name:  "lightd",

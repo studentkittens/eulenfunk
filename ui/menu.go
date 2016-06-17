@@ -1,4 +1,4 @@
-package menu
+package ui
 
 import (
 	"fmt"
@@ -140,10 +140,9 @@ func (mn *Menu) Scroll(move int) {
 	}
 }
 
-func (mn *Menu) Display() error {
+func (mn *Menu) Display(width int) error {
 	for pos, entry := range mn.Entries {
-		// TODO: pass config width
-		line := entry.Render(20, pos == mn.Cursor)
+		line := entry.Render(width, pos == mn.Cursor)
 		log.Printf("ACtive %t %d == %d %s", pos == mn.Cursor, pos, mn.Cursor, line)
 
 		if _, err := mn.lw.Formatf("line %s %d %s", mn.Name, pos, line); err != nil {
@@ -178,7 +177,9 @@ const (
 
 type MenuManager struct {
 	sync.Mutex
+	Config *Config
 
+	// TODO: cleanup
 	Active       *Menu
 	Menus        map[string]*Menu
 	TimedActions map[time.Duration]Action
@@ -191,7 +192,7 @@ type MenuManager struct {
 	rotary               *util.Rotary
 }
 
-func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, error) {
+func NewMenuManager(cfg *Config, lw *display.LineWriter, initialWin string) (*MenuManager, error) {
 	rty, err := util.NewRotary()
 	if err != nil {
 		return nil, err
@@ -205,7 +206,8 @@ func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, er
 	mgr := &MenuManager{
 		Menus:        make(map[string]*Menu),
 		TimedActions: make(map[time.Duration]Action),
-		activeWindow: "mpd",
+		activeWindow: initialWin,
+		Config:       cfg,
 		lw:           lw,
 		rotary:       rty,
 	}
@@ -309,7 +311,7 @@ func NewMenuManager(lw *display.LineWriter, initialWin string) (*MenuManager, er
 				}
 			}
 
-			mgr.Active.Display()
+			mgr.Active.Display(mgr.Config.Width)
 		}
 	}()
 
@@ -320,7 +322,7 @@ func (mgr *MenuManager) Display() error {
 	mgr.Lock()
 	defer mgr.Unlock()
 
-	return mgr.Active.Display()
+	return mgr.Active.Display(mgr.Config.Width)
 }
 
 func (mgr *MenuManager) ActiveWindow() string {
@@ -371,7 +373,7 @@ func (mgr *MenuManager) SwitchTo(name string) error {
 
 	if menu, ok := mgr.Menus[name]; ok {
 		mgr.Active = menu
-		mgr.Active.Display()
+		mgr.Active.Display(mgr.Config.Width)
 	}
 
 	if _, err := mgr.lw.Formatf("switch %s", name); err != nil {
@@ -405,7 +407,7 @@ func (mgr *MenuManager) AddMenu(name string, entries []MenuLine) error {
 
 	if mgr.Active == nil {
 		mgr.Active = menu
-		mgr.Active.Display()
+		mgr.Active.Display(mgr.Config.Width)
 	}
 
 	// Pre-select first selectable entry:
@@ -427,49 +429,6 @@ func sysCommand(name string, args ...string) func() error {
 	}
 }
 
-func drawShutdownscreen(lw *display.LineWriter) error {
-	// TODO: Make these screens
-	shutdownScreen := []string{
-		"SHUTTING DOWN - BYE!",
-		"                    ",
-		"PLEASE WAIT 1 MINUTE",
-		"BEFORE POWERING OFF!",
-	}
-
-	for idx, line := range shutdownScreen {
-		if _, err := lw.Formatf("line mpd %d %s", idx, line); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func drawStartupScreen(lw *display.LineWriter) error {
-	startupScreen := []string{
-		"/ / / / / / / / / / / / / / / /",
-		"WELCOME TO EULENFUNK",
-		" GUT. ECHT. ANDERS. ",
-		"/ / / / / / / / / / / / / / / /",
-	}
-
-	for idx, line := range startupScreen {
-		if _, err := lw.Formatf("line mpd %d %s", idx, line); err != nil {
-			return err
-		}
-	}
-
-	if _, err := lw.Formatf("scroll mpd 0 150ms"); err != nil {
-		return err
-	}
-
-	if _, err := lw.Formatf("scroll mpd 3 200ms"); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func boolToGlyph(b bool) string {
 	if b {
 		return "✓"
@@ -478,10 +437,10 @@ func boolToGlyph(b bool) string {
 	}
 }
 
-func createPartyModeEntry(mgr *MenuManager) (*Entry, error) {
+func createPartyModeEntry(cfg *Config, mgr *MenuManager) (*Entry, error) {
 	client, err := ambilight.NewClient(&ambilight.Config{
-		Host: "localhost",
-		Port: 4444,
+		Host: cfg.AmbilightHost,
+		Port: cfg.AmbilightPort,
 	})
 
 	if err != nil {
@@ -552,7 +511,11 @@ func createOutputEntry(mgr *MenuManager, MPD *mpd.Client) (*Entry, error) {
 		newOutput := outputs[(idx+1)%len(outputs)]
 		outputEntry.State = newOutput
 
-		return MPD.SwitchToOutput(newOutput)
+		if err := MPD.SwitchToOutput(newOutput); err != nil {
+			return err
+		}
+
+		return mgr.Display()
 	}
 
 	return outputEntry, nil
@@ -589,38 +552,75 @@ func createPlaybackEntry(mgr *MenuManager, MPD *mpd.Client) (*Entry, error) {
 			err = MPD.Stop()
 		}
 
-		return err
+		if err != nil {
+			return err
+		}
+
+		return mgr.Display()
 	}
 
 	return playbackEntry, nil
+}
+
+func createRandomEntry(mgr *MenuManager, MPD *mpd.Client) (*Entry, error) {
+	randomEntry := &Entry{
+		Text:  "Random",
+		State: boolToGlyph(MPD.IsRandom()),
+	}
+
+	randomEntry.ActionFunc = func() error {
+		enable := !MPD.IsRandom()
+		randomEntry.State = boolToGlyph(enable)
+		if err := MPD.EnableRandom(enable); err != nil {
+			return err
+		}
+
+		return mgr.Display()
+	}
+
+	return randomEntry, nil
+}
+
+/////////////////////////
+
+type Config struct {
+	Width  int
+	Height int
+
+	DisplayHost string
+	DisplayPort int
+
+	MPDHost string
+	MPDPort int
+
+	AmbilightHost string
+	AmbilightPort int
 }
 
 /////////////////////////
 // MENU MAINLOOP LOGIC //
 /////////////////////////
 
-func Run(ctx context.Context) error {
-	// TODO: pass config
-	cfg := &display.Config{
-		Host: "localhost",
-		Port: 7778,
-	}
-
+func Run(cfg *Config, ctx context.Context) error {
 	log.Printf("Connecting to displayd...")
-	lw, err := display.Connect(cfg)
+	lw, err := display.Connect(&display.Config{
+		Host: cfg.DisplayHost,
+		Port: cfg.DisplayPort,
+	})
+
 	if err != nil {
 		return err
 	}
 
 	defer lw.Close()
 
-	if err := drawStartupScreen(lw); err != nil {
-		log.Printf("Failed to draw startup screen: %v", err)
+	if err := drawStaticScreens(lw); err != nil {
+		log.Printf("Failed to draw static screens: %v", err)
 		return err
 	}
 
 	log.Printf("Creating menus...")
-	mgr, err := NewMenuManager(lw, "mpd")
+	mgr, err := NewMenuManager(cfg, lw, "startup")
 	if err != nil {
 		return err
 	}
@@ -638,10 +638,10 @@ func Run(ctx context.Context) error {
 	// Start auxillary services:
 	log.Printf("Starting background services...")
 	MPD, err := mpd.NewClient(&mpd.Config{
-		Host:        "localhost",
-		Port:        6600,
-		DisplayHost: "localhost",
-		DisplayPort: 7778,
+		Host:        cfg.MPDHost,
+		Port:        cfg.MPDPort,
+		DisplayHost: cfg.DisplayHost,
+		DisplayPort: cfg.DisplayPort,
 	})
 
 	if err != nil {
@@ -650,8 +650,8 @@ func Run(ctx context.Context) error {
 	}
 
 	go MPD.Run(ctx)
-	go RunClock(lw, 20, ctx) // TODO: get width?
-	go RunSysinfo(lw, 20, ctx)
+	go RunClock(lw, cfg.Width, ctx)
+	go RunSysinfo(lw, cfg.Width, ctx)
 
 	// Create some special entries with extended logic:
 
@@ -661,7 +661,7 @@ func Run(ctx context.Context) error {
 		return err
 	}
 
-	partyModeEntry, err := createPartyModeEntry(mgr)
+	partyModeEntry, err := createPartyModeEntry(cfg, mgr)
 	if err != nil {
 		log.Printf("Failed to create party-mode entry: %v", err)
 		return err
@@ -670,6 +670,12 @@ func Run(ctx context.Context) error {
 	playbackEntry, err := createPlaybackEntry(mgr, MPD)
 	if err != nil {
 		log.Printf("Failed to create playback entry: %v", err)
+		return err
+	}
+
+	randomEntry, err := createRandomEntry(mgr, MPD)
+	if err != nil {
+		log.Printf("Failed to create random entry: %v", err)
 		return err
 	}
 
@@ -682,8 +688,10 @@ func Run(ctx context.Context) error {
 			ActionFunc: switcher("mpd"),
 		},
 		&Entry{
-			Text:       "Playlists",
-			ActionFunc: switcher("playlists"),
+			Text: "Playlists",
+			ActionFunc: func() error {
+				return showPlaylistWindow(lw, MPD)
+			},
 		},
 		&Entry{
 			Text:       "Clock",
@@ -701,6 +709,7 @@ func Run(ctx context.Context) error {
 		partyModeEntry,
 		outputEntry,
 		playbackEntry,
+		randomEntry,
 		&Separator{"SYSTEM"},
 		&Entry{
 			Text:       "Powermenu",
@@ -716,14 +725,14 @@ func Run(ctx context.Context) error {
 		&Entry{
 			Text: "Poweroff",
 			ActionFunc: func() error {
-				drawShutdownscreen(lw)
+				switchToStatic(lw, "shutdown")
 				return sysCommand("systemctl", "poweroff")()
 			},
 		},
 		&Entry{
 			Text: "Reboot",
 			ActionFunc: func() error {
-				drawShutdownscreen(lw)
+				switchToStatic(lw, "shutdown")
 				return sysCommand("systemctl", "reboot")()
 			},
 		},
@@ -747,12 +756,12 @@ func Run(ctx context.Context) error {
 		return nil
 	})
 
-	mgr.AddTimedAction(400*time.Millisecond, func() error {
+	mgr.AddTimedAction(600*time.Millisecond, func() error {
 		ignoreRelease = true
 		return mgr.SwitchTo("menu-main")
 	})
 
-	mgr.AddTimedAction(2*time.Second, func() error {
+	mgr.AddTimedAction(3*time.Second, func() error {
 		ignoreRelease = true
 		return mgr.SwitchTo("menu-power")
 	})

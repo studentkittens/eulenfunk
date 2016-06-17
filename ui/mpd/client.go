@@ -201,6 +201,20 @@ func (cl *Client) CurrentState() string {
 	return cl.Status["state"]
 }
 
+func (cl *Client) IsRandom() bool {
+	cl.Lock()
+	defer cl.Unlock()
+
+	return cl.Status["random"] == "1"
+}
+
+func (cl *Client) EnableRandom(enable bool) error {
+	cl.Lock()
+	defer cl.Unlock()
+
+	return cl.MPD.Client().Random(enable)
+}
+
 func (cl *Client) Next() error {
 	cl.Lock()
 	defer cl.Unlock()
