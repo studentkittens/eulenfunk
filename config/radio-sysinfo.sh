@@ -6,7 +6,7 @@ IP_ADDR=$(ip addr show wlan0 | grep -m 1 'inet' | awk  '{print $2}' | sed 's/...
 UPTIME_HOURS=$(uptime | awk '{print $1}')
 WIFI_SIGNAL=$(awk 'NR==3 {print $4}''' /proc/net/wireless)
 
-printf "CPU: %3d%% MEM: %3d%%\n" ${CPU_USAGE} ${MEM_USAGE}
+printf "π %3d%% ⏸ %3d%%\n" ${CPU_USAGE} ${MEM_USAGE}
 printf "IP: %15s\n" ${IP_ADDR}
-printf "UPTIME: %s HR\n" ${UPTIME_HOURS}
-printf "SIGNAL:  %3.1f%%/100%%\n"  ${WIFI_SIGNAL}
+printf "❤ %s ৹C\n" ${UPTIME_HOURS}
+printf "ψ %3.1f%%\n"  ${WIFI_SIGNAL}

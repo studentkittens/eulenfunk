@@ -101,7 +101,6 @@ func createOutputEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error) 
 
 	MPD.Register("output", func() {
 		active, err := MPD.ActiveOutput()
-		log.Printf("Output changed to %v from extern", active)
 		if err != nil {
 			log.Printf("Failed to get active output: %v", err)
 			return
@@ -133,7 +132,6 @@ func createPlaybackEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error
 
 	MPD.Register("player", func() {
 		newState := mpd.StateToUnicode(MPD.CurrentState())
-		log.Printf("State changed to %v from extern", newState)
 		if err := playbackEntry.SetState(newState, false); err != nil {
 			log.Printf("Failed to set new state: %v", err)
 		}
@@ -159,7 +157,6 @@ func createRandomEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error) 
 	}
 
 	MPD.Register("options", func() {
-		log.Printf("random changed to %v from extern", MPD.IsRandom())
 		randomEntry.SetState(boolToGlyph(MPD.IsRandom()), false)
 		mgr.Display()
 	})

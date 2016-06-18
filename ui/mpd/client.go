@@ -456,7 +456,6 @@ func (cl *Client) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case ev := <-updateCh:
-			log.Printf("MPD EVENT: %s", ev)
 			switch ev {
 			case "stored_playlist":
 				if err := cl.updatePlaylists(); err != nil {

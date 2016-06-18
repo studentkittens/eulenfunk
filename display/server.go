@@ -16,17 +16,21 @@ import (
 	"golang.org/x/net/context"
 )
 
+// NOTE: Custom chars are repeated in 8-15;
+//       use 8 instead of 0 (=> nul-byte) therefore.
 const (
-	GLYPH_HBAR  = 8
-	GLYPH_PLAY  = 1
-	GLYPH_PAUSE = 2
-	GLYPH_HEART = 3
-	GLYPH_CROSS = 4
-	GLYPH_CHECK = 5
-	GLYPH_STOP  = 6
+	GLYPH_HBAR   = 8
+	GLYPH_PLAY   = 1
+	GLYPH_PAUSE  = 2
+	GLYPH_HEART  = 3
+	GLYPH_CROSS  = 4
+	GLYPH_CHECK  = 5
+	GLYPH_STOP   = 6
+	GLYPH_CACTUS = 7
 )
 
 var UnicodeToLCDCustom = map[rune]byte{
+	// Real custom characters:
 	'━': GLYPH_HBAR,
 	'▶': GLYPH_PLAY,
 	'⏸': GLYPH_PAUSE,
@@ -34,6 +38,8 @@ var UnicodeToLCDCustom = map[rune]byte{
 	'×': GLYPH_CROSS,
 	'✓': GLYPH_CHECK,
 	'⏹': GLYPH_STOP,
+	// Existing characters on the LCD:
+	'ψ': GLYPH_CACTUS,
 	'ä': 132,
 	'Ä': 142,
 	'ü': 129,
@@ -41,6 +47,8 @@ var UnicodeToLCDCustom = map[rune]byte{
 	'ö': 148,
 	'Ö': 153,
 	'ß': 224,
+	'π': 237,
+	'৹': 178,
 }
 
 func encode(s string) []byte {
@@ -329,7 +337,6 @@ func (win *Window) Switch() {
 func (win *Window) Render() []byte {
 	buf := &bytes.Buffer{}
 
-	log.Printf("WinRender: %d %d %d", win.LineOffset, win.Height, win.NLines)
 	hi := win.LineOffset + win.Height
 	if hi > win.NLines {
 		hi = win.NLines
