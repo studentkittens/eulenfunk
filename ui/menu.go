@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"log"
-
 	"github.com/studentkittens/eulenfunk/display"
 )
 
@@ -63,7 +61,6 @@ func (mn *Menu) Scroll(move int) {
 func (mn *Menu) Display(width int) error {
 	for pos, ClickEntry := range mn.Entries {
 		line := ClickEntry.Render(width, pos == mn.Cursor)
-		log.Printf("ACtive %t %d == %d %s", pos == mn.Cursor, pos, mn.Cursor, line)
 
 		if _, err := mn.lw.Formatf("line %s %d %s", mn.Name, pos, line); err != nil {
 			return err

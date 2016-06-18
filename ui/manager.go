@@ -87,7 +87,7 @@ func NewMenuManager(cfg *Config, lw *display.LineWriter, initialWin string) (*Me
 			if mgr.ActiveWindow() == active.Name {
 				if err := active.Click(); err != nil {
 					name := active.ActiveEntryName()
-					log.Printf("Action for menu ClickEntry `%s` failed: %v", name, err)
+					log.Printf("Action for menu entry `%s` failed: %v", name, err)
 				}
 
 				mgr.Display()
@@ -244,8 +244,15 @@ func (mgr *MenuManager) AddMenu(name string, entries []Entry) error {
 		return err
 	}
 
-	for _, ClickEntry := range entries {
-		menu.Entries = append(menu.Entries, ClickEntry)
+	for _, entry := range entries {
+		menu.Entries = append(menu.Entries, entry)
+	}
+
+	// Why? Because AddMenu may be called more than once with different entries.
+	// If first a long menu is given and then a short, the diff will still
+	// contain the lines of the longer one:
+	if _, err := mgr.lw.Formatf("truncate %s %d", name, len(entries)); err != nil {
+		log.Printf("Failed to truncate menu %s: %v", name, err)
 	}
 
 	if mgr.Active == nil {
@@ -253,7 +260,7 @@ func (mgr *MenuManager) AddMenu(name string, entries []Entry) error {
 		mgr.Active.Display(mgr.Config.Width)
 	}
 
-	// Pre-select first selectable ClickEntry:
+	// Pre-select first selectable entry:
 	menu.Scroll(0)
 
 	mgr.Menus[name] = menu

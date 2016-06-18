@@ -176,6 +176,17 @@ func (cl *Client) ListPlaylists() []string {
 	return n
 }
 
+func (cl *Client) LoadAndPlayPlaylist(name string) error {
+	cl.Lock()
+	defer cl.Unlock()
+
+	if err := cl.MPD.Client().PlaylistLoad(name, -1, -1); err != nil {
+		return err
+	}
+
+	return cl.MPD.Client().Play(0)
+}
+
 func (cl *Client) TogglePlayback() error {
 	cl.Lock()
 	defer cl.Unlock()
@@ -419,11 +430,7 @@ func (cl *Client) Run(ctx context.Context) {
 
 	// Also sync on every mpd event:
 	go func() {
-		watcher := NewReWatcher(
-			cl.Config.Host, cl.Config.Port,
-			"player", "stored_playlist",
-		)
-
+		watcher := NewReWatcher(cl.Config.Host, cl.Config.Port)
 		defer watcher.Close()
 
 		for {
@@ -441,6 +448,7 @@ func (cl *Client) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case ev := <-updateCh:
+			log.Printf("MPD EVENT: %s", ev)
 			switch ev {
 			case "stored_playlist":
 				if err := cl.updatePlaylists(); err != nil {

@@ -1,20 +1,22 @@
 package ui
 
-import (
-	"log"
+import "github.com/studentkittens/eulenfunk/ui/mpd"
 
-	"github.com/studentkittens/eulenfunk/display"
-	"github.com/studentkittens/eulenfunk/ui/mpd"
-)
+func createPlaylistEntries(MPD *mpd.Client) []Entry {
+	entries := []Entry{&Separator{"Playlists"}}
 
-func showPlaylistWindow(lw *display.LineWriter, MPD *mpd.Client) error {
-	for idx, playlist := range MPD.ListPlaylists() {
-		if _, err := lw.Formatf("line playlists %d %s", idx, playlist); err != nil {
-			log.Printf("Failed to format playlist line %d: %v", idx, err)
-			return err
-		}
+	for _, name := range MPD.ListPlaylists() {
+		entries = append(entries, &ClickEntry{
+			Text: name,
+
+			// Closure trick so we don't get the last loop var:
+			ActionFunc: func(name string) func() error {
+				return func() error {
+					return MPD.LoadAndPlayPlaylist(name)
+				}
+			}(name),
+		})
 	}
 
-	_, err := lw.Formatf("switch playlists")
-	return err
+	return entries
 }

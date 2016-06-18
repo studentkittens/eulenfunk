@@ -273,13 +273,18 @@ func Run(cfg *Config, ctx context.Context) error {
 	mainMenu := []Entry{
 		&Separator{"MODES"},
 		&ClickEntry{
-			Text:       "Music status",
+			Text:       "Music info",
 			ActionFunc: switcher("mpd"),
 		},
 		&ClickEntry{
 			Text: "Playlists",
 			ActionFunc: func() error {
-				return showPlaylistWindow(lw, MPD)
+				entries := createPlaylistEntries(MPD)
+				if err := mgr.AddMenu("playlists", entries); err != nil {
+					return err
+				}
+
+				return mgr.SwitchTo("playlists")
 			},
 		},
 		&ClickEntry{
