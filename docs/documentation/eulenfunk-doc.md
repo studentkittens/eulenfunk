@@ -8,8 +8,9 @@ include-headers:
     - \usepackage[babel, german=quotes]{csquotes}
 fontsize: 11pt
 sections: yes
+rights:  Creative Commons Non-Commercial Share Alike 3.0
 toc: yes
-lof: no
+lof: yes
 lot: no
 date: \today
 ---
@@ -158,8 +159,8 @@ noch erworben werden:
 * WIFI--Adapter (vorhanden)
 * Netzteil (vorhanden, div. 5V)
 * Audioverstärker (muss erworben werden)
-* Drehregler (muss erworben werden)
-* Farbe und Kunststoffabdeckung für das neue Gehäuse (muss erworben werden)
+* Drehimpulsregler (muss erworben werden)
+* Farbe (Lack), Kunststoffabdeckung und Drehknöpfe für das Gehäuse (muss erworben werden)
 
 [^AEG]: AEG Küchenradio 4104: \url{https://www.amazon.de/AEG-MR-4104-Desgin-Uhrenradio-buche/dp/B000HD19W8}
 
@@ -215,7 +216,7 @@ Abbildung \ref{gpio}[^SRC] zeigt die GPIO--Header des *Raspberry Pi* Modell B Re
 Die GPIO--Pins des *Raspberry Pi* haben eine Logikspannung von 3.3V und sind pro
 GPIO--Pin mit max. 16mA belastbar. Der der gesamte GPIO--Header sollte mit nicht
 mehr als 50mA belastet werden, da es darüber hinaus zu Hardwareschäden kommen
-kann (siehe auch @gay2014raspberry).
+kann (siehe auch [@gay2014raspberry]).
 
 Die Ansteuerung Ansteuerung von LED über GPIO erfolgt binär. Das heisst, dass
 die LED entweder aus (GPIO low) oder an sein kann (GPIO high).
@@ -224,8 +225,8 @@ TODO: ELCH?
 In der ,,analogen'' Welt ist es jedoch möglich eine LED über das Senken der
 Spannung zu dimmen. Um ein Dimmen in der digitalen Welt zu erreichen wird ein
 Modulationsverfahren angwandt, welches Pulsweitenmodulation heisst. Hierbei
-wird...elch? Weitere Informationen finden sich auch unter @richardson2014make
-@gay2014raspberry und @gay2014mastering. Software PWM in @gay2014experimenting.
+wird...elch? Weitere Informationen finden sich auch unter [@richardson2014make]
+[@gay2014raspberry] und [@gay2014mastering]. Software PWM in [@gay2014experimenting].
 Hier beispielsweise 6% CPU--Last pro GPIO--Pin. 
 
 ## LCD--Anzeige
@@ -259,7 +260,7 @@ lediglich nur zwei.
 Da für den seriellen Betrieb beispielsweise über den I2C--Bus zusätzliche
 Hardware benötigt wird, wird die parallele Ansteuerung über die GPIO--Pins
 bevorzugt. Für weitere Informationen zum seriellen Betrieb über I2C siehe auch
-@horan2013practical.
+[@horan2013practical].
 
 \begin{figure}[h!]
   \centering
@@ -308,7 +309,7 @@ eine) und einen Anschluss für den Schalter. Beim drehen eines Drehimpulsgebers
 wird ein Rechtecksignal generiert. Je nach Muster der beiden Datensignale A oder
 B, kann entschieden werden ob es sich um eine Rechts-- oder Linksdrehung
 handelt. Weitere Hintergrundinformationen zu Drehimpulsgeber siehe auch
-@2014projekte.
+[@2014projekte].
 
 Abbildung \ref{alps} zeigt den Anschluss des Drehimpulsgebers am *Raspberry Pi*. 
 
@@ -316,8 +317,9 @@ Abbildung \ref{alps} zeigt den Anschluss des Drehimpulsgebers am *Raspberry Pi*.
 
 \begin{figure}[h!]
   \centering
-\includegraphics[width=0.5\textwidth]{images/rotary.png}
-  \caption{Drehimpulsgeber--Anschluss an den Raspberry Pi}
+\includegraphics[width=0.6\textwidth]{images/rotary.png}
+  \caption{Drehimpulsgeber--Anschluss an den Raspberry Pi, Abbildung zeigt
+  Kombination aus Potentiometer und Schalter.}
   \label{alps}
 \end{figure}
 
@@ -341,6 +343,26 @@ Anschluss von externen Lautsprechern auch eine Lautstärkeregelung über ein Pot
 erfolgen soll, ist die Entscheidung einfachheitshalber auf ein
 Audioverstärker--Modul auf Basis vom PAM8403[^POW] Stereo-Verstärker mit Potentiometer gefallen.
 
+Das Audioverstärker--Module hat folgende Anschlusspins:
+
+* Left--In, Right--In, GND
+* 5V+ und GND (Betriebsspannung)
+* Left--Side--Out (+), Left--Side--Out (-)
+* Right--Side--Out (+), Right--Side--Out (-)
+
+Laut diverser Onlinequellen[^MONO], dürfen die Ausgänge für einen Mono--Betrieb
+eines auf dem PAM8403--basierten Verstärkers nicht paralell geschaltet werden.
+Aus diesem Grund kommt ein ein 4--poliger
+*EIN--EIN--Kippschalter*[^KIPPSCHALTER] zum Einsatz. So kann zwischen dem
+interen Lautsprecher (Mono--Betrieb) und den externen Stereo
+Lautsprecher--Anschlüssen sauber per Hardware hin und her geschaltet werden.
+
+Damit beim Mono--Betrieb nicht nur ein Channal verwendet wird, ermöglicht
+*Eulenfunk* das umschalten zwischen Mono-- und Stereo--Betrieb in Software.
+
+[^MONO]: PAM8403 Mono--Betrieb: http://electronics.stackexchange.com/questions/95743/can-you-bridge-or-parallel-the-outputs-of-the-pam8403-amplifier
+
+[^KIPPSCHALTER]: Kippschalter 4--polig EIN--EIN: \url{http://www.reichelt.de/Kippschalter/MS-500P/3/index.html?&ACTION=3&LA=2&ARTICLE=13172&GROUPID=3275&artnr=MS+500P}
 [^POW]: Verstärkermodul: \url{https://www.amazon.de/5V-Audioverstärker-Digitalendstufenmodul-Zweikanalige-Stereo-Verstärker-Potentiometer/dp/B01ELT81A6}
 
 ## LED--Transistorschaltung
@@ -386,7 +408,7 @@ max. Strom von 16 mA beziehen
 In *Eulenfunk* sollen mehrere intensiv leuchtende LEDs verbaut werden. Da die
 GPIO--Pins in ihrer Leistung sehr begrenzt ist, würde es sich anbeiten eine
 externe Stromquelle zu verwenden. Um die Speisung über eine externe Stromquelle
-zu ermöglichen kann eine Transistorschaltung verwendet werden (vgl. @traled). 
+zu ermöglichen kann eine Transistorschaltung verwendet werden (vgl. [@traled]). 
 
 Für die Transistorschaltung wurden vom Herrn Schäferling NPN (BC547C) und PNP
 (BC557C) bereitgestellt. Für den ersten Testaufbau wurde der PNP--Transistor und
@@ -429,7 +451,7 @@ $$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{270\mu
 
 \begin{figure}[h!]
   \centering
-\includegraphics[width=0.7\textwidth]{images/transistorled.png}
+\includegraphics[width=0.9\textwidth]{images/transistorled.png}
   \caption{Transistor--RGB--LED Schaltung}
   \label{transled}
 \end{figure}
@@ -457,27 +479,40 @@ Verhalten wurde bemerkt, also der *Raspberry Pi* ohne Power--Connector alleine
 mit nur der USB--Verbindung zum Hub bootete.
 
 Da bei der Speisung über die USB--Schnittstelle die interne Sicherungschaltung
-des *Pi* umgangen werden, besteht hier die zusätzliche Gefahr eines
+des *Pi* umgangen wird, besteht hier die zusätzliche Gefahr eines
 Hardwaredefektes durch die Speisung einer zusätzlichen Spannungsquelle. Weitere
-Informationen zu dem Problem finden sich unter @suehle2014hacks.
+Informationen zu dem Problem finden sich unter [@suehle2014hacks].
 
 
 ## Gehäuse
 
-Die Gehäuse--Farbe soll in hellelfenbeinweiß RAL 1015 einen dezenten
-,,Retro''--Look verschaffen.
-Plexiglas von Wolfgang
-Holzgehäuse des alten AEG Radios
-Knöpfe schwarz mit Alu-Optik
+Abbildung \ref{ral} zeigt ein Muster der Gehäusefront--Farbe hellelfenbeinweiß RAL
+1015. Dieser Farbton wird für die Front verwendet um *Eulenfunk* einen dezenten
+,,Retro''--Look verpassen.
 
-### Platz im Gehäuse gering
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.3\textwidth]{images/ral_soft.png}
+  \caption{Muster RAL1015, hellelfenbeinweiß}
+  \label{ral}
+\end{figure}
 
-...
+Das Plexiglas für die Front wurde von der Firma *ira-Kunststoffe* in
+Schwarzenbach/Saale zugeschnitten. In der Plexiglasfront wurden mit Hilfe vom
+Herrn Schäferling zwei 5mm Löcher (Drehimpulsgeber, Lautstärkeregler--Poti)
+gebohrt. Anschließend wurde die Plexiglas--Front von der Innenseite
+lackiert[^LACK], hierbei wurden die Flächen für LCD und die drei LEDs
+abgeklebt. Desweiteren werden schwarze Knöpfe in Alu--Optik mit 
+$\diameter$ 30mm  für den Lautstärkeregler und
+den Drehimpulsgeber verwendet.
+
+[^LACK]: Buntlack, hellelfenbein: \url{http://www.obi.de/decom/product/OBI_Buntlack_Spray_Hellelfenbein_hochglaenzend_150_ml/3468725}
+
 
 ## Betriebssystem
 
 Mittlerweile gibt es für den *Raspberry Pi* viele offiziell zugeschnittene
-Betriebssysteme[^OS] (vgl. @dembowski2013raspberry). Bei den den Linux
+Betriebssysteme[^OS] (vgl. [@dembowski2013raspberry]). Bei den den Linux
 Distributionen ist *Raspbian* eine der bekanntesten Distribution -- welche auf
 *Debian* basiert. *Raspbian* bringt ein komplettes Linux--basiertes System mit
 grafischer Benutzeroberfläche mit sich. 
@@ -493,9 +528,9 @@ diese alle Vorteile von Freier Software zu nichte machen würde.
 
 ### Wahl des Betriebbsystems
 
-*Arch Linux ARM* ist eine minimalistische und sehr performante
+*Arch Linux ARM*[^ARCH] ist eine minimalistische und sehr performante
 Linux--Distribution welche im Gegensatz zu *Raspbian* ohne Desktopumgebung
-geliefert wird (vgl. @schmidt2014raspberry) Desweiteren ist *Arch Linux* ein
+geliefert wird (vgl. [@schmidt2014raspberry]) Desweiteren ist *Arch Linux* ein
 bekannter Vertreter von Rolling--Release--Distributionen. Ein weiterer Vorteil
 für unseren Einsatzzweck hier ist bei *Arch Linux* das *AUR* (Arch User
 Repository)[^AUR], dieses erlaubt es eigene Software auf eine schnelle und
@@ -503,7 +538,7 @@ unkomplizierte Weise der Allgemeinheit zur Verfügung zu stellen.
 
 ### Einrichtung des Grundsystems
 
-Nach der Installation und dem ersten Booten des Grundsystems muss die
+Nach der Installation[^INSTALL] und dem ersten Booten des Grundsystems muss die
 Netzwerk--Schnittstelle konfiguriert werden. Arch Linux ARM bietet mit *netctl*
 ein profilbasierte Konfigurationsmöglichkeit. Ein Profil kann über das
 *ncurses*--basierte Tool `wifi-menu` erstellt werden. In unserem Fall wurde das
@@ -513,7 +548,7 @@ Profil `wlan0-Phobos` erstellt. Anschließend kann das erstellte Profil mit
 **Auflistung der bekannten Profile**
 
 ```bash
-    [alarm@eulenfunk ~]$ netctl list
+    [wald@eulenfunk ~]$ netctl list
       eth0-static
       wlan0-Phobos
 ```
@@ -522,14 +557,14 @@ Profil `wlan0-Phobos` erstellt. Anschließend kann das erstellte Profil mit
 
 ```bash
     # Starten des gewünschten Profils
-    [alarm@eulenfunk ~]$ netctl start wlan0-Phobos
+    [wald@eulenfunk ~]$ netctl start wlan0-Phobos
 
-    [alarm@eulenfunk ~]$ netctl list
+    [wald@eulenfunk ~]$ netctl list
       eth0-static
     * wlan0-Phobos
 
     # Profil über System-Reboot hinweg aktivieren 
-    [alarm@eulenfunk ~]$ netctl enable wlan0-Phobos
+    [wald@eulenfunk ~]$ netctl enable wlan0-Phobos
 
 ```
 
@@ -583,7 +618,9 @@ Von Elchen kopiert.
 
 ## Ziel erreicht?
 
-Ja?
+Das selbstgesetzte Ziel --- mit möglichst wenig Aufwand ein Internetradio auf Basis
+eines *Raspberry Pi* zu entwickeln --- kann durchaus als erfolgreich betrachtet
+werden. 
 
 ## Erweiterungen und alternative Ansätze
 
@@ -596,11 +633,12 @@ live gestreamter Musik gut. Bei live gestreamter Musik könnte für die
 Visualisierung eine Fast--Fourier--Transformation in Echtzeit durchgeführt
 werden. Da jedoch die Ressourcen des *Raspberry Pi* sehr begrenzt sollte hier
 auf die Verwendung einer GPU--beschleunigte--FFT[^FFT] zurückgegriffen werden
-(vgl. @Sabarinath2015).
+(vgl. [@Sabarinath2015]).
 
 Ein alternativer Ansatz wäre auch die Realisierung einer Musik--Visualisierung
 mittels Hardwarekomponenten. Ein möglicher Ansatz aus hardwarebasierten
-Hochpass-- und Tiefpassfiltern in Form einer Disco--Beleuchtung wird unter @2014projekte beschrieben.
+Hochpass-- und Tiefpassfiltern in Form einer Disco--Beleuchtung wird unter
+[@2014projekte] beschrieben.
 
 ### Echtzeit--Uhr
 
@@ -609,7 +647,15 @@ sich bei *Eulenfunk* um eine Internet--Radio handelt wurde auf eine Echtzeituhr
 (real time clock, RTC) verzichtet, da sich die Uhr *Eulenfunk* aufgrund der
 permanenten Internetverbindung mittels NTP[^NTP] über das Internet
 synchronisieren kann. Eine Erweiterung um eine Echtzeituhr wird in
-@horan2013practical und @gay2014experimenting ausführlich beschreiben.
+[@horan2013practical] und [@gay2014experimenting] ausführlich beschreiben.
+
+
+### Fernbedienung
+
+Eine weitere Erweiterung wäre die integration einer Fernbedienung. Diese ließe
+sich relativ einfach mittels eine Infrarot--Sensors und beispielsweise der
+*lirc*--Library umsetzen. Weitere Informationen siehe auch
+[@kurniawanraspberry].
 
 [^NTP]: Network Time Protocol:
 \url{https://de.wikipedia.org/wiki/Network_Time_Protocol}
