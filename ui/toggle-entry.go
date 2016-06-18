@@ -62,6 +62,15 @@ func (te *ToggleEntry) SetState(state string, click bool) error {
 		return fmt.Errorf("No such action `%s`", state)
 	}
 
+	te.mu.Lock()
+	for idx, toggle := range te.Order {
+		if toggle == state {
+			te.State = idx
+			break
+		}
+	}
+	te.mu.Unlock()
+
 	if click {
 		return fn()
 	}

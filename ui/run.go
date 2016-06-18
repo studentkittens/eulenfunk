@@ -132,8 +132,12 @@ func createPlaybackEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error
 	}
 
 	MPD.Register("player", func() {
-		log.Printf("State changed to %v from extern", mpd.StateToUnicode(MPD.CurrentState()))
-		playbackEntry.SetState(mpd.StateToUnicode(MPD.CurrentState()), false)
+		newState := mpd.StateToUnicode(MPD.CurrentState())
+		log.Printf("State changed to %v from extern", newState)
+		if err := playbackEntry.SetState(newState, false); err != nil {
+			log.Printf("Failed to set new state: %v", err)
+		}
+
 		mgr.Display()
 	})
 
@@ -284,7 +288,7 @@ func Run(cfg *Config, ctx context.Context) error {
 					return err
 				}
 
-				return mgr.SwitchTo("playlists")
+				return switcher("playlists")()
 			},
 		},
 		&ClickEntry{
