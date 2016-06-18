@@ -281,11 +281,18 @@ func Run(cfg *Config, ctx context.Context) error {
 			Text: "Playlists",
 			ActionFunc: func() error {
 				entries := createPlaylistEntries(MPD)
-				if err := mgr.AddMenu("playlists", entries); err != nil {
+
+				// Add an exit button:
+				entries = append(entries, &ClickEntry{
+					Text:       "Exit",
+					ActionFunc: switcher("menu-main"),
+				})
+
+				if err := mgr.AddMenu("menu-playlists", entries); err != nil {
 					return err
 				}
 
-				return switcher("playlists")()
+				return switcher("menu-playlists")()
 			},
 		},
 		&ClickEntry{
