@@ -245,6 +245,10 @@ func (cl *Client) Play() error {
 	cl.Lock()
 	defer cl.Unlock()
 
+	if cl.Status["state"] == "stop" {
+		return cl.MPD.Client().Play(0)
+	}
+
 	return cl.MPD.Client().Pause(false)
 }
 
