@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
     wiringPiSetup();
 
     if(argc < 2) {
-	usage(argv[0]);
+	    usage(argv[0]);
     }
 
     softPwmCreate(PIN_RED, 0, 255);

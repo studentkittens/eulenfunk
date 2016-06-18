@@ -1,7 +1,8 @@
 all: radio-led radio-lcd radio-rotary
 
+# Im too lazy for make right now:
 clean:
-	rm radio-*
+	rm -f radio-*
 
 radio-led: clean
 	gcc led-driver.c softPwm.c -o radio-led -lwiringPi -pthread -Os -Wall -Wextra

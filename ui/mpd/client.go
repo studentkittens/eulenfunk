@@ -67,12 +67,25 @@ func displayStats(lw *display.LineWriter, stats mpd.Attrs) error {
 	return nil
 }
 
+func formatStop(status mpd.Attrs) ([]string, error) {
+	return []string{
+		fmt.Sprintf("        ⏹          "),
+		fmt.Sprintf("Playback stopped.  "),
+		fmt.Sprintf("Turn knob to start "),
+		fmt.Sprintf("        ⏹          "),
+	}, nil
+}
+
 func isRadio(currSong mpd.Attrs) bool {
 	_, ok := currSong["Name"]
 	return ok
 }
 
 func format(currSong, status mpd.Attrs) ([]string, error) {
+	if status["state"] == "stop" {
+		return formatStop(status)
+	}
+
 	if isRadio(currSong) {
 		return formatRadio(currSong, status)
 	}
@@ -113,17 +126,21 @@ func formatStatusLine(currSong, status mpd.Attrs) string {
 		return state
 	}
 
-	state += " "
-	state += formatTimeSpec(time.Duration(elapsedSec*1000) * time.Millisecond)
+	length := formatTimeSpec(time.Duration(elapsedSec*1000) * time.Millisecond)
 
 	// Append total time if available:
 	if timeStr, ok := currSong["Time"]; ok {
 		if totalSec, err := strconv.Atoi(timeStr); err == nil {
-			state += "/" + formatTimeSpec(time.Duration(totalSec)*time.Second)
+			length += "/" + formatTimeSpec(time.Duration(totalSec)*time.Second)
 		}
 	}
 
-	return state
+	bitrate := ""
+	if len(status["bitrate"]) > 0 {
+		bitrate = status["bitrate"]
+	}
+
+	return fmt.Sprintf("%s %-3s %s", state, bitrate, length)
 }
 
 func formatRadio(currSong, status mpd.Attrs) ([]string, error) {
@@ -138,10 +155,15 @@ func formatRadio(currSong, status mpd.Attrs) ([]string, error) {
 }
 
 func formatSong(currSong, status mpd.Attrs) ([]string, error) {
+	genre := currSong["Genre"]
+	if len(genre) > 0 {
+		genre = " (" + genre + ")"
+	}
+
 	block := []string{
-		currSong["Artist"],
-		fmt.Sprintf("%s (Genre: %s)", currSong["Album"], currSong["Genre"]),
-		fmt.Sprintf("%s %s", currSong["Title"], currSong["Track"]),
+		fmt.Sprintf("%s%s", currSong["Artist"], genre),
+		fmt.Sprintf("%s (#%s)", currSong["Title"], currSong["Pos"]),
+		fmt.Sprintf("%s", currSong["Album"]),
 		formatStatusLine(currSong, status),
 	}
 

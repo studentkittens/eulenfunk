@@ -3,9 +3,15 @@ BIN=/usr/bin
 
 all: install
 
-build:
+eulenfunk:
 	go install
+
+driver:
 	@cd driver && $(MAKE) --no-print-directory
+
+.PHONY: driver
+
+build: eulenfunk driver
 
 install: build
 	cp config/radio-sysinfo.sh $(BIN)
