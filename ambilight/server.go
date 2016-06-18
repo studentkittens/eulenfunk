@@ -25,6 +25,9 @@ import (
 	"github.com/studentkittens/eulenfunk/ui/mpd"
 )
 
+// Use a builtin default moodbar if none was found if true
+const USE_DEFAULT_MOODBAR = true
+
 type Config struct {
 	// MPDHost of the mpd server (usually localhost)
 	MPDHost string
@@ -366,13 +369,17 @@ func MoodbarAdjuster(eventCh <-chan MPDEvent, colorsCh chan<- TimedColor) {
 					log.Printf("Failed to read moodbar at `%s`: %v", ev.Path, err)
 
 					// Return to black:
-					sendColor(TimedColor{0, 0, 0, 0})
-					colors = []TimedColor{}
-					currIdx = 0
-					continue
+					if USE_DEFAULT_MOODBAR {
+						colors = DEFAULT_MOODBAR
+					} else {
+						sendColor(TimedColor{0, 0, 0, 0})
+						colors = []TimedColor{}
+						currIdx = 0
+						continue
+					}
+				} else {
+					colors = data
 				}
-
-				colors = data
 			}
 
 			// Adjust the moodbar seek offset (1000 samples per total time)
@@ -541,7 +548,7 @@ func handleConn(server *Server, driverStdin io.WriteCloser, conn net.Conn) {
 
 			// Wait a short amount to make sure other colors
 			// get flushed:
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(250 * time.Millisecond)
 			if _, err := driverStdin.Write([]byte("0 0 0\n")); err != nil {
 				log.Printf("Failed to turn light off: %v", err)
 			}
