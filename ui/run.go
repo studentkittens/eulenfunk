@@ -63,6 +63,8 @@ func createPartyModeEntry(cfg *Config, mgr *MenuManager) (*ToggleEntry, error) {
 			enabled, err := ambilightIsEnabled(cfg)
 			if err != nil {
 				log.Printf("Failed to query state of ambilight: %v", err)
+				log.Printf("(Waiting 5 seconds before retrying)")
+				time.Sleep(5 * time.Second)
 				continue
 			} else {
 				partyModeEntry.SetState(boolToGlyph(enabled), false)
