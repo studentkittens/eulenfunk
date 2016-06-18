@@ -180,6 +180,10 @@ func (cl *Client) LoadAndPlayPlaylist(name string) error {
 	cl.Lock()
 	defer cl.Unlock()
 
+	if err := cl.MPD.Client().Clear(); err != nil {
+		return err
+	}
+
 	if err := cl.MPD.Client().PlaylistLoad(name, -1, -1); err != nil {
 		return err
 	}
@@ -470,7 +474,7 @@ func (cl *Client) Run(ctx context.Context) {
 					log.Printf("Failed to display playlists: %v", err)
 					continue
 				}
-			case "player":
+			case "player", "options":
 				song, err := cl.MPD.Client().CurrentSong()
 				if err != nil {
 					log.Printf("Unable to fetch current song: %v", err)

@@ -255,9 +255,9 @@ func (win *Window) SetLine(pos int, text string) error {
 		}
 
 		win.Lines = newLines
-		win.NLines = len(win.Lines)
 	}
 
+	win.NLines = len(win.Lines)
 	win.Lines[pos].SetText(text, win.UseEncoding)
 	return nil
 }
@@ -293,27 +293,31 @@ func (win *Window) Move(n int) {
 	return
 }
 
-func (win *Window) Truncate(n int) {
-	oldN := win.NLines
+func (win *Window) Truncate(n int) int {
+	nlines := 0
 
 	switch {
 	case n < 0:
 		win.LineOffset = 0
+		nlines = 0
 	case n > len(win.Lines):
-		win.NLines = len(win.Lines)
+		nlines = len(win.Lines)
 	default:
-		win.NLines = n
+		nlines = n
 	}
 
-	diff := win.NLines - oldN
+	// Go back if needed:
+	diff := nlines - win.NLines
 	if diff < 0 {
 		win.Move(diff)
 	}
 
 	// Clear remaining lines:
-	for i := win.NLines; i < oldN; i++ {
+	for i := nlines; i < win.NLines; i++ {
 		win.Lines[i].SetText("", win.UseEncoding)
 	}
+
+	return nlines
 }
 
 func (win *Window) Switch() {
@@ -325,6 +329,7 @@ func (win *Window) Switch() {
 func (win *Window) Render() []byte {
 	buf := &bytes.Buffer{}
 
+	log.Printf("WinRender: %d %d %d", win.LineOffset, win.Height, win.NLines)
 	hi := win.LineOffset + win.Height
 	if hi > win.NLines {
 		hi = win.NLines
@@ -492,9 +497,17 @@ func (srv *Server) Move(window string, n int) {
 
 func (srv *Server) Truncate(window string, n int) {
 	srv.Lock()
-	defer srv.Unlock()
+	win := srv.createOrLookupWindow(window)
+	nlines := win.Truncate(n)
+	srv.Unlock()
 
-	srv.createOrLookupWindow(window).Truncate(n)
+	srv.renderToDriver()
+
+	srv.Lock()
+	win.NLines = nlines
+	srv.Unlock()
+
+	srv.renderToDriver()
 }
 
 func (srv *Server) Render() []byte {
