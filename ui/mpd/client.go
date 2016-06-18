@@ -168,9 +168,14 @@ func formatSong(currSong, status mpd.Attrs) ([]string, error) {
 		genre = " (" + genre + ")"
 	}
 
+	pos, err := strconv.Atoi(currSong["Pos"])
+	if err != nil {
+		return nil, err
+	}
+
 	block := []string{
 		fmt.Sprintf("%s", currSong["Artist"]),
-		fmt.Sprintf("%s (#%s)", currSong["Title"], currSong["Pos"]),
+		fmt.Sprintf("%s (#%d)", currSong["Title"], pos+1),
 		fmt.Sprintf("%s%s", currSong["Album"], genre),
 		formatStatusLine(currSong, status),
 	}
