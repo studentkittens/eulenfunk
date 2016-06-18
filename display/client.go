@@ -41,7 +41,6 @@ func (lw *LineWriter) Write(p []byte) (int, error) {
 			continue
 		}
 
-		log.Printf("lw: %s", p)
 		return n, err
 	}
 

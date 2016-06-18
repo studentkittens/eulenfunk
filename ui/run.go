@@ -49,10 +49,10 @@ func createPartyModeEntry(cfg *Config, mgr *MenuManager) (*ToggleEntry, error) {
 		Text:  "Party!",
 		Order: []string{"✓", "×"},
 		Actions: map[string]Action{
-			"on": func() error {
+			"✓": func() error {
 				return ambilightChangeState(cfg, true)
 			},
-			"off": func() error {
+			"×": func() error {
 				return ambilightChangeState(cfg, false)
 			},
 		},
@@ -88,7 +88,7 @@ func createOutputEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error) 
 		// Stupid closure trick so we bind the right loop var:
 		actionMap[output] = func(name string) func() error {
 			return func() error {
-				return MPD.SwitchToOutput(output)
+				return MPD.SwitchToOutput(name)
 			}
 		}(output)
 	}
@@ -101,6 +101,7 @@ func createOutputEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error) 
 
 	MPD.Register("output", func() {
 		active, err := MPD.ActiveOutput()
+		log.Printf("Output changed to %v from extern", active)
 		if err != nil {
 			log.Printf("Failed to get active output: %v", err)
 			return
@@ -131,6 +132,7 @@ func createPlaybackEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error
 	}
 
 	MPD.Register("player", func() {
+		log.Printf("State changed to %v from extern", mpd.StateToUnicode(MPD.CurrentState()))
 		playbackEntry.SetState(mpd.StateToUnicode(MPD.CurrentState()), false)
 		mgr.Display()
 	})
@@ -153,6 +155,7 @@ func createRandomEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error) 
 	}
 
 	MPD.Register("options", func() {
+		log.Printf("random changed to %v from extern", MPD.IsRandom())
 		randomEntry.SetState(boolToGlyph(MPD.IsRandom()), false)
 		mgr.Display()
 	})
@@ -243,25 +246,25 @@ func Run(cfg *Config, ctx context.Context) error {
 
 	outputEntry, err := createOutputEntry(mgr, MPD)
 	if err != nil {
-		log.Printf("Failed to create output ClickEntry: %v", err)
+		log.Printf("Failed to create output entry: %v", err)
 		return err
 	}
 
 	partyModeEntry, err := createPartyModeEntry(cfg, mgr)
 	if err != nil {
-		log.Printf("Failed to create party-mode ClickEntry: %v", err)
+		log.Printf("Failed to create party-mode entry: %v", err)
 		return err
 	}
 
 	playbackEntry, err := createPlaybackEntry(mgr, MPD)
 	if err != nil {
-		log.Printf("Failed to create playback ClickEntry: %v", err)
+		log.Printf("Failed to create playback entry: %v", err)
 		return err
 	}
 
 	randomEntry, err := createRandomEntry(mgr, MPD)
 	if err != nil {
-		log.Printf("Failed to create random ClickEntry: %v", err)
+		log.Printf("Failed to create random entry: %v", err)
 		return err
 	}
 

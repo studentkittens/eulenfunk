@@ -380,7 +380,6 @@ func (srv *Server) renderToDriver() {
 
 		buf := lines[i : i+width]
 
-		log.Printf("%s%s", lpos, buf)
 		if _, err := srv.DriverPipe.Write([]byte(lpos)); err != nil {
 			log.Printf("Failed to write to driver: %v", err)
 		}
