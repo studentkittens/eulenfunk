@@ -135,12 +135,20 @@ func formatStatusLine(currSong, status mpd.Attrs) string {
 		}
 	}
 
-	bitrate := ""
+	bitrateStr := ""
+
 	if len(status["bitrate"]) > 0 {
-		bitrate = status["bitrate"]
+		bitrate, err := strconv.Atoi(status["bitrate"])
+		if err == nil {
+			if bitrate > 999 {
+				bitrate = 999
+			}
+
+			bitrateStr = fmt.Sprintf("%-3dKBs", bitrate)
+		}
 	}
 
-	return fmt.Sprintf("%s %-3s %s", state, bitrate, length)
+	return fmt.Sprintf("%s %s %s", state, bitrateStr, length)
 }
 
 func formatRadio(currSong, status mpd.Attrs) ([]string, error) {
@@ -161,9 +169,9 @@ func formatSong(currSong, status mpd.Attrs) ([]string, error) {
 	}
 
 	block := []string{
-		fmt.Sprintf("%s%s", currSong["Artist"], genre),
+		fmt.Sprintf("%s", currSong["Artist"]),
 		fmt.Sprintf("%s (#%s)", currSong["Title"], currSong["Pos"]),
-		fmt.Sprintf("%s", currSong["Album"]),
+		fmt.Sprintf("%s%s", currSong["Album"], genre),
 		formatStatusLine(currSong, status),
 	}
 
