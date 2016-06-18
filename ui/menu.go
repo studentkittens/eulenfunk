@@ -625,6 +625,13 @@ func Run(cfg *Config, ctx context.Context) error {
 		return err
 	}
 
+	// Wait a second to give the startup screen a bit time
+	// to show before switching to mpd status.
+	go func() {
+		time.Sleep(1 * time.Second)
+		mgr.SwitchTo("mpd")
+	}()
+
 	// Some flags to coordinate actions:
 	ignoreRelease := false
 
