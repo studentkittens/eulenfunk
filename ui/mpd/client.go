@@ -33,7 +33,7 @@ type Client struct {
 
 func displayInfo(lw *display.LineWriter, block []string) error {
 	for idx, line := range block {
-		if _, err := lw.Formatf("line mpd %d %s", idx, line); err != nil {
+		if _, err := lw.Printf("line mpd %d %s", idx, line); err != nil {
 			log.Printf("Failed to send line to display server: %v", err)
 			return err
 		}
@@ -58,7 +58,7 @@ func displayStats(lw *display.LineWriter, stats mpd.Attrs) error {
 	}
 
 	for idx, line := range block {
-		if _, err := lw.Formatf("line stats %d %s", idx, line); err != nil {
+		if _, err := lw.Printf("line stats %d %s", idx, line); err != nil {
 			log.Printf("Failed to send line to display server: %v", err)
 			return err
 		}
@@ -381,13 +381,13 @@ func NewClient(cfg *Config) (*Client, error) {
 		return nil, err
 	}
 
-	if _, err := lw.Formatf("switch mpd"); err != nil {
+	if _, err := lw.Printf("switch mpd"); err != nil {
 		log.Printf("Failed to send initial switch to display server: %v", err)
 	}
 
 	// Make the first 3 lines scrolling:
 	for idx := 0; idx < 3; idx++ {
-		if _, err := lw.Formatf("scroll mpd %d 400ms", idx); err != nil {
+		if _, err := lw.Printf("scroll mpd %d 400ms", idx); err != nil {
 			log.Printf("Failed to set scroll: %v", err)
 		}
 	}

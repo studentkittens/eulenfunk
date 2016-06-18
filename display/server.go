@@ -146,7 +146,7 @@ func (ln *Line) SetText(text string, useEncoding bool) {
 	defer ln.Unlock()
 
 	if utf8.RuneCountInString(text) > len(ln.buf) {
-		text += " ━━ "
+		text += " ❤ψ❤ "
 	}
 
 	var encodedText []byte

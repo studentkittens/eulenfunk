@@ -68,8 +68,8 @@ func (lw *LineWriter) Read(p []byte) (int, error) {
 	return 0, nil
 }
 
-// TODO: Formatf -> Printf
-func (lw *LineWriter) Formatf(format string, args ...interface{}) (int, error) {
+// TODO: Printf -> Printf
+func (lw *LineWriter) Printf(format string, args ...interface{}) (int, error) {
 	return lw.Write([]byte(fmt.Sprintf(format, args...)))
 }
 
@@ -120,12 +120,12 @@ func RunDumpClient(cfg *Config, window string, update bool) error {
 		return err
 	}
 
-	if _, err := lw.Formatf("switch %s", window); err != nil {
+	if _, err := lw.Printf("switch %s", window); err != nil {
 		return err
 	}
 
 	for {
-		if _, err := lw.Formatf("render"); err != nil {
+		if _, err := lw.Printf("render"); err != nil {
 			return err
 		}
 
@@ -155,18 +155,18 @@ func RunInputClient(cfg *Config, quit bool, window string) error {
 		return err
 	}
 
-	if _, err := lw.Formatf("switch %s", window); err != nil {
+	if _, err := lw.Printf("switch %s", window); err != nil {
 		return err
 	}
 
 	if quit {
-		_, err := lw.Formatf("quit")
+		_, err := lw.Printf("quit")
 		return err
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
-		if _, err := lw.Formatf(scanner.Text()); err != nil {
+		if _, err := lw.Printf(scanner.Text()); err != nil {
 			return err
 		}
 	}

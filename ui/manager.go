@@ -41,7 +41,7 @@ func NewMenuManager(cfg *Config, lw *display.LineWriter, initialWin string) (*Me
 	}
 
 	// Switch to mpd initially:
-	if _, err := lw.Formatf("switch %s", initialWin); err != nil {
+	if _, err := lw.Printf("switch %s", initialWin); err != nil {
 		return nil, err
 	}
 
@@ -144,7 +144,7 @@ func NewMenuManager(cfg *Config, lw *display.LineWriter, initialWin string) (*Me
 			log.Printf("Value: %d Diff %d\n", value, diff)
 
 			mgr.Active.Scroll(diff)
-			if _, err := lw.Formatf("move %s %d", name, diff); err != nil {
+			if _, err := lw.Printf("move %s %d", name, diff); err != nil {
 				log.Printf("move failed: %v", err)
 			}
 
@@ -219,7 +219,7 @@ func (mgr *MenuManager) SwitchTo(name string) error {
 		mgr.Active.Display(mgr.Config.Width)
 	}
 
-	if _, err := mgr.lw.Formatf("switch %s", name); err != nil {
+	if _, err := mgr.lw.Printf("switch %s", name); err != nil {
 		log.Printf("switch failed: %v", err)
 		return err
 	}
@@ -251,7 +251,7 @@ func (mgr *MenuManager) AddMenu(name string, entries []Entry) error {
 	// Why? Because AddMenu may be called more than once with different entries.
 	// If first a long menu is given and then a short, the diff will still
 	// contain the lines of the longer one:
-	if _, err := mgr.lw.Formatf("truncate %s %d", name, len(entries)); err != nil {
+	if _, err := mgr.lw.Printf("truncate %s %d", name, len(entries)); err != nil {
 		log.Printf("Failed to truncate menu %s: %v", name, err)
 	}
 

@@ -62,7 +62,7 @@ func (mn *Menu) Display(width int) error {
 	for pos, ClickEntry := range mn.Entries {
 		line := ClickEntry.Render(width, pos == mn.Cursor)
 
-		if _, err := mn.lw.Formatf("line %s %d %s", mn.Name, pos, line); err != nil {
+		if _, err := mn.lw.Printf("line %s %d %s", mn.Name, pos, line); err != nil {
 			return err
 		}
 	}
