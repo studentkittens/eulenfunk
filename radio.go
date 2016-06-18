@@ -57,14 +57,14 @@ func main() {
 			client, err := mpd.NewClient(&mpd.Config{
 				"localhost", 6600, // MPD Config
 				"localhost", 7778, // Display server config
-			})
+			}, killCtx)
 
 			if err != nil {
 				log.Printf("Failed to create mpd client: %v", err)
 				return err
 			}
 
-			client.Run(killCtx)
+			client.Run()
 			return nil
 		},
 	}, {
@@ -205,10 +205,18 @@ func main() {
 			}
 
 			if ctx.Bool("dump") {
-				return display.RunDumpClient(cfg, ctx.String("window"), ctx.Bool("update"))
+				return display.RunDumpClient(
+					cfg, killCtx,
+					ctx.String("window"),
+					ctx.Bool("update"),
+				)
 			}
 
-			return display.RunInputClient(cfg, ctx.Bool("quit"), ctx.String("window"))
+			return display.RunInputClient(
+				cfg, killCtx,
+				ctx.Bool("quit"),
+				ctx.String("window"),
+			)
 		},
 		Subcommands: []cli.Command{{
 			Name:  "server",

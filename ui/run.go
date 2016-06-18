@@ -189,7 +189,7 @@ func Run(cfg *Config, ctx context.Context) error {
 	lw, err := display.Connect(&display.Config{
 		Host: cfg.DisplayHost,
 		Port: cfg.DisplayPort,
-	})
+	}, ctx)
 
 	if err != nil {
 		return err
@@ -232,14 +232,16 @@ func Run(cfg *Config, ctx context.Context) error {
 		Port:        cfg.MPDPort,
 		DisplayHost: cfg.DisplayHost,
 		DisplayPort: cfg.DisplayPort,
-	})
+	}, ctx)
 
 	if err != nil {
 		log.Printf("Failed to create mpd client: %v", err)
 		return err
 	}
 
-	go MPD.Run(ctx)
+	defer MPD.Close()
+
+	go MPD.Run()
 	go RunClock(lw, cfg.Width, ctx)
 	go RunSysinfo(lw, cfg.Width, ctx)
 

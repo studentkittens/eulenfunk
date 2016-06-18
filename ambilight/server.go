@@ -492,7 +492,11 @@ func Watcher(server *Server) error {
 	addr := fmt.Sprintf("%s:%d", server.Config.MPDHost, server.Config.MPDPort)
 
 	log.Printf("Watching on %s", addr)
-	watcher := mpd.NewReWatcher(server.Config.MPDHost, server.Config.MPDPort, "player")
+	watcher := mpd.NewReWatcher(
+		server.Config.MPDHost, server.Config.MPDPort,
+		server.Context,
+		"player",
+	)
 
 	defer watcher.Close()
 
@@ -618,8 +622,8 @@ func createNetworkListener(server *Server) error {
 }
 
 func RunDaemon(cfg *Config, ctx context.Context) error {
-	MPD := mpd.NewReMPD(cfg.MPDHost, cfg.MPDPort)
 	subCtx, cancel := context.WithCancel(ctx)
+	MPD := mpd.NewReMPD(cfg.MPDHost, cfg.MPDPort, subCtx)
 
 	server := &Server{
 		Config:  cfg,

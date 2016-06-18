@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/fhs/gompd/mpd"
 )
 
@@ -15,10 +17,12 @@ type ReMPD struct {
 	host   string
 	port   int
 	client *mpd.Client
+
+	ctx context.Context
 }
 
-func NewReMPD(host string, port int) *ReMPD {
-	return &ReMPD{host: host, port: port}
+func NewReMPD(host string, port int, ctx context.Context) *ReMPD {
+	return &ReMPD{host: host, port: port, ctx: ctx}
 }
 
 func (rc *ReMPD) reconnect() error {
@@ -38,6 +42,13 @@ func (rc *ReMPD) Client() *mpd.Client {
 	defer rc.Unlock()
 
 	for {
+		select {
+		case <-rc.ctx.Done():
+			log.Fatalf("Interrupted while waiting for connection")
+			return nil
+		default:
+		}
+
 		if rc.client == nil || rc.client.Ping() != nil {
 			if err := rc.reconnect(); err != nil {
 				log.Printf("No MPD connection; retry in 4s...")
@@ -60,14 +71,21 @@ type ReWatcher struct {
 	watcher  *mpd.Watcher
 	listenOn []string
 
+	ctx    context.Context
+	cancel context.CancelFunc
+
 	Events chan string
 }
 
-func NewReWatcher(host string, port int, listenOn ...string) *ReWatcher {
+func NewReWatcher(host string, port int, ctx context.Context, listenOn ...string) *ReWatcher {
+	subCtx, cancel := context.WithCancel(ctx)
+
 	rw := &ReWatcher{
 		host:     host,
 		port:     port,
 		listenOn: listenOn,
+		ctx:      subCtx,
+		cancel:   cancel,
 		Events:   make(chan string),
 	}
 
@@ -85,6 +103,12 @@ func NewReWatcher(host string, port int, listenOn ...string) *ReWatcher {
 
 func (rw *ReWatcher) retryUntilSuccesfull() {
 	for {
+		select {
+		case <-rw.ctx.Done():
+			return
+		default:
+		}
+
 		if err := rw.reconnect(); err != nil {
 			log.Printf("Failed to watch mpd: %v", err)
 			log.Printf("Retrying in 5 seconds.")
@@ -120,6 +144,8 @@ func (rw *ReWatcher) reconnect() error {
 func (rw *ReWatcher) Close() error {
 	rw.Lock()
 	defer rw.Unlock()
+
+	rw.cancel()
 
 	if rw.watcher == nil {
 		return nil

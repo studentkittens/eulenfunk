@@ -29,6 +29,9 @@ type Client struct {
 	CurrSong  mpd.Attrs
 	Playlists []string
 	Callbacks map[string][]func()
+
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 func displayInfo(lw *display.LineWriter, block []string) error {
@@ -370,12 +373,14 @@ func (cl *Client) SwitchToOutput(enableMe string) error {
 	return nil
 }
 
-func NewClient(cfg *Config) (*Client, error) {
-	MPD := NewReMPD(cfg.Host, cfg.Port)
+func NewClient(cfg *Config, ctx context.Context) (*Client, error) {
+	subCtx, cancel := context.WithCancel(ctx)
+
+	MPD := NewReMPD(cfg.Host, cfg.Port, subCtx)
 	lw, err := display.Connect(&display.Config{
 		Host: cfg.DisplayHost,
 		Port: cfg.DisplayPort,
-	})
+	}, subCtx)
 
 	if err != nil {
 		return nil, err
@@ -397,6 +402,8 @@ func NewClient(cfg *Config) (*Client, error) {
 		MPD:       MPD,
 		LW:        lw,
 		Callbacks: make(map[string][]func()),
+		ctx:       subCtx,
+		cancel:    cancel,
 	}, nil
 }
 
@@ -421,13 +428,18 @@ func (cl *Client) emit(signal string) {
 	}
 }
 
-func (cl *Client) Run(ctx context.Context) {
+func (cl *Client) Close() error {
+	cl.cancel()
+	return nil
+}
+
+func (cl *Client) Run() {
 	// Make sure the mpd connection survives long timeouts:
 	go func() {
 		ticker := time.NewTicker(1 * time.Minute)
 
 		select {
-		case <-ctx.Done():
+		case <-cl.ctx.Done():
 			break
 		case <-ticker.C:
 			cl.MPD.Client().Ping()
@@ -446,7 +458,7 @@ func (cl *Client) Run(ctx context.Context) {
 
 		for {
 			select {
-			case <-ctx.Done():
+			case <-cl.ctx.Done():
 				return
 			case <-ticker.C:
 				updateCh <- "player"
@@ -463,7 +475,7 @@ func (cl *Client) Run(ctx context.Context) {
 
 		for {
 			select {
-			case <-ctx.Done():
+			case <-cl.ctx.Done():
 				return
 			case <-ticker.C:
 				updateCh <- "stats"
@@ -473,12 +485,12 @@ func (cl *Client) Run(ctx context.Context) {
 
 	// Also sync on every mpd event:
 	go func() {
-		watcher := NewReWatcher(cl.Config.Host, cl.Config.Port)
+		watcher := NewReWatcher(cl.Config.Host, cl.Config.Port, cl.ctx)
 		defer watcher.Close()
 
 		for {
 			select {
-			case <-ctx.Done():
+			case <-cl.ctx.Done():
 				return
 			case ev := <-watcher.Events:
 				updateCh <- ev
@@ -488,7 +500,7 @@ func (cl *Client) Run(ctx context.Context) {
 
 	for {
 		select {
-		case <-ctx.Done():
+		case <-cl.ctx.Done():
 			return
 		case ev := <-updateCh:
 			switch ev {
