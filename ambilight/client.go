@@ -57,3 +57,18 @@ func (cl *Client) Quit() error {
 func (cl *Client) Close() error {
 	return cl.send("close")
 }
+
+func WithClient(host string, port int, fn func(client *Client) error) error {
+	client, err := NewClient(&Config{
+		Host: host,
+		Port: port,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	defer client.Close()
+
+	return fn(client)
+}
