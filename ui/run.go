@@ -23,7 +23,7 @@ func boolToGlyph(b bool) string {
 	if b {
 		return "✓"
 	} else {
-		return ""
+		return "×"
 	}
 }
 
@@ -99,7 +99,16 @@ func createOutputEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error) 
 		Order:   outputs,
 	}
 
-	// TODO: notify and initial update
+	MPD.Register("output", func() {
+		active, err := MPD.ActiveOutput()
+		if err != nil {
+			log.Printf("Failed to get active output: %v", err)
+			return
+		}
+
+		outputEntry.SetState(active, false)
+		mgr.Display()
+	})
 
 	return outputEntry, nil
 }
@@ -121,8 +130,10 @@ func createPlaybackEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error
 		},
 	}
 
-	// TODO: Notify from mpd and initial update
-	// playbackEntry.State = mpd.StateToUnicode(newState)
+	MPD.Register("player", func() {
+		playbackEntry.SetState(mpd.StateToUnicode(MPD.CurrentState()), false)
+		mgr.Display()
+	})
 
 	return playbackEntry, nil
 }
@@ -141,7 +152,10 @@ func createRandomEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error) 
 		},
 	}
 
-	// TODO: mpd notify
+	MPD.Register("options", func() {
+		randomEntry.SetState(boolToGlyph(MPD.IsRandom()), false)
+		mgr.Display()
+	})
 
 	return randomEntry, nil
 }

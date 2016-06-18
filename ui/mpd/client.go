@@ -28,6 +28,7 @@ type Client struct {
 	Status    mpd.Attrs
 	CurrSong  mpd.Attrs
 	Playlists []string
+	Callbacks map[string][]func()
 }
 
 func displayInfo(lw *display.LineWriter, block []string) error {
@@ -268,6 +269,25 @@ func (cl *Client) Outputs() ([]string, error) {
 	return names, nil
 }
 
+// NOTE: MPD supports more than one active, but our software does not.
+func (cl *Client) ActiveOutput() (string, error) {
+	cl.Lock()
+	defer cl.Unlock()
+
+	outputs, err := cl.MPD.Client().ListOutputs()
+	if err != nil {
+		return "", err
+	}
+
+	for _, output := range outputs {
+		if output["outputenabled"] == "1" {
+			return output["outputname"], nil
+		}
+	}
+
+	return "", nil
+}
+
 func (cl *Client) SwitchToOutput(enableMe string) error {
 	// Disable all other outputs on the way:
 	// (one output is enough for our usecase)
@@ -319,10 +339,32 @@ func NewClient(cfg *Config) (*Client, error) {
 	}
 
 	return &Client{
-		Config: cfg,
-		MPD:    MPD,
-		LW:     lw,
+		Config:    cfg,
+		MPD:       MPD,
+		LW:        lw,
+		Callbacks: make(map[string][]func()),
 	}, nil
+}
+
+func (cl *Client) Register(signal string, action func()) {
+	cl.Lock()
+	defer cl.Unlock()
+
+	cl.Callbacks[signal] = append(cl.Callbacks[signal], action)
+}
+
+func (cl *Client) emit(signal string) {
+	cl.Lock()
+	actions, ok := cl.Callbacks[signal]
+	cl.Unlock()
+
+	if !ok {
+		return
+	}
+
+	for _, action := range actions {
+		action()
+	}
 }
 
 func (cl *Client) Run(ctx context.Context) {
@@ -445,6 +487,9 @@ func (cl *Client) Run(ctx context.Context) {
 					continue
 				}
 			}
+
+			// Notify observers for all events:
+			cl.emit(ev)
 		}
 	}
 }
