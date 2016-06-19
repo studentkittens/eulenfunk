@@ -137,7 +137,7 @@ func (ln *Line) redraw() {
 }
 
 // Redraw makes sure the line is up-to-date.
-// It can be called if events happended that are out of reach of `Line`.
+// It can be called if events happeneded that are out of reach of `Line`.
 func (ln *Line) Redraw() {
 	ln.Lock()
 	defer ln.Unlock()

@@ -234,10 +234,10 @@ func createBlend(c1, c2 timedColor, N int) []timedColor {
 		mix := cc1.BlendHcl(cc2, float64(i)/float64(N)).Clamped()
 		h, c, l := mix.Hcl()
 
-		// Increase chroma slighly for mid values:
+		// Increase chroma slightly for mid values:
 		c = (-((c-1)*(c-1))+1)/2 + c/2
 
-		// Decrease lumninance slighly for mid values:
+		// Decrease lumninance slightly for mid values:
 		l = (l*l)/2 + (l / 2)
 
 		// Convert back to (gamma corrected) RGB for catlight:
@@ -490,7 +490,7 @@ func StatusUpdater(server *server, updateCh <-chan bool, eventCh chan<- mpdEvent
 			isStopped = true
 		}
 
-		// Send the appropiate event:
+		// Send the appropriate event:
 		eventCh <- mpdEvent{
 			Path: filepath.Join(
 				server.Config.MoodDir,
@@ -697,6 +697,6 @@ func Run(cfg *Config, ctx context.Context) error {
 
 	log.Printf("Starting up...")
 
-	// Monitor MPD events and sync moodbar appropiately.
+	// Monitor MPD events and sync moodbar appropriately.
 	return Watcher(server)
 }

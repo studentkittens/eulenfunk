@@ -27,7 +27,7 @@ type LineWriter struct {
 	cancel context.CancelFunc
 }
 
-// Write sends arbitary bytes to displayd. You should use Printf() instead.
+// Write sends arbitrary bytes to displayd. You should use Printf() instead.
 func (lw *LineWriter) Write(p []byte) (int, error) {
 	if !bytes.HasSuffix(p, []byte("\n")) {
 		p = append(p, '\n')
@@ -185,7 +185,7 @@ func DumpClient(cfg *Config, ctx context.Context, window string, update bool) er
 	return nil
 }
 
-// InputClient is a dump client that can be used to send arbitary displayd
+// InputClient is a dump client that can be used to send arbitrary displayd
 // lines in a netcat or telnet like fashion from the commandline.
 func InputClient(cfg *Config, ctx context.Context, quit bool, window string) error {
 	lw, err := Connect(cfg, ctx)

@@ -10,7 +10,7 @@
 // This mpd client can automatically create a dir with a .mood database.
 // When a song is played the respective .mood file is located and loaded
 // and synchronized to the music. Additionally a bit of color correction
-// is done and (linear) fading is done inbetween the individual samples
+// is done and (linear) fading is done between the individual samples
 // for a smoother look.
 //
 // The ambilightd can be controlled by a simple, line based network protocol
