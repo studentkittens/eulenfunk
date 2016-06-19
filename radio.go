@@ -157,14 +157,16 @@ func handleAmbilight(ctx *cli.Context, dropout context.Context) error {
 	moodyDir := ctx.String("mood-dir")
 
 	cfg := &ambilight.Config{
-		Host:               ctx.String("ambi-host"),
-		Port:               ctx.Int("ambi-port"),
+		AmbiHost:           ctx.String("ambi-host"),
+		AmbiPort:           ctx.Int("ambi-port"),
 		MPDHost:            ctx.String("mpd-host"),
 		MPDPort:            ctx.Int("mpd-port"),
-		MusicDir:           musicDir,
-		MoodDir:            moodyDir,
+		LightdHost:         ctx.String("lightd-host"),
+		LightdPort:         ctx.Int("lightd-port"),
 		UpdateMoodDatabase: ctx.Bool("update-mood-db"),
 		BinaryName:         ctx.String("driver"),
+		MusicDir:           musicDir,
+		MoodDir:            moodyDir,
 	}
 
 	handled, err := handleAmbilightCommand(ctx, cfg)

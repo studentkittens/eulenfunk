@@ -17,7 +17,7 @@ type Client struct {
 
 // NewClient creates a new Client from the cfg.Host and cfg.Port
 func NewClient(cfg *Config) (*Client, error) {
-	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	addr := fmt.Sprintf("%s:%d", cfg.AmbiHost, cfg.AmbiPort)
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
@@ -74,8 +74,8 @@ func (cl *Client) Close() error {
 // an ambilight connection.
 func WithClient(host string, port int, fn func(client *Client) error) error {
 	client, err := NewClient(&Config{
-		Host: host,
-		Port: port,
+		AmbiHost: host,
+		AmbiPort: port,
 	})
 
 	if err != nil {

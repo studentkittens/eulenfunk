@@ -36,11 +36,17 @@ type Config struct {
 	// MPDPort of the mpd server (usually 6600)
 	MPDPort int
 
+	// Lightd host (usually localhost)
+	LightdHost string
+
+	// Lightd port  (usually 3333)
+	LightdPort int
+
 	// Host of the ambilight command server
-	Host string
+	AmbiHost string
 
 	// Port of the command server
-	Port int
+	AmbiPort int
 
 	// MusicDir is the root path of the mpd database
 	MusicDir string
@@ -395,7 +401,7 @@ func process(locker *lightd.Locker, currIdx int, currEv *mpdEvent, colors []time
 
 // MoodbarAdjuster tried to synchronize the music to the moodbar.
 // It will send the correct current color to MoodbarRunner.
-func MoodbarAdjuster(eventCh <-chan mpdEvent, colorsCh chan<- timedColor) {
+func MoodbarAdjuster(cfg *Config, eventCh <-chan mpdEvent, colorsCh chan<- timedColor) {
 	var (
 		currIdx int
 		colors  []timedColor
@@ -406,8 +412,8 @@ func MoodbarAdjuster(eventCh <-chan mpdEvent, colorsCh chan<- timedColor) {
 
 	// TODO: get port from config
 	lightdConfig := &lightd.Config{
-		Host: "localhost",
-		Port: 3333,
+		Host: cfg.LightdHost,
+		Port: cfg.LightdPort,
 	}
 
 	locker, err := lightd.NewLocker(lightdConfig)
@@ -547,7 +553,7 @@ func Watcher(server *server) error {
 
 	// Start the respective go routines:
 	go MoodbarRunner(server, colorsCh)
-	go MoodbarAdjuster(eventCh, colorsCh)
+	go MoodbarAdjuster(server.Config, eventCh, colorsCh)
 	go StatusUpdater(server, updateCh, eventCh)
 
 	// Also sync extra every few seconds:
@@ -620,7 +626,7 @@ func handleConn(server *server, driverStdin io.Writer, conn net.Conn) {
 }
 
 func createNetworkListener(server *server) error {
-	addr := fmt.Sprintf("%s:%d", server.Config.Host, server.Config.Port)
+	addr := fmt.Sprintf("%s:%d", server.Config.AmbiHost, server.Config.AmbiPort)
 	lsn, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
