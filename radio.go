@@ -209,14 +209,14 @@ func main() {
 			}
 
 			if ctx.Bool("dump") {
-				return display.RunDumpClient(
+				return display.DumpClient(
 					cfg, killCtx,
 					ctx.String("window"),
 					ctx.Bool("update"),
 				)
 			}
 
-			return display.RunInputClient(
+			return display.InputClient(
 				cfg, killCtx,
 				ctx.Bool("quit"),
 				ctx.String("window"),
@@ -239,7 +239,7 @@ func main() {
 				},
 			},
 			Action: func(ctx *cli.Context) error {
-				return display.RunDaemon(&display.Config{
+				return display.Run(&display.Config{
 					Host:         ctx.Parent().String("host"),
 					Port:         ctx.Parent().Int("port"),
 					Width:        ctx.Parent().Int("width"),
@@ -357,7 +357,7 @@ func main() {
 				return nil
 			}
 
-			return ambilight.RunDaemon(cfg, killCtx)
+			return ambilight.Run(cfg, killCtx)
 		},
 	},
 	}

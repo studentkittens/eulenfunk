@@ -127,9 +127,18 @@ func Connect(cfg *Config, ctx context.Context) (*LineWriter, error) {
 	return lw, nil
 }
 
-// RunDumpClient is a client that renders the content of `window` onto stdout.
+func cancelled(ctx context.Context) bool {
+	select {
+	case <-ctx.Done():
+		return true
+	default:
+		return false
+	}
+}
+
+// DumpClient is a client that renders the content of `window` onto stdout.
 // Optionally it will clear & update the screen if `update` is true.
-func RunDumpClient(cfg *Config, ctx context.Context, window string, update bool) error {
+func DumpClient(cfg *Config, ctx context.Context, window string, update bool) error {
 	lw, err := Connect(cfg, ctx)
 	if err != nil {
 		return err
@@ -139,13 +148,7 @@ func RunDumpClient(cfg *Config, ctx context.Context, window string, update bool)
 		return err
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
-		}
-
+	for !cancelled(ctx) {
 		if _, err := lw.Printf("render"); err != nil {
 			return err
 		}
@@ -182,9 +185,9 @@ func RunDumpClient(cfg *Config, ctx context.Context, window string, update bool)
 	return nil
 }
 
-// RunInputClient is a dump client that can be used to send arbitary displayd
+// InputClient is a dump client that can be used to send arbitary displayd
 // lines in a netcat or telnet like fashion from the commandline.
-func RunInputClient(cfg *Config, ctx context.Context, quit bool, window string) error {
+func InputClient(cfg *Config, ctx context.Context, quit bool, window string) error {
 	lw, err := Connect(cfg, ctx)
 	if err != nil {
 		return err

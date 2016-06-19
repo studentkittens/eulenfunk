@@ -18,11 +18,11 @@ import (
 	"golang.org/x/net/context"
 
 	// External dependencies:
-	"github.com/studentkittens/eulenfunk/util"
 	gompd "github.com/fhs/gompd/mpd"
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/studentkittens/eulenfunk/lightd"
 	"github.com/studentkittens/eulenfunk/ui/mpd"
+	"github.com/studentkittens/eulenfunk/util"
 )
 
 // UseDefaultMoodbar enables a builtin default moodbar if none was found
@@ -120,6 +120,8 @@ func checkForMoodbar() {
 
 // Walk over all music files and create a .mood file for each in mood-dir.
 func updateMoodDatabase(server *server) error {
+	checkForMoodbar()
+
 	if server.Config.MoodDir == "" {
 		return fmt.Errorf("No mood bar directory given (--mood-dir)")
 	}
@@ -559,6 +561,14 @@ func Watcher(server *server) error {
 	return nil
 }
 
+func turnOff(driverStdin io.Writer) {
+	// Wait a short amount to make sure other colors get flushed:
+	time.Sleep(250 * time.Millisecond)
+	if _, err := driverStdin.Write([]byte("0 0 0\n")); err != nil {
+		log.Printf("Failed to turn light off: %v", err)
+	}
+}
+
 func handleConn(server *server, driverStdin io.Writer, conn net.Conn) {
 	defer util.Closer(conn)
 
@@ -568,12 +578,7 @@ func handleConn(server *server, driverStdin io.Writer, conn net.Conn) {
 		case "off":
 			log.Printf("Disabling ambilight...")
 			server.Enable(false)
-
-			// Wait a short amount to make sure other colors get flushed:
-			time.Sleep(250 * time.Millisecond)
-			if _, err := driverStdin.Write([]byte("0 0 0\n")); err != nil {
-				log.Printf("Failed to turn light off: %v", err)
-			}
+			go turnOff(driverStdin)
 		case "on":
 			log.Printf("Enabling ambilight...")
 			server.Enable(true)
@@ -639,12 +644,31 @@ func createNetworkListener(server *server) error {
 	return nil
 }
 
-// RunDaemon starts ambilightd with the settings defined in `cfg`.
+func keepAlivePinger(MPD *mpd.ReMPD, ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		if err := MPD.Client().Ping(); err != nil {
+			log.Printf("Failed to ping MPD server. Weird: %v", err)
+		}
+
+		time.Sleep(1 * time.Minute)
+	}
+}
+
+// Run starts ambilightd with the settings defined in `cfg`.
 // It will stop execution when `ctx` was canceled.
 // If something show-stopping occurs on startup an error is returned.
-func RunDaemon(cfg *Config, ctx context.Context) error {
+func Run(cfg *Config, ctx context.Context) error {
 	subCtx, cancel := context.WithCancel(ctx)
 	MPD := mpd.NewReMPD(cfg.MPDHost, cfg.MPDPort, subCtx)
+
+	// Close pinger and client on exit:
+	defer util.Closer(MPD.Client())
 
 	server := &server{
 		Config:  cfg,
@@ -659,28 +683,10 @@ func RunDaemon(cfg *Config, ctx context.Context) error {
 		return err
 	}
 
-	keepAlivePinger := make(chan bool)
-
 	// Make sure the mpd connection survives long timeouts:
-	go func() {
-		for range keepAlivePinger {
-			if err := MPD.Client().Ping(); err != nil {
-				log.Printf("Failed to ping MPD server. Weird: %v", err)
-			}
-
-			time.Sleep(1 * time.Minute)
-		}
-	}()
-
-	// Close pinger and client on exit:
-	defer func() {
-		close(keepAlivePinger)
-		util.Closer(MPD.Client())
-	}()
+	go keepAlivePinger(MPD, ctx)
 
 	if cfg.UpdateMoodDatabase {
-		checkForMoodbar()
-
 		if err := updateMoodDatabase(server); err != nil {
 			log.Printf("Failed to update the mood db: %v", err)
 			return err

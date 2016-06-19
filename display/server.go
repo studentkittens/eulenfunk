@@ -556,7 +556,116 @@ func (srv *server) RenderMatrix() []byte {
 // NETWORK HANDLING //
 //////////////////////
 
-func handleConn(srv *server, conn net.Conn) {
+func handleSwitch(srv *server, line string) {
+	name := ""
+	if _, err := fmt.Sscanf(line, "switch %s", &name); err != nil {
+		log.Printf("Failed to parse switch command `%s`: %v", line, err)
+		return
+	}
+
+	srv.Switch(name)
+}
+
+func handleLine(srv *server, line string, split []string) {
+	text := ""
+	if len(split) >= 4 {
+		text = split[3]
+	}
+
+	win, pos := "", 0
+
+	if _, err := fmt.Sscanf(line, "line %s %d ", &win, &pos); err != nil {
+		log.Printf("Failed to parse line command `%s`: %v", line, err)
+		return
+	}
+
+	if err := srv.SetLine(win, pos, text); err != nil {
+		log.Printf("Failed to set line: %v", err)
+		return
+	}
+}
+
+func handleScroll(srv *server, line string) {
+	win, pos, durationSpec := "", 0, ""
+	if _, err := fmt.Sscanf(line, "scroll %s %d %s", &win, &pos, &durationSpec); err != nil {
+		log.Printf("Failed to parse scroll command `%s`: %v", line, err)
+		return
+	}
+
+	duration, err := time.ParseDuration(durationSpec)
+	if err != nil {
+		log.Printf("Bad duration `%s`: %v", durationSpec, err)
+		return
+	}
+
+	if err := srv.SetScrollDelay(win, pos, duration); err != nil {
+		log.Printf("Cannot set scroll: %v", err)
+		return
+	}
+}
+
+func handleMove(srv *server, line string) {
+	name, pos := "", 0
+	if _, err := fmt.Sscanf(line, "move %s %d", &name, &pos); err != nil {
+		log.Printf("Failed to parse move command `%s`: %v", line, err)
+		return
+	}
+
+	srv.Move(name, pos)
+}
+
+func handleTruncate(srv *server, line string) {
+	win, limit := "", 0
+	if _, err := fmt.Sscanf(line, "truncate %s %d", &win, &limit); err != nil {
+		log.Printf("Failed to parse move command `%s`: %v", line, err)
+		return
+	}
+
+	srv.Truncate(win, limit)
+}
+
+func handleRender(srv *server, conn io.Writer) {
+	matrix := srv.RenderMatrix()
+	sizeBuf := make([]byte, 8)
+	binary.LittleEndian.PutUint64(sizeBuf, uint64(len(matrix)))
+
+	if _, err := conn.Write(sizeBuf); err != nil {
+		log.Printf("Failed to respond rendered size: %v", err)
+		return
+	}
+
+	if _, err := conn.Write(matrix); err != nil {
+		log.Printf("Failed to respond rendered display: %v", err)
+		return
+	}
+}
+
+func handleSingle(srv *server, line string, conn io.Writer) {
+	switch split := strings.SplitN(line, " ", 4); split[0] {
+	case "switch":
+		handleSwitch(srv, line)
+	case "line":
+		handleLine(srv, line, split)
+	case "scroll":
+		handleScroll(srv, line)
+	case "move":
+		handleMove(srv, line)
+	case "truncate":
+		handleTruncate(srv, line)
+	case "render":
+		// NOTE: This is only used for --dump, not for the actual driver.
+		handleRender(srv, conn)
+	case "close":
+		return
+	case "quit":
+		srv.Quit <- true
+		return
+	default:
+		log.Printf("Ignoring unknown command `%s`", line)
+	}
+}
+
+func handleAll(srv *server, conn io.ReadWriteCloser) {
 	scanner := bufio.NewScanner(conn)
 	defer util.Closer(conn)
 
@@ -566,88 +675,7 @@ func handleConn(srv *server, conn net.Conn) {
 			continue
 		}
 
-		switch split := strings.SplitN(line, " ", 4); split[0] {
-		case "switch":
-			name := ""
-			if _, err := fmt.Sscanf(line, "switch %s", &name); err != nil {
-				log.Printf("Failed to parse switch command `%s`: %v", line, err)
-				continue
-			}
-
-			srv.Switch(name)
-		case "line":
-			text := ""
-			if len(split) >= 4 {
-				text = split[3]
-			}
-
-			win, pos := "", 0
-
-			if _, err := fmt.Sscanf(line, "line %s %d ", &win, &pos); err != nil {
-				log.Printf("Failed to parse line command `%s`: %v", line, err)
-				continue
-			}
-
-			if err := srv.SetLine(win, pos, text); err != nil {
-				log.Printf("Failed to set line: %v", err)
-				continue
-			}
-		case "scroll":
-			win, pos, durationSpec := "", 0, ""
-			if _, err := fmt.Sscanf(line, "scroll %s %d %s", &win, &pos, &durationSpec); err != nil {
-				log.Printf("Failed to parse scroll command `%s`: %v", line, err)
-				continue
-			}
-
-			duration, err := time.ParseDuration(durationSpec)
-			if err != nil {
-				log.Printf("Bad duration `%s`: %v", durationSpec, err)
-				continue
-			}
-
-			if err := srv.SetScrollDelay(win, pos, duration); err != nil {
-				log.Printf("Cannot set scroll: %v", err)
-				continue
-			}
-		case "move":
-			name, pos := "", 0
-			if _, err := fmt.Sscanf(line, "move %s %d", &name, &pos); err != nil {
-				log.Printf("Failed to parse move command `%s`: %v", line, err)
-				continue
-			}
-
-			srv.Move(name, pos)
-		case "truncate":
-			name, pos := "", 0
-			if _, err := fmt.Sscanf(line, "truncate %s %d", &name, &pos); err != nil {
-				log.Printf("Failed to parse move command `%s`: %v", line, err)
-				continue
-			}
-
-			srv.Truncate(name, pos)
-		case "render":
-			// NOTE: This is only used for --dump, not for the actual driver.
-			matrix := srv.RenderMatrix()
-			sizeBuf := make([]byte, 8)
-			binary.LittleEndian.PutUint64(sizeBuf, uint64(len(matrix)))
-
-			if _, err := conn.Write(sizeBuf); err != nil {
-				log.Printf("Failed to respond rendered size: %v", err)
-				continue
-			}
-
-			if _, err := conn.Write(matrix); err != nil {
-				log.Printf("Failed to respond rendered display: %v", err)
-				continue
-			}
-		case "close":
-			return
-		case "quit":
-			srv.Quit <- true
-			return
-		default:
-			log.Printf("Ignoring unknown command `%s`", line)
-		}
+		handleSingle(srv, line, conn)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -655,8 +683,20 @@ func handleConn(srv *server, conn net.Conn) {
 	}
 }
 
-// RunDaemon starts a new displayd server based on `cfg` and `ctx`.
-func RunDaemon(cfg *Config, ctx context.Context) error {
+func aborted(srv *server, ctx context.Context) bool {
+	// Check if we were interrupted:
+	select {
+	case <-ctx.Done():
+		return true
+	case <-srv.Quit:
+		return true
+	default:
+		return false
+	}
+}
+
+// Run starts a new displayd server based on `cfg` and `ctx`.
+func Run(cfg *Config, ctx context.Context) error {
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	lsn, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -672,17 +712,7 @@ func RunDaemon(cfg *Config, ctx context.Context) error {
 		return err
 	}
 
-	for {
-		// Check if we were interrupted:
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-srv.Quit:
-			return nil
-		default:
-			// We may continue normally.
-		}
-
+	for !aborted(srv, ctx) {
 		if tcpLsn, ok := lsn.(*net.TCPListener); ok {
 			if err := tcpLsn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {
 				log.Printf("Setting deadline failed: %v", err)
@@ -700,6 +730,8 @@ func RunDaemon(cfg *Config, ctx context.Context) error {
 			continue
 		}
 
-		go handleConn(srv, conn)
+		go handleAll(srv, conn)
 	}
+
+	return nil
 }

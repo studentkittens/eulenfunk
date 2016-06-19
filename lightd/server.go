@@ -351,28 +351,28 @@ func parseEffect(s string) (effect, error) {
 
 //////////// SERVER MAIN //////////////
 
+func lock(queue *effectQueue) {
+	timer := time.NewTimer(5 * time.Second)
+	select {
+	case <-queue.Blocked:
+		break
+	case <-timer.C:
+		break
+	}
+}
+
+func unlock(queue *effectQueue) {
+	timer := time.NewTimer(5 * time.Second)
+	select {
+	case queue.Blocked <- false:
+		break
+	case <-timer.C:
+		break
+	}
+}
+
 func handleRequest(conn io.ReadWriteCloser, queue *effectQueue) {
 	defer util.Closer(conn)
-
-	lock := func() {
-		timer := time.NewTimer(5 * time.Second)
-		select {
-		case <-queue.Blocked:
-			break
-		case <-timer.C:
-			break
-		}
-	}
-
-	unlock := func() {
-		timer := time.NewTimer(5 * time.Second)
-		select {
-		case queue.Blocked <- false:
-			break
-		case <-timer.C:
-			break
-		}
-	}
 
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
@@ -385,7 +385,7 @@ func handleRequest(conn io.ReadWriteCloser, queue *effectQueue) {
 
 		switch line {
 		case "!lock":
-			lock()
+			lock(queue)
 
 			if _, err := conn.Write([]byte("OK\n")); err != nil {
 				log.Printf("Failed to answer lock response: %v", err)
@@ -393,7 +393,7 @@ func handleRequest(conn io.ReadWriteCloser, queue *effectQueue) {
 
 			continue
 		case "!unlock":
-			unlock()
+			unlock(queue)
 
 			if _, err := conn.Write([]byte("OK\n")); err != nil {
 				log.Printf("Failed to answer unlock response: %v", err)
@@ -410,9 +410,9 @@ func handleRequest(conn io.ReadWriteCloser, queue *effectQueue) {
 			continue
 		}
 
-		lock()
+		lock(queue)
 		queue.Push(effect)
-		unlock()
+		unlock(queue)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -434,6 +434,15 @@ type Config struct {
 	DriverBinary string
 }
 
+func cancelled(ctx context.Context) bool {
+	select {
+	case <-ctx.Done():
+		return true
+	default:
+		return false
+	}
+}
+
 // Run starts lightd with the options specified in `cfg`,
 // cancelling services when `ctx` is cancelled.
 func Run(cfg *Config, ctx context.Context) error {
@@ -453,13 +462,7 @@ func Run(cfg *Config, ctx context.Context) error {
 	defer util.Closer(lsn)
 	log.Println("Listening on " + addr)
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
-		}
-
+	for !cancelled(ctx) {
 		if tcpLsn, ok := lsn.(*net.TCPListener); ok {
 			if err := tcpLsn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {
 				log.Printf("Setting deadline failed: %v", err)
@@ -479,4 +482,6 @@ func Run(cfg *Config, ctx context.Context) error {
 
 		go handleRequest(conn, queue)
 	}
+
+	return nil
 }
