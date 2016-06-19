@@ -433,7 +433,7 @@ func MoodbarAdjuster(eventCh <-chan mpdEvent, colorsCh chan<- timedColor) {
 			currEv = &ev
 		// Nothing happened, give the led some input:
 		default:
-			if initialSend {
+			if initialSend && currEv != nil {
 				currEv.IsPlaying = true
 				initialSend = false
 			}

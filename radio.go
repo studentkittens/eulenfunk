@@ -390,7 +390,7 @@ func main() {
 		Name:   "ambilight",
 		Usage:  "Control the ambilight feature",
 		Action: withCancelCtx(dropout, handleAmbilight),
-		Flags: concat(ambiNetFlags, []cli.Flag{
+		Flags: concat(mpdNetFlags, lightdNetFlags, ambiNetFlags, []cli.Flag{
 			cli.StringFlag{
 				Name:   "music-dir,m",
 				Value:  "",
