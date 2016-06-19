@@ -668,6 +668,4 @@ func RunDaemon(cfg *Config, ctx context.Context) error {
 
 		go handleConn(srv, conn)
 	}
-
-	return nil
 }

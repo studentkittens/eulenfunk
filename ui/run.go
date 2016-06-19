@@ -230,8 +230,8 @@ func Run(cfg *Config, ctx context.Context) error {
 	// Start auxillary services:
 	log.Printf("Starting background services...")
 	MPD, err := mpd.NewClient(&mpd.Config{
-		Host:        cfg.MPDHost,
-		Port:        cfg.MPDPort,
+		MPDHost:     cfg.MPDHost,
+		MPDPort:     cfg.MPDPort,
 		DisplayHost: cfg.DisplayHost,
 		DisplayPort: cfg.DisplayPort,
 	}, ctx)

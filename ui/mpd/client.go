@@ -13,8 +13,8 @@ import (
 )
 
 type Config struct {
-	Host        string
-	Port        int
+	MPDHost     string
+	MPDPort     int
 	DisplayHost string
 	DisplayPort int
 }
@@ -376,7 +376,7 @@ func (cl *Client) SwitchToOutput(enableMe string) error {
 func NewClient(cfg *Config, ctx context.Context) (*Client, error) {
 	subCtx, cancel := context.WithCancel(ctx)
 
-	MPD := NewReMPD(cfg.Host, cfg.Port, subCtx)
+	MPD := NewReMPD(cfg.MPDHost, cfg.MPDPort, subCtx)
 	lw, err := display.Connect(&display.Config{
 		Host: cfg.DisplayHost,
 		Port: cfg.DisplayPort,
@@ -485,7 +485,7 @@ func (cl *Client) Run() {
 
 	// Also sync on every mpd event:
 	go func() {
-		watcher := NewReWatcher(cl.Config.Host, cl.Config.Port, cl.ctx)
+		watcher := NewReWatcher(cl.Config.MPDHost, cl.Config.MPDPort, cl.ctx)
 		defer watcher.Close()
 
 		for {

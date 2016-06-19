@@ -42,8 +42,6 @@ func (lw *LineWriter) Write(p []byte) (int, error) {
 
 		return n, err
 	}
-
-	return 0, nil
 }
 
 func (lw *LineWriter) Read(p []byte) (int, error) {
@@ -63,8 +61,6 @@ func (lw *LineWriter) Read(p []byte) (int, error) {
 
 		return n, err
 	}
-
-	return 0, nil
 }
 
 func (lw *LineWriter) Printf(format string, args ...interface{}) (int, error) {

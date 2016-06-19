@@ -75,10 +75,5 @@ func (mn *Menu) Click() error {
 		return nil
 	}
 
-	ClickEntry := mn.Entries[mn.Cursor]
-	if ClickEntry.Action == nil {
-		return nil
-	}
-
-	return ClickEntry.Action()
+	return mn.Entries[mn.Cursor].Action()
 }

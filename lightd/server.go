@@ -420,7 +420,7 @@ func Run(cfg *Config) error {
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	lsn, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Printf("Error listening:", err.Error())
+		log.Printf("Error listening: %v", err.Error())
 		return err
 	}
 
@@ -430,7 +430,7 @@ func Run(cfg *Config) error {
 	for {
 		conn, err := lsn.Accept()
 		if err != nil {
-			log.Printf("Error accepting: ", err.Error())
+			log.Printf("Error accepting: %v", err.Error())
 			return err
 		}
 

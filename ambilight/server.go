@@ -1,5 +1,3 @@
-// moodymusic is a small mpd client that uses the `moodbar` utility
-// and a multicolor LED to create an ambient light
 package ambilight
 
 import (
@@ -20,14 +18,17 @@ import (
 	"golang.org/x/net/context"
 
 	// External dependencies:
+	"github.com/disorganizer/brig/util"
+	gompd "github.com/fhs/gompd/mpd"
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/studentkittens/eulenfunk/lightd"
 	"github.com/studentkittens/eulenfunk/ui/mpd"
 )
 
-// Use a builtin default moodbar if none was found if true
-const USE_DEFAULT_MOODBAR = true
+// UseDefaultMoodbar enables a builtin default moodbar if none was found
+const UseDefaultMoodbar = true
 
+// Config holds all possible adjusting screws for ambilightd.
 type Config struct {
 	// MPDHost of the mpd server (usually localhost)
 	MPDHost string
@@ -54,24 +55,31 @@ type Config struct {
 	BinaryName string
 }
 
-type Server struct {
+// server holds all runtime info for ambilightd.
+type server struct {
 	sync.Mutex
-	Config  *Config
-	MPD     *mpd.ReMPD
+
+	Config *Config
+	MPD    *mpd.ReMPD
+
+	// Cancellation:
 	Context context.Context
 	Cancel  context.CancelFunc
 
 	enabled bool
 }
 
-func (srv *Server) Enabled() bool {
+// Enabled returns true if playback should be running:
+// (It is enabled by default)
+func (srv *server) Enabled() bool {
 	srv.Lock()
 	defer srv.Unlock()
 
 	return srv.enabled
 }
 
-func (srv *Server) Enable(enabled bool) {
+// Enable alters the playback state of the server
+func (srv *server) Enable(enabled bool) {
 	srv.Lock()
 	defer srv.Unlock()
 
@@ -79,23 +87,23 @@ func (srv *Server) Enable(enabled bool) {
 }
 
 // Current status of the MPD player:
-type MPDEvent struct {
+type mpdEvent struct {
 	Path        string
-	SongChanged bool
 	ElapsedMs   float64
 	TotalMs     float64
 	IsPlaying   bool
 	IsStopped   bool
+	SongChanged bool
 }
 
 // Info needed to render a moodbar:
-type MoodInfo struct {
+type moodInfo struct {
 	MusicFile string
 	MoodPath  string
 }
 
 // RGB Color that stays for a certain duration:
-type TimedColor struct {
+type timedColor struct {
 	R, G, B  uint8
 	Duration time.Duration
 }
@@ -111,7 +119,7 @@ func checkForMoodbar() {
 }
 
 // Walk over all music files and create a .mood file for each in mood-dir.
-func updateMoodDatabase(server *Server) error {
+func updateMoodDatabase(server *server) error {
 	if server.Config.MoodDir == "" {
 		return fmt.Errorf("No mood bar directory given (--mood-dir)")
 	}
@@ -130,7 +138,7 @@ func updateMoodDatabase(server *Server) error {
 	wg := &sync.WaitGroup{}
 	wg.Add(N)
 
-	moodChan := make(chan *MoodInfo, N)
+	moodChan := make(chan *moodInfo, N)
 	for i := 0; i < N; i++ {
 		go func() {
 			for pair := range moodChan {
@@ -155,7 +163,7 @@ func updateMoodDatabase(server *Server) error {
 		}
 
 		dataPath := filepath.Join(server.Config.MusicDir, path)
-		moodChan <- &MoodInfo{
+		moodChan <- &moodInfo{
 			MusicFile: dataPath,
 			MoodPath:  moodPath,
 		}
@@ -167,17 +175,17 @@ func updateMoodDatabase(server *Server) error {
 	return nil
 }
 
-// Read the .mood file at `path`; return a 1000-element slice of TimedColor.
+// Read the .mood file at `path`; return a 1000-element slice of timedColor.
 // The duration of each color will be 0.
-func readMoodbarFile(path string) ([]TimedColor, error) {
-	results := []TimedColor{}
+func readMoodbarFile(path string) ([]timedColor, error) {
+	results := []timedColor{}
 
 	fd, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 
-	defer fd.Close()
+	defer util.Closer(fd)
 
 	rgb := make([]byte, 3)
 	for {
@@ -186,8 +194,8 @@ func readMoodbarFile(path string) ([]TimedColor, error) {
 			return nil, err
 		}
 
-		results = append(results, TimedColor{
-			uint8(rgb[0]), uint8(rgb[1]), uint8(rgb[2]), 0,
+		results = append(results, timedColor{
+			rgb[0], rgb[1], rgb[2], 0,
 		})
 
 		if err == io.EOF {
@@ -200,25 +208,25 @@ func readMoodbarFile(path string) ([]TimedColor, error) {
 
 // Create a HCL Gradient between c1 and c2 using N steps.
 // Returns the gradient as slice of individual colors.
-func createBlend(c1, c2 TimedColor, N int) []TimedColor {
+func createBlend(c1, c2 timedColor, N int) []timedColor {
 	// Do nothing if it's the same color:
 	if c1.R == c2.R && c1.G == c2.G && c1.B == c2.B {
-		return []TimedColor{c1}
+		return []timedColor{c1}
 	}
 
 	cc1 := colorful.Color{
-		float64(c1.R) / 255.,
-		float64(c1.G) / 255.,
-		float64(c1.B) / 255.,
+		R: float64(c1.R) / 255.,
+		G: float64(c1.G) / 255.,
+		B: float64(c1.B) / 255.,
 	}
 
 	cc2 := colorful.Color{
-		float64(c2.R) / 255.,
-		float64(c2.G) / 255.,
-		float64(c2.B) / 255.,
+		R: float64(c2.R) / 255.,
+		G: float64(c2.G) / 255.,
+		B: float64(c2.B) / 255.,
 	}
 
-	colors := []TimedColor{}
+	colors := []timedColor{}
 
 	for i := 0; i < N; i++ {
 		mix := cc1.BlendHcl(cc2, float64(i)/float64(N)).Clamped()
@@ -232,7 +240,7 @@ func createBlend(c1, c2 TimedColor, N int) []TimedColor {
 
 		// Convert back to (gamma corrected) RGB for catlight:
 		r, g, b := colorful.Hcl(h, c, l).LinearRgb()
-		colors = append(colors, TimedColor{
+		colors = append(colors, timedColor{
 			uint8(r * 255), uint8(g * 255), uint8(b * 255),
 			((c1.Duration + c2.Duration) / 2) / time.Duration(N),
 		})
@@ -259,7 +267,7 @@ func createDriverPipe(cfg *Config) (io.WriteCloser, error) {
 
 // MoodbarRunner sets the current color and blends to it
 // by remembering the last color and calculating a gradient between both.
-func MoodbarRunner(server *Server, colors <-chan TimedColor) {
+func MoodbarRunner(server *server, colors <-chan timedColor) {
 	cfg := server.Config
 
 	stdin, err := createDriverPipe(cfg)
@@ -267,13 +275,13 @@ func MoodbarRunner(server *Server, colors <-chan TimedColor) {
 		return
 	}
 
-	defer stdin.Close()
+	defer util.Closer(stdin)
 
 	// First color is always black.
-	var lastColor TimedColor
+	var lastColor timedColor
 
 	// Blend between lastColor and current color.
-	var blend []TimedColor
+	var blend []timedColor
 
 	for {
 		select {
@@ -299,7 +307,10 @@ func MoodbarRunner(server *Server, colors <-chan TimedColor) {
 				blend = blend[1:]
 
 				colorValue := fmt.Sprintf("%d %d %d\n", color.R, color.G, color.B)
-				stdin.Write([]byte(colorValue))
+				if _, err := stdin.Write([]byte(colorValue)); err != nil {
+					log.Printf("Failed to write color to driver: %v", err)
+				}
+
 				time.Sleep(color.Duration)
 			} else {
 				// Blend is exhausted and no new colors available.
@@ -312,10 +323,10 @@ func MoodbarRunner(server *Server, colors <-chan TimedColor) {
 
 // MoodbarAdjuster tried to synchronize the music to the moodbar.
 // It will send the correct current color to MoodbarRunner.
-func MoodbarAdjuster(eventCh <-chan MPDEvent, colorsCh chan<- TimedColor) {
+func MoodbarAdjuster(eventCh <-chan mpdEvent, colorsCh chan<- timedColor) {
 	var currIdx int
-	var colors []TimedColor
-	var currEv *MPDEvent
+	var colors []timedColor
+	var currEv *mpdEvent
 
 	initialSend := true
 
@@ -328,10 +339,10 @@ func MoodbarAdjuster(eventCh <-chan MPDEvent, colorsCh chan<- TimedColor) {
 	if err != nil {
 		log.Printf("Failed to create locker. Will continue without. lightd running?")
 	} else {
-		defer locker.Close()
+		defer util.Closer(locker)
 	}
 
-	sendColor := func(col TimedColor) {
+	sendColor := func(col timedColor) {
 		if locker != nil {
 			if err := locker.Lock(); err != nil {
 				log.Printf("Failed to acquire lock (sending anyways): %v", err)
@@ -369,11 +380,11 @@ func MoodbarAdjuster(eventCh <-chan MPDEvent, colorsCh chan<- TimedColor) {
 					log.Printf("Failed to read moodbar at `%s`: %v", ev.Path, err)
 
 					// Return to black:
-					if USE_DEFAULT_MOODBAR {
-						colors = DEFAULT_MOODBAR
+					if UseDefaultMoodbar {
+						colors = DefaultMoodbar
 					} else {
-						sendColor(TimedColor{0, 0, 0, 0})
-						colors = []TimedColor{}
+						sendColor(timedColor{0, 0, 0, 0})
+						colors = []timedColor{}
 						currIdx = 0
 						continue
 					}
@@ -401,7 +412,7 @@ func MoodbarAdjuster(eventCh <-chan MPDEvent, colorsCh chan<- TimedColor) {
 
 			if currEv.IsStopped {
 				// Black out on stop, but wait a bit to save cpu time:
-				sendColor(TimedColor{0, 0, 0, 500 * time.Millisecond})
+				sendColor(timedColor{0, 0, 0, 500 * time.Millisecond})
 			} else if currEv.IsPlaying || initialSend {
 				// Send the color to the fader:
 				sendColor(colors[currIdx])
@@ -416,22 +427,31 @@ func MoodbarAdjuster(eventCh <-chan MPDEvent, colorsCh chan<- TimedColor) {
 	}
 }
 
+func fetchMPDInfo(client *gompd.Client) (gompd.Attrs, gompd.Attrs, error) {
+	song, err := client.CurrentSong()
+	if err != nil {
+		log.Printf("Unable to fetch current song: %v", err)
+		return nil, nil, err
+	}
+
+	status, err := client.Status()
+	if err != nil {
+		log.Printf("Unable to fetch status: %v", err)
+		return nil, nil, err
+	}
+
+	return song, status, nil
+}
+
 // StatusUpdater is triggerd on "player" events and fetches the current state infos
-// needed for the moodbar sync. It then proceeds to generate a MPDEvent that
+// needed for the moodbar sync. It then proceeds to generate a mpdEvent that
 // MoodbarAdjuster will receive.
-func StatusUpdater(server *Server, updateCh <-chan bool, eventCh chan<- MPDEvent) {
+func StatusUpdater(server *server, updateCh <-chan bool, eventCh chan<- mpdEvent) {
 	lastSongID := ""
 
 	for range updateCh {
-		song, err := server.MPD.Client().CurrentSong()
+		song, status, err := fetchMPDInfo(server.MPD.Client())
 		if err != nil {
-			log.Printf("Unable to fetch current song: %v", err)
-			continue
-		}
-
-		status, err := server.MPD.Client().Status()
-		if err != nil {
-			log.Printf("Unable to fetch status: %v", err)
 			continue
 		}
 
@@ -469,7 +489,7 @@ func StatusUpdater(server *Server, updateCh <-chan bool, eventCh chan<- MPDEvent
 		}
 
 		// Send the appropiate event:
-		eventCh <- MPDEvent{
+		eventCh <- mpdEvent{
 			Path: filepath.Join(
 				server.Config.MoodDir,
 				strings.Replace(song["file"], string(filepath.Separator), "|", -1),
@@ -487,7 +507,7 @@ func StatusUpdater(server *Server, updateCh <-chan bool, eventCh chan<- MPDEvent
 
 // Watcher instances and connects via channels the go routines that contain the actual logic.
 // It also triggers the logic by feeding mpd events to the go routine pipe.
-func Watcher(server *Server) error {
+func Watcher(server *server) error {
 	// Watch for 'player' events:
 	addr := fmt.Sprintf("%s:%d", server.Config.MPDHost, server.Config.MPDPort)
 
@@ -498,16 +518,16 @@ func Watcher(server *Server) error {
 		"player",
 	)
 
-	defer watcher.Close()
+	defer util.Closer(watcher)
 
 	// Watcher -> StatusUpdater
 	updateCh := make(chan bool)
 
 	// StatusUpdater -> MoodbarAdjuster
-	eventCh := make(chan MPDEvent)
+	eventCh := make(chan mpdEvent)
 
 	// MoodbarAdjuster -> MoodbarRunner
-	colorsCh := make(chan TimedColor)
+	colorsCh := make(chan timedColor)
 
 	// Start the respective go routines:
 	go MoodbarRunner(server, colorsCh)
@@ -539,19 +559,17 @@ func Watcher(server *Server) error {
 	return nil
 }
 
-func handleConn(server *Server, driverStdin io.WriteCloser, conn net.Conn) {
-	defer conn.Close()
+func handleConn(server *server, driverStdin io.Writer, conn net.Conn) {
+	defer util.Closer(conn)
 
 	scn := bufio.NewScanner(conn)
-
 	for scn.Scan() {
 		switch cmd := scn.Text(); cmd {
 		case "off":
 			log.Printf("Disabling ambilight...")
 			server.Enable(false)
 
-			// Wait a short amount to make sure other colors
-			// get flushed:
+			// Wait a short amount to make sure other colors get flushed:
 			time.Sleep(250 * time.Millisecond)
 			if _, err := driverStdin.Write([]byte("0 0 0\n")); err != nil {
 				log.Printf("Failed to turn light off: %v", err)
@@ -582,7 +600,7 @@ func handleConn(server *Server, driverStdin io.WriteCloser, conn net.Conn) {
 	}
 }
 
-func createNetworkListener(server *Server) error {
+func createNetworkListener(server *server) error {
 	addr := fmt.Sprintf("%s:%d", server.Config.Host, server.Config.Port)
 	lsn, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -597,8 +615,8 @@ func createNetworkListener(server *Server) error {
 	}
 
 	go func() {
-		defer stdin.Close()
-		defer lsn.Close()
+		defer util.Closer(stdin)
+		defer util.Closer(lsn)
 
 		for {
 			select {
@@ -621,11 +639,14 @@ func createNetworkListener(server *Server) error {
 	return nil
 }
 
+// RunDaemon starts ambilightd with the settings defined in `cfg`.
+// It will stop execution when `ctx` was canceled.
+// If something show-stopping occurs on startup an error is returned.
 func RunDaemon(cfg *Config, ctx context.Context) error {
 	subCtx, cancel := context.WithCancel(ctx)
 	MPD := mpd.NewReMPD(cfg.MPDHost, cfg.MPDPort, subCtx)
 
-	server := &Server{
+	server := &server{
 		Config:  cfg,
 		MPD:     MPD,
 		Context: subCtx,
@@ -643,7 +664,10 @@ func RunDaemon(cfg *Config, ctx context.Context) error {
 	// Make sure the mpd connection survives long timeouts:
 	go func() {
 		for range keepAlivePinger {
-			MPD.Client().Ping()
+			if err := MPD.Client().Ping(); err != nil {
+				log.Printf("Failed to ping MPD server. Weird: %v", err)
+			}
+
 			time.Sleep(1 * time.Minute)
 		}
 	}()
@@ -651,10 +675,12 @@ func RunDaemon(cfg *Config, ctx context.Context) error {
 	// Close pinger and client on exit:
 	defer func() {
 		close(keepAlivePinger)
-		MPD.Client().Close()
+		util.Closer(MPD.Client())
 	}()
 
 	if cfg.UpdateMoodDatabase {
+		checkForMoodbar()
+
 		if err := updateMoodDatabase(server); err != nil {
 			log.Printf("Failed to update the mood db: %v", err)
 			return err

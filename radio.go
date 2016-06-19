@@ -53,10 +53,12 @@ func main() {
 		Usage: "Send mpd infos to the display server on the `mpd` window",
 		Flags: []cli.Flag{}, // TODO
 		Action: func(ctx *cli.Context) error {
-			// TODO: check for running mpd
+			// TODO: check for running mpd and more
 			client, err := mpd.NewClient(&mpd.Config{
-				"localhost", 6600, // MPD Config
-				"localhost", 7778, // Display server config
+				MPDHost:     "localhost",
+				MPDPort:     6600,
+				DisplayHost: "localhost",
+				DisplayPort: 7778,
 			}, killCtx)
 
 			if err != nil {
