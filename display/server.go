@@ -648,7 +648,7 @@ func handleRender(srv *server, conn io.Writer) {
 	}
 }
 
-func handleSingle(srv *server, line string, conn io.Writer) {
+func handleSingle(srv *server, line string, conn io.Writer) bool {
 	switch split := strings.SplitN(line, " ", 4); split[0] {
 	case "switch":
 		handleSwitch(srv, line)
@@ -664,13 +664,15 @@ func handleSingle(srv *server, line string, conn io.Writer) {
 		// NOTE: This is only used for --dump, not for the actual driver.
 		handleRender(srv, conn)
 	case "close":
-		return
+		return false
 	case "quit":
 		srv.Quit <- true
-		return
+		return false
 	default:
 		log.Printf("Ignoring unknown command `%s`", line)
 	}
+
+	return true
 }
 
 func handleAll(srv *server, conn io.ReadWriteCloser) {
@@ -683,7 +685,9 @@ func handleAll(srv *server, conn io.ReadWriteCloser) {
 			continue
 		}
 
-		handleSingle(srv, line, conn)
+		if !handleSingle(srv, line, conn) {
+			break
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
