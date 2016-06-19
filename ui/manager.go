@@ -78,7 +78,7 @@ func (mgr *MenuManager) handleButtonEvent(state bool) {
 		log.Printf("Button pressed")
 
 		// Check if we're actually in a menu:
-		if mgr.ActiveWindow() == mgr.active.Name {
+		if mgr.activeWindow == mgr.active.Name {
 			mgr.callAction(mgr.active.Click, "pressed")
 			mgr.display()
 		}

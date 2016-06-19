@@ -365,7 +365,10 @@ func initialSwitchToMPD(mgr *MenuManager, MPD *mpd.Client) {
 	initial := true
 	MPD.Register("player", func() {
 		if initial {
-			mgr.SwitchTo("mpd")
+			if err := mgr.SwitchTo("mpd"); err != nil {
+				log.Printf("Initial switch to mpd failed: %v", err)
+			}
+
 			initial = false
 		}
 	})
@@ -385,9 +388,9 @@ func Run(cfg *Config, ctx context.Context) error {
 
 	defer util.Closer(lw)
 
-	if err := drawStaticScreens(lw); err != nil {
-		log.Printf("Failed to draw static screens: %v", err)
-		return err
+	if staticErr := drawStaticScreens(lw); staticErr != nil {
+		log.Printf("Failed to draw static screens: %v", staticErr)
+		return staticErr
 	}
 
 	log.Printf("Creating menus...")
