@@ -15,8 +15,196 @@ import (
 	"golang.org/x/net/context"
 )
 
+const (
+	// DefaultWidth of our LCD display in runes
+	DefaultWidth = 20
+	// DefaultHeight of our LCD display in lines
+	DefaultHeight = 4
+)
+
+//////////////////////////
+
+func handleInfo(ctx *cli.Context, dropout context.Context) error {
+	client, err := mpd.NewClient(&mpd.Config{
+		MPDHost:     ctx.String("mpd-host"),
+		MPDPort:     ctx.Int("mpd-port"),
+		DisplayHost: ctx.String("display-host"),
+		DisplayPort: ctx.Int("display-port"),
+	}, dropout)
+
+	if err != nil {
+		log.Printf("Failed to create mpd client: %v", err)
+		return err
+	}
+
+	client.Run()
+	return nil
+}
+
+func handleUI(ctx *cli.Context, dropout context.Context) error {
+	return ui.Run(&ui.Config{
+		Width:         ctx.GlobalInt("width"),
+		Height:        ctx.GlobalInt("height"),
+		DisplayHost:   ctx.String("display-host"),
+		DisplayPort:   ctx.Int("display-port"),
+		MPDHost:       ctx.String("mpd-host"),
+		MPDPort:       ctx.Int("mpd-port"),
+		AmbilightHost: ctx.String("ambi-host"),
+		AmbilightPort: ctx.Int("ambi-port"),
+	}, dropout)
+}
+
+func handleLightd(ctx *cli.Context, dropout context.Context) error {
+	cfg := &lightd.Config{
+		Host:         ctx.String("lightd-host"),
+		Port:         ctx.Int("lightd-port"),
+		DriverBinary: ctx.String("driver"),
+	}
+
+	if effect := ctx.String("send"); effect != "" {
+		return lightd.Send(cfg, effect)
+	}
+
+	if ctx.Bool("lock") || ctx.Bool("unlock") {
+		locker, err := lightd.NewLocker(cfg)
+		if err != nil {
+			return err
+		}
+
+		if ctx.Bool("lock") {
+			if err := locker.Lock(); err != nil {
+				log.Printf("lightd-lock failed: %v", err)
+			}
+		} else {
+			if err := locker.Unlock(); err != nil {
+				log.Printf("lightd-unlock failed: %v", err)
+			}
+		}
+
+		return locker.Close()
+	}
+
+	return nil
+}
+
+func handleDisplayClient(ctx *cli.Context, dropout context.Context) error {
+	cfg := &display.Config{
+		Host:   ctx.String("display-host"),
+		Port:   ctx.Int("display-port"),
+		Width:  ctx.GlobalInt("width"),
+		Height: ctx.GlobalInt("height"),
+	}
+
+	if ctx.Bool("dump") {
+		return display.DumpClient(
+			cfg, dropout,
+			ctx.String("window"),
+			ctx.Bool("update"),
+		)
+	}
+
+	return display.InputClient(
+		cfg, dropout,
+		ctx.Bool("quit"),
+		ctx.String("window"),
+	)
+}
+
+func handleDisplayServer(ctx *cli.Context, dropout context.Context) error {
+	return display.Run(&display.Config{
+		Host:         ctx.Parent().String("display-host"),
+		Port:         ctx.Parent().Int("display-port"),
+		Width:        ctx.GlobalInt("width"),
+		Height:       ctx.GlobalInt("height"),
+		NoEncoding:   ctx.Bool("no-encoding"),
+		DriverBinary: ctx.String("driver"),
+	}, dropout)
+}
+
+func handleAmbilightCommand(ctx *cli.Context, cfg *ambilight.Config) (bool, error) {
+	on, off, quit, state := ctx.Bool("on"), ctx.Bool("off"), ctx.Bool("quit"), ctx.Bool("state")
+	if !on && !off && !quit && !state {
+		return false, nil
+	}
+
+	client, err := ambilight.NewClient(cfg)
+	if err != nil {
+		log.Printf("Failed to connect to ambilightd: %v", err)
+		return true, err
+	}
+
+	switch {
+	case on, off:
+		return true, client.Enable(on)
+	case state:
+		enabled, err := client.Enabled()
+		if err != nil {
+			log.Printf("Failed to get state: %v", err)
+			return true, err
+		}
+
+		fmt.Printf("%t", enabled)
+		return true, nil
+	case quit:
+		return true, client.Quit()
+	}
+
+	return true, nil
+}
+
+func handleAmbilight(ctx *cli.Context, dropout context.Context) error {
+	musicDir := ctx.String("music-dir")
+	moodyDir := ctx.String("mood-dir")
+
+	cfg := &ambilight.Config{
+		Host:               ctx.String("ambi-host"),
+		Port:               ctx.Int("ambi-port"),
+		MPDHost:            ctx.GlobalString("mpd-host"),
+		MPDPort:            ctx.GlobalInt("mpd-port"),
+		MusicDir:           musicDir,
+		MoodDir:            moodyDir,
+		UpdateMoodDatabase: ctx.Bool("update-mood-db"),
+		BinaryName:         ctx.String("driver"),
+	}
+
+	handled, err := handleAmbilightCommand(ctx, cfg)
+	if err != nil {
+		return err
+	}
+
+	if handled {
+		return nil
+	}
+
+	if musicDir == "" || moodyDir == "" {
+		log.Printf("Need both --music-dir and --mood-dir")
+		return nil
+	}
+
+	return ambilight.Run(cfg, dropout)
+}
+
+//////////////////////////
+
+type handlerFunc func(ctx *cli.Context, dropout context.Context) error
+
+func withCancelCtx(dropout context.Context, fn handlerFunc) func(ctx *cli.Context) error {
+	return func(ctx *cli.Context) error {
+		return fn(ctx, dropout)
+	}
+}
+
+func concat(packs ...[]cli.Flag) []cli.Flag {
+	result := []cli.Flag{}
+	for _, pack := range packs {
+		result = append(result, pack...)
+	}
+
+	return result
+}
+
 func main() {
-	killCtx, cancel := context.WithCancel(context.Background())
+	dropout, cancel := context.WithCancel(context.Background())
 
 	go func() {
 		// Handle Interrupt:
@@ -27,6 +215,10 @@ func main() {
 		cancel()
 	}()
 
+	//////////////////////////
+	// APPLICATION METADATA //
+	//////////////////////////
+
 	app := cli.NewApp()
 	app.Author = "Waldsoft"
 	app.Email = "sahib@online.de"
@@ -34,6 +226,25 @@ func main() {
 
 	app.Version = "0.0.1"
 	app.Flags = []cli.Flag{
+		cli.IntFlag{
+			Name:   "width",
+			Value:  DefaultWidth,
+			Usage:  "Width of the LCD screen",
+			EnvVar: "LCD_HEIGHT",
+		},
+		cli.IntFlag{
+			Name:   "height",
+			Value:  DefaultHeight,
+			Usage:  "Height of the LCD screen",
+			EnvVar: "LCD_HEIGHT",
+		},
+	}
+
+	//////////////////////
+	// CONNECTION FLAGS //
+	//////////////////////
+
+	mpdNetFlags := []cli.Flag{
 		cli.StringFlag{
 			Name:   "mpd-host,H",
 			Value:  "localhost",
@@ -48,65 +259,75 @@ func main() {
 		},
 	}
 
+	displaydNetFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:   "display-host",
+			Value:  "localhost",
+			Usage:  "Display server hostname",
+			EnvVar: "DISPLAY_HOST",
+		},
+		cli.IntFlag{
+			Name:   "display-port",
+			Value:  7777,
+			Usage:  "Display server port",
+			EnvVar: "DISPLAY_PORT",
+		},
+	}
+
+	ambiNetFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:   "ambi-host",
+			Value:  "localhost",
+			Usage:  "Host of the internal control server",
+			EnvVar: "AMBI_HOST",
+		},
+		cli.IntFlag{
+			Name:   "ambi-port",
+			Value:  4444,
+			Usage:  "Port of the internal control server",
+			EnvVar: "AMBI_PORT",
+		},
+	}
+
+	lightdNetFlags := []cli.Flag{
+		cli.StringFlag{
+			Name:   "lightd-host",
+			Value:  "localhost",
+			Usage:  "Host of the lightd server",
+			EnvVar: "LIGHTD_HOST",
+		},
+		cli.IntFlag{
+			Name:   "lightd-port",
+			Value:  3333,
+			Usage:  "Port of the lightd server",
+			EnvVar: "LIGHTD_PORT",
+		},
+	}
+
+	////////////////////////
+	// ACTUAL SUBCOMMANDS //
+	////////////////////////
+
 	app.Commands = []cli.Command{{
-		Name:  "mpdinfo",
-		Usage: "Send mpd infos to the display server on the `mpd` window",
-		Flags: []cli.Flag{}, // TODO
-		Action: func(ctx *cli.Context) error {
-			// TODO: check for running mpd and more
-			client, err := mpd.NewClient(&mpd.Config{
-				MPDHost:     "localhost",
-				MPDPort:     6600,
-				DisplayHost: "localhost",
-				DisplayPort: 7778,
-			}, killCtx)
-
-			if err != nil {
-				log.Printf("Failed to create mpd client: %v", err)
-				return err
-			}
-
-			client.Run()
-			return nil
-		},
+		Name:   "info",
+		Usage:  "Send mpd infos to the display server on the `mpd` window",
+		Action: withCancelCtx(dropout, handleInfo),
+		Flags:  concat(mpdNetFlags, displaydNetFlags),
 	}, {
-		Name:  "ui",
-		Usage: "Handle window rendering and input control",
-		Flags: []cli.Flag{}, // TODO: introduce flags for UI
-		Action: func(ctx *cli.Context) error {
-			log.Printf("Starting ui...")
-			return ui.Run(&ui.Config{
-				Width:         20,
-				Height:        4,
-				DisplayHost:   "localhost",
-				DisplayPort:   7778,
-				MPDHost:       "localhost",
-				MPDPort:       6600,
-				AmbilightHost: "localhost",
-				AmbilightPort: 4444,
-			}, killCtx)
-		},
+		Name:   "ui",
+		Usage:  "Handle window rendering and input control",
+		Action: withCancelCtx(dropout, handleUI),
+		Flags:  concat(displaydNetFlags, mpdNetFlags, ambiNetFlags),
 	}, {
-		Name:  "lightd",
-		Usage: "Utility server to lock the led ownage and enable nice atomic effects",
-		Flags: []cli.Flag{
+		Name:   "lightd",
+		Usage:  "Utility server to lock the led ownage and enable nice atomic effects",
+		Action: withCancelCtx(dropout, handleLightd),
+		Flags: concat(lightdNetFlags, []cli.Flag{
 			cli.StringFlag{
 				Name:   "driver,d",
 				Value:  "catlight",
 				Usage:  "Which driver binary to use to send colors to",
 				EnvVar: "LIGHTD_DRIVER",
-			},
-			cli.StringFlag{
-				Name:   "host,H",
-				Value:  "localhost",
-				Usage:  "lightd-host to connect to",
-				EnvVar: "LIGHTD_HOST",
-			},
-			cli.IntFlag{
-				Name:   "port,p",
-				Value:  3333,
-				Usage:  "lightd port to connect to",
-				EnvVar: "LIGHTD_PORT",
 			},
 			cli.StringFlag{
 				Name:  "send,s",
@@ -121,55 +342,13 @@ func main() {
 				Name:  "unlock,u",
 				Usage: "Unlock the lights",
 			},
-		},
-		Action: func(ctx *cli.Context) error {
-			cfg := &lightd.Config{
-				Host:         ctx.String("host"),
-				Port:         ctx.Int("port"),
-				DriverBinary: ctx.String("driver"),
-			}
-
-			if effect := ctx.String("send"); effect != "" {
-				return lightd.Send(cfg, effect)
-			}
-
-			if ctx.Bool("lock") || ctx.Bool("unlock") {
-				locker, err := lightd.NewLocker(cfg)
-				if err != nil {
-					return err
-				}
-
-				if ctx.Bool("lock") {
-					if err := locker.Lock(); err != nil {
-						log.Printf("lightd-lock failed: %v", err)
-					}
-				} else {
-					if err := locker.Unlock(); err != nil {
-						log.Printf("lightd-unlock failed: %v", err)
-					}
-				}
-
-				return locker.Close()
-			}
-
-			return lightd.Run(cfg, killCtx)
-		},
+		}),
 	}, {
-		Name:  "display",
-		Usage: "Display server",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "host,H",
-				Value:  "localhost",
-				Usage:  "Display server hostname",
-				EnvVar: "DISPLAY_HOST",
-			},
-			cli.IntFlag{
-				Name:   "port,p",
-				Value:  7778,
-				Usage:  "Display server port",
-				EnvVar: "DISPLAY_PORT",
-			},
+
+		Name:   "display",
+		Usage:  "Display manager",
+		Action: withCancelCtx(dropout, handleDisplayClient),
+		Flags: concat(displaydNetFlags, []cli.Flag{
 			cli.BoolFlag{
 				Name:  "dump,d",
 				Usage: "Dumpy display output to terminal",
@@ -187,44 +366,11 @@ func main() {
 				Value: "1",
 				Usage: "Which window to show/modify",
 			},
-			cli.IntFlag{
-				Name:   "width",
-				Value:  20,
-				Usage:  "Width of each LCD display line",
-				EnvVar: "DISPLAY_LCD_WITH",
-			},
-			cli.IntFlag{
-				Name:   "height",
-				Value:  4,
-				Usage:  "Height of the LCD display in lines",
-				EnvVar: "DISPLAY_LCD_HEIGHT",
-			},
-		},
-		Action: func(ctx *cli.Context) error {
-			cfg := &display.Config{
-				Host:   ctx.String("host"),
-				Port:   ctx.Int("port"),
-				Width:  ctx.Int("width"),
-				Height: ctx.Int("height"),
-			}
-
-			if ctx.Bool("dump") {
-				return display.DumpClient(
-					cfg, killCtx,
-					ctx.String("window"),
-					ctx.Bool("update"),
-				)
-			}
-
-			return display.InputClient(
-				cfg, killCtx,
-				ctx.Bool("quit"),
-				ctx.String("window"),
-			)
-		},
+		}),
 		Subcommands: []cli.Command{{
-			Name:  "server",
-			Usage: "Start the display server",
+			Name:   "server",
+			Usage:  "Start the display server",
+			Action: withCancelCtx(dropout, handleDisplayServer),
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:   "driver",
@@ -238,34 +384,13 @@ func main() {
 					EnvVar: "DISPLAY_NO_ENCODING",
 				},
 			},
-			Action: func(ctx *cli.Context) error {
-				return display.Run(&display.Config{
-					Host:         ctx.Parent().String("host"),
-					Port:         ctx.Parent().Int("port"),
-					Width:        ctx.Parent().Int("width"),
-					Height:       ctx.Parent().Int("height"),
-					NoEncoding:   ctx.Bool("no-encoding"),
-					DriverBinary: ctx.String("driver"),
-				}, killCtx)
-			},
 		},
 		},
 	}, {
-		Name:  "ambilight",
-		Usage: "Control the ambilight feature",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "host,H",
-				Value:  "localhost",
-				Usage:  "Host of the internal control server",
-				EnvVar: "AMBI_HOST",
-			},
-			cli.IntFlag{
-				Name:   "port,p",
-				Value:  4444,
-				Usage:  "Port of the internal control server",
-				EnvVar: "AMBI_PORT",
-			},
+		Name:   "ambilight",
+		Usage:  "Control the ambilight feature",
+		Action: withCancelCtx(dropout, handleAmbilight),
+		Flags: concat(ambiNetFlags, []cli.Flag{
 			cli.StringFlag{
 				Name:   "music-dir,m",
 				Value:  "",
@@ -304,61 +429,7 @@ func main() {
 				Name:  "quit",
 				Usage: "Quit the ambilight daemon",
 			},
-		},
-		Action: func(ctx *cli.Context) error {
-			musicDir := ctx.String("music-dir")
-			moodyDir := ctx.String("mood-dir")
-
-			cfg := &ambilight.Config{
-				Host:               ctx.String("host"),
-				Port:               ctx.Int("port"),
-				MPDHost:            ctx.GlobalString("mpd-host"),
-				MPDPort:            ctx.GlobalInt("mpd-port"),
-				MusicDir:           musicDir,
-				MoodDir:            moodyDir,
-				UpdateMoodDatabase: ctx.Bool("update-mood-db"),
-				BinaryName:         ctx.String("driver"),
-			}
-
-			on, off, quit, state := ctx.Bool("on"), ctx.Bool("off"), ctx.Bool("quit"), ctx.Bool("state")
-			if on || off || quit || state {
-				client, err := ambilight.NewClient(cfg)
-				if err != nil {
-					log.Printf("Failed to connect to ambilightd: %v", err)
-					return err
-				}
-
-				switch {
-				case on:
-					return client.Enable(true)
-				case off:
-					return client.Enable(false)
-				case state:
-					enabled, err := client.Enabled()
-					if err != nil {
-						log.Printf("Failed to get state: %v", err)
-						return err
-					}
-
-					if enabled {
-						fmt.Println("on")
-					} else {
-						fmt.Println("off")
-					}
-					return nil
-				case quit:
-					log.Printf("do quit")
-					return client.Quit()
-				}
-			}
-
-			if musicDir == "" || moodyDir == "" {
-				log.Printf("Need both --music-dir and --mood-dir")
-				return nil
-			}
-
-			return ambilight.Run(cfg, killCtx)
-		},
+		}),
 	},
 	}
 
