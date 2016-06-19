@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/disorganizer/brig/util"
+	"github.com/studentkittens/eulenfunk/util"
 	"github.com/studentkittens/eulenfunk/ambilight"
 	"github.com/studentkittens/eulenfunk/display"
 	"github.com/studentkittens/eulenfunk/ui/mpd"

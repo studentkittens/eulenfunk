@@ -16,7 +16,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/disorganizer/brig/util"
+	"github.com/studentkittens/eulenfunk/util"
 )
 
 func max(r uint8, g uint8, b uint8) uint8 {

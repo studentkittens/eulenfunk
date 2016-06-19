@@ -13,7 +13,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/disorganizer/brig/util"
+	"github.com/studentkittens/eulenfunk/util"
 
 	"golang.org/x/net/context"
 )

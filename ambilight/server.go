@@ -18,7 +18,7 @@ import (
 	"golang.org/x/net/context"
 
 	// External dependencies:
-	"github.com/disorganizer/brig/util"
+	"github.com/studentkittens/eulenfunk/util"
 	gompd "github.com/fhs/gompd/mpd"
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/studentkittens/eulenfunk/lightd"

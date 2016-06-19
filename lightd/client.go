@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/disorganizer/brig/util"
+	"github.com/studentkittens/eulenfunk/util"
 )
 
 // Send one or more effects to lightd.

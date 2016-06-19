@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/disorganizer/brig/util"
+	"github.com/studentkittens/eulenfunk/util"
 	"github.com/fhs/gompd/mpd"
 	"github.com/studentkittens/eulenfunk/display"
 	"golang.org/x/net/context"

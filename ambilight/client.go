@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/disorganizer/brig/util"
+	"github.com/studentkittens/eulenfunk/util"
 )
 
 // Client connects to a running ambilightd instance
