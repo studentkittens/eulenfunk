@@ -247,7 +247,9 @@ func createBlend(c1, c2 timedColor, N int) []timedColor {
 		l = (l*l)/2 + (l / 2)
 
 		// Convert back to (gamma corrected) RGB for catlight:
-		r, g, b := colorful.Hcl(h, c, l).LinearRgb()
+		r, g, b := colorful.Hcl(h, c, l).FastLinearRgb()
+		//hcl := colorful.Hcl(h, c, l)
+		//r, g, b := hcl.R, hcl.G, hcl.B
 		colors = append(colors, timedColor{
 			uint8(r * 255), uint8(g * 255), uint8(b * 255),
 			((c1.Duration + c2.Duration) / 2) / time.Duration(N),
@@ -347,10 +349,9 @@ func sendColor(locker *lightd.Locker, col timedColor, colorsCh chan<- timedColor
 	}
 }
 
-func adjust(locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- timedColor) (int, []timedColor) {
+func adjust(locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- timedColor, colors *[]timedColor) int {
 	// Only required if the song changed:
 	currIdx := 0
-	colors := []timedColor{}
 
 	if ev.SongChanged {
 		data, err := readMoodbarFile(ev.Path)
@@ -359,43 +360,39 @@ func adjust(locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- timedColor) (in
 
 			// Return to black:
 			if UseDefaultMoodbar {
-				colors = DefaultMoodbar
+				*colors = DefaultMoodbar
 			} else {
 				sendColor(locker, timedColor{0, 0, 0, 0}, colorsCh)
-				return 0, []timedColor{}
+				*colors = []timedColor{}
+				return 0
 			}
+		} else {
+			*colors = data
 		}
-
-		colors = data
 	}
 
 	// Adjust the moodbar seek offset (1000 samples per total time)
 	if ev.TotalMs > 0 {
 		currIdx = int((ev.ElapsedMs / ev.TotalMs) * 1000)
+	} else {
+		currIdx = 0
 	}
 
-	return currIdx, colors
+	return currIdx
 }
 
-func process(locker *lightd.Locker, currIdx int, currEv *mpdEvent, colors []timedColor, colorsCh chan<- timedColor) {
-	if currIdx >= len(colors) || currEv == nil {
-		return
-	}
+func eatColor(locker *lightd.Locker, currEv *mpdEvent, currCol *timedColor, colorsCh chan<- timedColor, initialSend *bool) {
 
 	// Figure out how much time is needed for one color:
-	colors[currIdx].Duration = time.Millisecond * time.Duration(currEv.TotalMs/1000)
+	(*currCol).Duration = time.Millisecond * time.Duration(currEv.TotalMs/1000)
 
 	if currEv.IsStopped {
 		// Black out on stop, but wait a bit to save cpu time:
 		sendColor(locker, timedColor{0, 0, 0, 500 * time.Millisecond}, colorsCh)
-	} else if currEv.IsPlaying {
+	} else if currEv.IsPlaying || *initialSend {
 		// Send the color to the fader:
-		sendColor(locker, colors[currIdx], colorsCh)
-	}
-
-	// No need to go forth on "pause" or "stop":
-	if currEv.IsPlaying {
-		currIdx++
+		sendColor(locker, *currCol, colorsCh)
+		*initialSend = false
 	}
 }
 
@@ -410,7 +407,6 @@ func MoodbarAdjuster(cfg *Config, eventCh <-chan mpdEvent, colorsCh chan<- timed
 
 	initialSend := true
 
-	// TODO: get port from config
 	lightdConfig := &lightd.Config{
 		Host: cfg.LightdHost,
 		Port: cfg.LightdPort,
@@ -429,22 +425,26 @@ func MoodbarAdjuster(cfg *Config, eventCh <-chan mpdEvent, colorsCh chan<- timed
 
 	for {
 		select {
-		// A new event happened, we need to adjust or even load a new moodbar file:
 		case ev, ok := <-eventCh:
 			if !ok {
 				return
 			}
 
-			currIdx, colors = adjust(locker, &ev, colorsCh)
+			// A new event happened, we need to adjust or even load a new moodbar file:
+			currIdx = adjust(locker, &ev, colorsCh, &colors)
 			currEv = &ev
-		// Nothing happened, give the led some input:
 		default:
-			if initialSend && currEv != nil {
-				currEv.IsPlaying = true
-				initialSend = false
+			if currIdx >= len(colors) || currEv == nil {
+				continue
 			}
 
-			process(locker, currIdx, currEv, colors, colorsCh)
+			// Nothing happened, give the led some input:
+			eatColor(locker, currEv, &colors[currIdx], colorsCh, &initialSend)
+
+			// No need to go forth on "pause" or "stop":
+			if currEv.IsPlaying {
+				currIdx++
+			}
 		}
 	}
 }
