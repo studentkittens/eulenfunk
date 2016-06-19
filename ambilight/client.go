@@ -36,7 +36,7 @@ func (cl *Client) send(s string) error {
 }
 
 // Enabled checks if ambilightd is currently doing playingback.
-// First return is always false when an error ocurred.
+// First return is always false when an error occurred.
 func (cl *Client) Enabled() (bool, error) {
 	if err := cl.send("state"); err != nil {
 		return false, err

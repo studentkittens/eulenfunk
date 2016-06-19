@@ -399,7 +399,7 @@ func Run(cfg *Config, ctx context.Context) error {
 		return err
 	}
 
-	// Start auxillary services:
+	// Start auxiliary services:
 	log.Printf("Starting background services...")
 	MPD, err := mpd.NewClient(&mpd.Config{
 		MPDHost:     cfg.MPDHost,

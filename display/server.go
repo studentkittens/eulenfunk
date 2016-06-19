@@ -137,7 +137,7 @@ func (ln *Line) redraw() {
 }
 
 // Redraw makes sure the line is up-to-date.
-// It can be called if events happended that are out of reach of `Line`.
+// It can be called if events happeneded that are out of reach of `Line`.
 func (ln *Line) Redraw() {
 	ln.Lock()
 	defer ln.Unlock()
@@ -604,10 +604,19 @@ func handleScroll(srv *server, line string) {
 	}
 }
 
-func handleMove(srv *server, line string) {
-	name, pos := "", 0
-	if _, err := fmt.Sscanf(line, "move %s %d", &name, &pos); err != nil {
+func parseMoveTruncate(line string) (string, int, error) {
+	name, dummy, pos := "", "", 0
+	if _, err := fmt.Sscanf(line, "%s %s %d", &dummy, &name, &pos); err != nil {
 		log.Printf("Failed to parse move command `%s`: %v", line, err)
+		return "", 0, err
+	}
+
+	return name, pos, nil
+}
+
+func handleMove(srv *server, line string) {
+	name, pos, err := parseMoveTruncate(line)
+	if err != nil {
 		return
 	}
 
@@ -615,13 +624,12 @@ func handleMove(srv *server, line string) {
 }
 
 func handleTruncate(srv *server, line string) {
-	win, limit := "", 0
-	if _, err := fmt.Sscanf(line, "truncate %s %d", &win, &limit); err != nil {
-		log.Printf("Failed to parse move command `%s`: %v", line, err)
+	name, pos, err := parseMoveTruncate(line)
+	if err != nil {
 		return
 	}
 
-	srv.Truncate(win, limit)
+	srv.Truncate(name, pos)
 }
 
 func handleRender(srv *server, conn io.Writer) {
