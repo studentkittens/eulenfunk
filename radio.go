@@ -139,15 +139,17 @@ func main() {
 					return err
 				}
 
-				defer locker.Close()
-
 				if ctx.Bool("lock") {
-					locker.Lock()
+					if err := locker.Lock(); err != nil {
+						log.Printf("lightd-lock failed: %v", err)
+					}
 				} else {
-					locker.Unlock()
+					if err := locker.Unlock(); err != nil {
+						log.Printf("lightd-unlock failed: %v", err)
+					}
 				}
 
-				return nil
+				return locker.Close()
 			}
 
 			return lightd.Run(cfg, killCtx)
@@ -360,5 +362,8 @@ func main() {
 	},
 	}
 
-	app.Run(os.Args)
+	if err := app.Run(os.Args); err != nil {
+		log.Printf("eulenfunk failed: %v", err)
+		os.Exit(1)
+	}
 }

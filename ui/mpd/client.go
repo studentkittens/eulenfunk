@@ -7,11 +7,22 @@ import (
 	"sync"
 	"time"
 
+	"github.com/disorganizer/brig/util"
 	"github.com/fhs/gompd/mpd"
 	"github.com/studentkittens/eulenfunk/display"
 	"golang.org/x/net/context"
 )
 
+const (
+	// PlaybackStop means that there is no current song.
+	PlaybackStop = "stop"
+	// PlaybackPlay means that there is a current song in progress.
+	PlaybackPlay = "play"
+	// PlaybackPause means that there is a current song, but no progress.
+	PlaybackPause = "pause"
+)
+
+// Config defines the connection details the mpd client will use.
 type Config struct {
 	MPDHost     string
 	MPDPort     int
@@ -19,6 +30,8 @@ type Config struct {
 	DisplayPort int
 }
 
+// Client is a utility mpd client tailored for the ui's purposes.
+// It draws it's status onto the window `mpd`.
 type Client struct {
 	sync.Mutex
 
@@ -85,7 +98,7 @@ func isRadio(currSong mpd.Attrs) bool {
 }
 
 func format(currSong, status mpd.Attrs) ([]string, error) {
-	if status["state"] == "stop" {
+	if status["state"] == PlaybackStop {
 		return formatStop(status)
 	}
 
@@ -107,13 +120,14 @@ func formatTimeSpec(tm time.Duration) string {
 	return fmt.Sprintf("%02d:", h) + f
 }
 
+// StateToUnicode converts `state` into a nicer unicode glyph.
 func StateToUnicode(state string) string {
 	switch state {
-	case "play":
+	case PlaybackPlay:
 		return "▶"
-	case "pause":
+	case PlaybackPause:
 		return "⏸"
-	case "stop":
+	case PlaybackStop:
 		return "⏹"
 	default:
 		return "?"
@@ -204,6 +218,7 @@ func (cl *Client) updatePlaylists() error {
 	return nil
 }
 
+// ListPlaylists returns all stored playlist names.
 func (cl *Client) ListPlaylists() []string {
 	cl.Lock()
 	defer cl.Unlock()
@@ -214,6 +229,8 @@ func (cl *Client) ListPlaylists() []string {
 	return n
 }
 
+// LoadAndPlayPlaylist subsitutes the queue with the stored playlist `name`
+// and immediately starts playing it's first song.
 func (cl *Client) LoadAndPlayPlaylist(name string) error {
 	cl.Lock()
 	defer cl.Unlock()
@@ -229,6 +246,8 @@ func (cl *Client) LoadAndPlayPlaylist(name string) error {
 	return cl.MPD.Client().Play(0)
 }
 
+// TogglePlayback toggles between pause and play.
+// If the state is stop, the first queued song is played.
 func (cl *Client) TogglePlayback() error {
 	cl.Lock()
 	defer cl.Unlock()
@@ -237,17 +256,18 @@ func (cl *Client) TogglePlayback() error {
 	var err error
 
 	switch cl.Status["state"] {
-	case "play":
+	case PlaybackPlay:
 		err = mpd.Pause(true)
-	case "pause":
+	case PlaybackPause:
 		err = mpd.Pause(false)
-	case "stop":
+	case PlaybackStop:
 		err = mpd.Play(0)
 	}
 
 	return err
 }
 
+// CurrentState returns the current state ("play", "pause" or "stop")
 func (cl *Client) CurrentState() string {
 	cl.Lock()
 	defer cl.Unlock()
@@ -255,6 +275,7 @@ func (cl *Client) CurrentState() string {
 	return cl.Status["state"]
 }
 
+// IsRandom returns true when the playback is randomized.
 func (cl *Client) IsRandom() bool {
 	cl.Lock()
 	defer cl.Unlock()
@@ -262,6 +283,7 @@ func (cl *Client) IsRandom() bool {
 	return cl.Status["random"] == "1"
 }
 
+// EnableRandom sets the random state to `enable`.
 func (cl *Client) EnableRandom(enable bool) error {
 	cl.Lock()
 	defer cl.Unlock()
@@ -269,6 +291,7 @@ func (cl *Client) EnableRandom(enable bool) error {
 	return cl.MPD.Client().Random(enable)
 }
 
+// Next skips to the next song in the queue.
 func (cl *Client) Next() error {
 	cl.Lock()
 	defer cl.Unlock()
@@ -276,6 +299,7 @@ func (cl *Client) Next() error {
 	return cl.MPD.Client().Next()
 }
 
+// Prev goes to the previous song in the queue.
 func (cl *Client) Prev() error {
 	cl.Lock()
 	defer cl.Unlock()
@@ -283,17 +307,19 @@ func (cl *Client) Prev() error {
 	return cl.MPD.Client().Previous()
 }
 
+// Play unpauses playback or plays the first song if stopped.
 func (cl *Client) Play() error {
 	cl.Lock()
 	defer cl.Unlock()
 
-	if cl.Status["state"] == "stop" {
+	if cl.Status["state"] == PlaybackStop {
 		return cl.MPD.Client().Play(0)
 	}
 
 	return cl.MPD.Client().Pause(false)
 }
 
+// Pause sets the playing state to "pause" or leaves "stop".
 func (cl *Client) Pause() error {
 	cl.Lock()
 	defer cl.Unlock()
@@ -301,6 +327,7 @@ func (cl *Client) Pause() error {
 	return cl.MPD.Client().Pause(true)
 }
 
+// Stop sets the state to "stop"
 func (cl *Client) Stop() error {
 	cl.Lock()
 	defer cl.Unlock()
@@ -308,6 +335,8 @@ func (cl *Client) Stop() error {
 	return cl.MPD.Client().Stop()
 }
 
+// Outputs returns a list of outputnames.
+// The index of the names are their ids.
 func (cl *Client) Outputs() ([]string, error) {
 	cl.Lock()
 	defer cl.Unlock()
@@ -326,7 +355,10 @@ func (cl *Client) Outputs() ([]string, error) {
 	return names, nil
 }
 
-// NOTE: MPD supports more than one active, but our software does not.
+// ActiveOutput returns the currently selected output.
+//
+// NOTE: MPD supports more than one active, but our software ignroes that.
+//      (German software is excellent at ignoring reality.)
 func (cl *Client) ActiveOutput() (string, error) {
 	cl.Lock()
 	defer cl.Unlock()
@@ -345,6 +377,7 @@ func (cl *Client) ActiveOutput() (string, error) {
 	return "", nil
 }
 
+// SwitchToOutput enables the output named bt `enableMe`.
 func (cl *Client) SwitchToOutput(enableMe string) error {
 	// Disable all other outputs on the way:
 	// (one output is enough for our usecase)
@@ -373,6 +406,8 @@ func (cl *Client) SwitchToOutput(enableMe string) error {
 	return nil
 }
 
+// NewClient returns a new mpd client that offers a few incomplete, convinience methods
+// for altering MPD's state. It also renders the current state to the "mpd" window.
 func NewClient(cfg *Config, ctx context.Context) (*Client, error) {
 	subCtx, cancel := context.WithCancel(ctx)
 
@@ -407,6 +442,7 @@ func NewClient(cfg *Config, ctx context.Context) (*Client, error) {
 	}, nil
 }
 
+// Register remembers a function that will be called the idle event `signal` is received.
 func (cl *Client) Register(signal string, action func()) {
 	cl.Lock()
 	defer cl.Unlock()
@@ -428,11 +464,14 @@ func (cl *Client) emit(signal string) {
 	}
 }
 
+// Close cancels all client operations
 func (cl *Client) Close() error {
 	cl.cancel()
 	return nil
 }
 
+// Run starts the client operations by keeping the status up-to-date
+// and drawing it on the `mpd` window.
 func (cl *Client) Run() {
 	// Make sure the mpd connection survives long timeouts:
 	go func() {
@@ -442,7 +481,9 @@ func (cl *Client) Run() {
 		case <-cl.ctx.Done():
 			break
 		case <-ticker.C:
-			cl.MPD.Client().Ping()
+			if err := cl.MPD.Client().Ping(); err != nil {
+				log.Printf("ping to MPD failed. Welp. Reason: %v", err)
+			}
 		}
 	}()
 
@@ -486,7 +527,7 @@ func (cl *Client) Run() {
 	// Also sync on every mpd event:
 	go func() {
 		watcher := NewReWatcher(cl.Config.MPDHost, cl.Config.MPDPort, cl.ctx)
-		defer watcher.Close()
+		defer util.Closer(watcher)
 
 		for {
 			select {
