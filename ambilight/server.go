@@ -323,15 +323,88 @@ func MoodbarRunner(server *server, colors <-chan timedColor) {
 	}
 }
 
+func sendColor(locker *lightd.Locker, col timedColor, colorsCh chan<- timedColor) {
+	if locker != nil {
+		if err := locker.Lock(); err != nil {
+			log.Printf("Failed to acquire lock (sending anyways): %v", err)
+		}
+	}
+
+	// Do not crash when colorsCh is closed:
+	colorsCh <- col
+	time.Sleep(col.Duration)
+
+	if locker != nil {
+		if err := locker.Unlock(); err != nil {
+			log.Printf("Failed to unlock: %v", err)
+		}
+	}
+}
+
+func adjust(locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- timedColor) (int, []timedColor) {
+	// Only required if the song changed:
+	currIdx := 0
+	colors := []timedColor{}
+
+	if ev.SongChanged {
+		data, err := readMoodbarFile(ev.Path)
+		if err != nil {
+			log.Printf("Failed to read moodbar at `%s`: %v", ev.Path, err)
+
+			// Return to black:
+			if UseDefaultMoodbar {
+				colors = DefaultMoodbar
+			} else {
+				sendColor(locker, timedColor{0, 0, 0, 0}, colorsCh)
+				return 0, []timedColor{}
+			}
+		}
+
+		colors = data
+	}
+
+	// Adjust the moodbar seek offset (1000 samples per total time)
+	if ev.TotalMs > 0 {
+		currIdx = int((ev.ElapsedMs / ev.TotalMs) * 1000)
+	}
+
+	return currIdx, colors
+}
+
+func process(locker *lightd.Locker, currIdx int, currEv *mpdEvent, colors []timedColor, colorsCh chan<- timedColor) {
+	if currIdx >= len(colors) || currEv == nil {
+		return
+	}
+
+	// Figure out how much time is needed for one color:
+	colors[currIdx].Duration = time.Millisecond * time.Duration(currEv.TotalMs/1000)
+
+	if currEv.IsStopped {
+		// Black out on stop, but wait a bit to save cpu time:
+		sendColor(locker, timedColor{0, 0, 0, 500 * time.Millisecond}, colorsCh)
+	} else if currEv.IsPlaying {
+		// Send the color to the fader:
+		sendColor(locker, colors[currIdx], colorsCh)
+	}
+
+	// No need to go forth on "pause" or "stop":
+	if currEv.IsPlaying {
+		currIdx++
+	}
+}
+
 // MoodbarAdjuster tried to synchronize the music to the moodbar.
 // It will send the correct current color to MoodbarRunner.
 func MoodbarAdjuster(eventCh <-chan mpdEvent, colorsCh chan<- timedColor) {
-	var currIdx int
-	var colors []timedColor
-	var currEv *mpdEvent
+	var (
+		currIdx int
+		colors  []timedColor
+		currEv  *mpdEvent
+	)
 
 	initialSend := true
 
+	// TODO: get port from config
 	lightdConfig := &lightd.Config{
 		Host: "localhost",
 		Port: 3333,
@@ -339,27 +412,9 @@ func MoodbarAdjuster(eventCh <-chan mpdEvent, colorsCh chan<- timedColor) {
 
 	locker, err := lightd.NewLocker(lightdConfig)
 	if err != nil {
-		log.Printf("Failed to create locker. Will continue without. lightd running?")
+		log.Printf("Failed to create locker - will continue without. lightd running?")
 	} else {
 		defer util.Closer(locker)
-	}
-
-	sendColor := func(col timedColor) {
-		if locker != nil {
-			if err := locker.Lock(); err != nil {
-				log.Printf("Failed to acquire lock (sending anyways): %v", err)
-			}
-		}
-
-		// Do not crash when colorsCh is closed:
-		colorsCh <- col
-		time.Sleep(col.Duration)
-
-		if locker != nil {
-			if err := locker.Unlock(); err != nil {
-				log.Printf("Failed to unlock: %v", err)
-			}
-		}
 	}
 
 	defer func() {
@@ -368,63 +423,22 @@ func MoodbarAdjuster(eventCh <-chan mpdEvent, colorsCh chan<- timedColor) {
 
 	for {
 		select {
-
 		// A new event happened, we need to adjust or even load a new moodbar file:
 		case ev, ok := <-eventCh:
 			if !ok {
 				return
 			}
 
-			// Only required if the song changed:
-			if ev.SongChanged {
-				data, err := readMoodbarFile(ev.Path)
-				if err != nil {
-					log.Printf("Failed to read moodbar at `%s`: %v", ev.Path, err)
-
-					// Return to black:
-					if UseDefaultMoodbar {
-						colors = DefaultMoodbar
-					} else {
-						sendColor(timedColor{0, 0, 0, 0})
-						colors = []timedColor{}
-						currIdx = 0
-						continue
-					}
-				} else {
-					colors = data
-				}
-			}
-
-			// Adjust the moodbar seek offset (1000 samples per total time)
-			if ev.TotalMs > 0 {
-				currIdx = int((ev.ElapsedMs / ev.TotalMs) * 1000)
-			} else {
-				// Probably stop or some error:
-				currIdx = 0
-			}
-
+			currIdx, colors = adjust(locker, &ev, colorsCh)
 			currEv = &ev
+		// Nothing happened, give the led some input:
 		default:
-			if currIdx >= len(colors) || currEv == nil {
-				continue
-			}
-
-			// Figure out how much time is needed for one color:
-			colors[currIdx].Duration = time.Millisecond * time.Duration(currEv.TotalMs/1000)
-
-			if currEv.IsStopped {
-				// Black out on stop, but wait a bit to save cpu time:
-				sendColor(timedColor{0, 0, 0, 500 * time.Millisecond})
-			} else if currEv.IsPlaying || initialSend {
-				// Send the color to the fader:
-				sendColor(colors[currIdx])
+			if initialSend {
+				currEv.IsPlaying = true
 				initialSend = false
 			}
 
-			// No need to go forth on "pause" or "stop":
-			if currEv.IsPlaying {
-				currIdx++
-			}
+			process(locker, currIdx, currEv, colors, colorsCh)
 		}
 	}
 }
