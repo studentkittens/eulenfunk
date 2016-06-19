@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/studentkittens/eulenfunk/util"
 	"github.com/fhs/gompd/mpd"
 	"github.com/studentkittens/eulenfunk/display"
+	"github.com/studentkittens/eulenfunk/util"
 	"golang.org/x/net/context"
 )
 
