@@ -1,5 +1,7 @@
 package util
 
+// Center pads `text` to with by placing it in the middle and
+// padding the rest of the string with the `padWith` rune.
 func Center(text string, width int, padWith rune) string {
 	s := ""
 
