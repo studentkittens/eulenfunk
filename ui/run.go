@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/disorganizer/brig/util"
 	"github.com/studentkittens/eulenfunk/ambilight"
 	"github.com/studentkittens/eulenfunk/display"
 	"github.com/studentkittens/eulenfunk/ui/mpd"
@@ -22,9 +23,9 @@ func sysCommand(name string, args ...string) func() error {
 func boolToGlyph(b bool) string {
 	if b {
 		return "✓"
-	} else {
-		return "×"
 	}
+
+	return "×"
 }
 
 func ambilightChangeState(cfg *Config, enable bool) error {
@@ -67,7 +68,7 @@ func createPartyModeEntry(cfg *Config, mgr *MenuManager) (*ToggleEntry, error) {
 				time.Sleep(5 * time.Second)
 				continue
 			} else {
-				partyModeEntry.SetState(boolToGlyph(enabled), false)
+				partyModeEntry.SetState(boolToGlyph(enabled))
 				mgr.Display()
 			}
 
@@ -108,7 +109,7 @@ func createOutputEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error) 
 			return
 		}
 
-		outputEntry.SetState(active, false)
+		outputEntry.SetState(active)
 		mgr.Display()
 	})
 
@@ -134,9 +135,7 @@ func createPlaybackEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error
 
 	MPD.Register("player", func() {
 		newState := mpd.StateToUnicode(MPD.CurrentState())
-		if err := playbackEntry.SetState(newState, false); err != nil {
-			log.Printf("Failed to set new state: %v", err)
-		}
+		playbackEntry.SetState(newState)
 
 		mgr.Display()
 	})
@@ -159,7 +158,7 @@ func createRandomEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error) 
 	}
 
 	MPD.Register("options", func() {
-		randomEntry.SetState(boolToGlyph(MPD.IsRandom()), false)
+		randomEntry.SetState(boolToGlyph(MPD.IsRandom()))
 		mgr.Display()
 	})
 
@@ -168,6 +167,7 @@ func createRandomEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error) 
 
 /////////////////////////
 
+// Config allows the user to configure to which services the ui connects.
 type Config struct {
 	Width  int
 	Height int
@@ -186,6 +186,7 @@ type Config struct {
 // MENU MAINLOOP LOGIC //
 /////////////////////////
 
+// Run starts the UI with the settings in `cfg` and until `ctx` is canceled.
 func Run(cfg *Config, ctx context.Context) error {
 	log.Printf("Connecting to displayd...")
 	lw, err := display.Connect(&display.Config{
@@ -197,7 +198,7 @@ func Run(cfg *Config, ctx context.Context) error {
 		return err
 	}
 
-	defer lw.Close()
+	defer util.Closer(lw)
 
 	if err := drawStaticScreens(lw); err != nil {
 		log.Printf("Failed to draw static screens: %v", err)
@@ -214,7 +215,9 @@ func Run(cfg *Config, ctx context.Context) error {
 	// to show before switching to mpd status.
 	go func() {
 		time.Sleep(1 * time.Second)
-		mgr.SwitchTo("mpd")
+		if err := mgr.SwitchTo("mpd"); err != nil {
+			log.Printf("Failed to switch initially to the mpd status: %v", err)
+		}
 	}()
 
 	// Some flags to coordinate actions:
@@ -241,7 +244,7 @@ func Run(cfg *Config, ctx context.Context) error {
 		return err
 	}
 
-	defer MPD.Close()
+	defer util.Closer(MPD)
 
 	go MPD.Run()
 	go RunClock(lw, cfg.Width, ctx)
@@ -374,8 +377,12 @@ func Run(cfg *Config, ctx context.Context) error {
 
 	mgr.AddTimedAction(8*time.Second, func() error {
 		ignoreRelease = true
-		cmd := sysCommand("aplay", "/root/hoot.wav")
-		go cmd()
+		go func() {
+			cmd := sysCommand("aplay", "/root/hoot.wav")
+			if err := cmd(); err != nil {
+				log.Printf("Failed to make schu-hu: %v", err)
+			}
+		}()
 		return nil
 	})
 

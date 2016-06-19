@@ -11,6 +11,8 @@ import (
 	"github.com/studentkittens/eulenfunk/display"
 )
 
+// RunSysinfo displays system information in the "sysinfo" window.
+// The data is obtained from the "radio-sysinfo.sh" script.
 func RunSysinfo(lw *display.LineWriter, width int, ctx context.Context) {
 	for {
 		select {

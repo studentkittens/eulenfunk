@@ -11,6 +11,7 @@ import (
 	"github.com/studentkittens/eulenfunk/util"
 )
 
+// RunClock displays the current time in the "clock" window.
 func RunClock(lw *display.LineWriter, width int, ctx context.Context) {
 	for {
 		select {

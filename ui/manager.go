@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -11,21 +10,27 @@ import (
 )
 
 const (
-	// No movement (initial)
+	// DirectionNone means no movement (initial state)
 	DirectionNone = iota
+
+	// DirectionRight means a clockwise rotation.
 	DirectionRight
+
+	// DirectionLeft means a counter-clockwise rotation.
 	DirectionLeft
 )
 
+// MenuManager handles the switching and drawing of several Menus
+// and possibly "normal" windows.
 type MenuManager struct {
 	sync.Mutex
 	Config *Config
 
 	// TODO: cleanup
-	Active       *Menu
-	Menus        map[string]*Menu
-	TimedActions map[time.Duration]Action
-
+	active               *Menu
+	menus                map[string]*Menu
+	timedActions         map[time.Duration]Action
+	timedActionExecd     map[time.Duration]bool
 	lw                   *display.LineWriter
 	rotateActions        []Action
 	releaseActions       []Action
@@ -34,6 +39,99 @@ type MenuManager struct {
 	rotary               *util.Rotary
 }
 
+func (mgr *MenuManager) callAction(action Action, typ string) {
+	// Order is reversed - This is intentional!
+	// callAction should be called locked, but the action
+	// should be called unlocked.
+	mgr.Unlock()
+	defer mgr.Lock()
+
+	if err := action(); err != nil {
+		log.Printf("%s action failed: %v", typ, err)
+	}
+}
+
+func (mgr *MenuManager) handleButtonEvent(state bool) {
+	mgr.Lock()
+	defer mgr.Unlock()
+
+	if mgr.active == nil {
+		return
+	}
+
+	switch state {
+	case false:
+		log.Printf("Button released")
+		mgr.timedActionExecd = make(map[time.Duration]bool)
+
+		for _, action := range mgr.releaseActions {
+			mgr.callAction(action, "release")
+		}
+
+		mgr.display()
+	case true:
+		log.Printf("Button pressed")
+
+		// Check if we're actually in a menu:
+		if mgr.ActiveWindow() == mgr.active.Name {
+			mgr.callAction(mgr.active.Click, "pressed")
+			mgr.display()
+		}
+	}
+}
+
+func (mgr *MenuManager) handlePressedEvent(duration time.Duration) {
+	mgr.Lock()
+	defer mgr.Unlock()
+
+	log.Printf("Pressed for %s", duration)
+
+	// Find the action with smallest non-negative diff:
+	var diff time.Duration
+	var action Action
+	var actionTime time.Duration
+
+	for after, timedAction := range mgr.timedActions {
+		newDiff := duration - after
+		if after <= duration && (action == nil || newDiff < diff) {
+			diff = duration - after
+			action = timedAction
+			actionTime = after
+		}
+	}
+
+	if action != nil && !mgr.timedActionExecd[actionTime] {
+		mgr.callAction(action, "timed")
+		mgr.timedActionExecd[actionTime] = true
+	}
+}
+
+func (mgr *MenuManager) handleValueEvent(value int) {
+	mgr.Lock()
+	defer mgr.Unlock()
+
+	if mgr.active == nil {
+		return
+	}
+
+	mgr.lastValue = mgr.currValue
+	mgr.currValue = value
+	name := mgr.active.Name
+	diff := mgr.currValue - mgr.lastValue
+
+	mgr.active.Scroll(diff)
+	if _, err := mgr.lw.Printf("move %s %d", name, diff); err != nil {
+		log.Printf("move failed: %v", err)
+	}
+
+	for _, action := range mgr.rotateActions {
+		mgr.callAction(action, "rotate")
+	}
+
+	mgr.display()
+}
+
+// NewMenuManager returns a new MenuManager that sends it's data to `lw` and switches to `initialWin`.
 func NewMenuManager(cfg *Config, lw *display.LineWriter, initialWin string) (*MenuManager, error) {
 	rty, err := util.NewRotary()
 	if err != nil {
@@ -46,128 +144,54 @@ func NewMenuManager(cfg *Config, lw *display.LineWriter, initialWin string) (*Me
 	}
 
 	mgr := &MenuManager{
-		Menus:        make(map[string]*Menu),
-		TimedActions: make(map[time.Duration]Action),
-		activeWindow: initialWin,
-		Config:       cfg,
-		lw:           lw,
-		rotary:       rty,
+		menus:            make(map[string]*Menu),
+		timedActions:     make(map[time.Duration]Action),
+		timedActionExecd: make(map[time.Duration]bool),
+		activeWindow:     initialWin,
+		Config:           cfg,
+		lw:               lw,
+		rotary:           rty,
 	}
-
-	timedActionExecd := make(map[time.Duration]bool)
 
 	go func() {
 		for state := range rty.Button {
-			if mgr.Active == nil {
-				continue
-			}
-
-			if !state {
-				fmt.Println("Button released")
-				mgr.Lock()
-				timedActionExecd = make(map[time.Duration]bool)
-				mgr.Unlock()
-
-				for idx, action := range mgr.releaseActions {
-					if err := action(); err != nil {
-						log.Printf("release action %d failed: %v", idx, err)
-					}
-				}
-
-				continue
-			}
-
-			fmt.Println("Button pressed")
-
-			mgr.Lock()
-			active := mgr.Active
-			mgr.Unlock()
-
-			// Check if we're actually in a menu:
-			if mgr.ActiveWindow() == active.Name {
-				if err := active.Click(); err != nil {
-					name := active.ActiveEntryName()
-					log.Printf("Action for menu entry `%s` failed: %v", name, err)
-				}
-
-				mgr.Display()
-			}
+			mgr.handleButtonEvent(state)
 		}
 	}()
 
 	go func() {
 		for duration := range rty.Pressed {
-			log.Printf("Pressed for %s", duration)
-			mgr.Lock()
-
-			// Find the action with smallest non-negative diff:
-			var diff time.Duration
-			var action Action
-			var actionTime time.Duration
-
-			for after, timedAction := range mgr.TimedActions {
-				newDiff := duration - after
-				if after <= duration && (action == nil || newDiff < diff) {
-					diff = duration - after
-					action = timedAction
-					actionTime = after
-				}
-			}
-
-			if action != nil && !timedActionExecd[actionTime] {
-				// Call action() unlocked:
-				mgr.Unlock()
-				action()
-				mgr.Lock()
-
-				timedActionExecd[actionTime] = true
-			}
-
-			mgr.Unlock()
+			mgr.handlePressedEvent(duration)
 		}
 	}()
 
 	go func() {
 		for value := range rty.Value {
-			mgr.Lock()
-			if mgr.Active == nil {
-				mgr.Unlock()
-				continue
-			}
-
-			mgr.lastValue = mgr.currValue
-			mgr.currValue = value
-			diff := mgr.currValue - mgr.lastValue
-			name := mgr.Active.Name
-			mgr.Unlock()
-
-			log.Printf("Value: %d Diff %d\n", value, diff)
-
-			mgr.Active.Scroll(diff)
-			if _, err := lw.Printf("move %s %d", name, diff); err != nil {
-				log.Printf("move failed: %v", err)
-			}
-
-			for idx, action := range mgr.rotateActions {
-				if err := action(); err != nil {
-					log.Printf("Rotate action %d failed: %v", idx, err)
-				}
-			}
-
-			mgr.Active.Display(mgr.Config.Width)
+			mgr.handleValueEvent(value)
 		}
 	}()
 
 	return mgr, nil
 }
 
-func (mgr *MenuManager) Display() error {
+// Display sends the current active menu to the display server.
+// (but it does not switch to it!)
+func (mgr *MenuManager) Display() {
 	mgr.Lock()
 	defer mgr.Unlock()
 
-	return mgr.Active.Display(mgr.Config.Width)
+	mgr.display()
 }
 
+func (mgr *MenuManager) display() {
+	// Just log the error, since the user can't do anything about it:
+	if err := mgr.active.Display(mgr.Config.Width); err != nil {
+		log.Printf("Failed to display current state: %v", err)
+	}
+}
+
+// ActiveWindow returns the currently active window shown
+// by the display server.
 func (mgr *MenuManager) ActiveWindow() string {
 	mgr.Lock()
 	defer mgr.Unlock()
@@ -175,6 +199,9 @@ func (mgr *MenuManager) ActiveWindow() string {
 	return mgr.activeWindow
 }
 
+// Direction returns the direction in which the
+// rotary button was rotated last. If it was not
+// rotated yet, the duration is DirectionNone.
 func (mgr *MenuManager) Direction() int {
 	mgr.Lock()
 	defer mgr.Unlock()
@@ -189,6 +216,7 @@ func (mgr *MenuManager) Direction() int {
 	}
 }
 
+// Value returns the current value of the rotary button.
 func (mgr *MenuManager) Value() int {
 	mgr.Lock()
 	defer mgr.Unlock()
@@ -196,6 +224,8 @@ func (mgr *MenuManager) Value() int {
 	return mgr.currValue
 }
 
+// RotateAction registers an action to be called
+// when the user rotates the knob.
 func (mgr *MenuManager) RotateAction(a Action) {
 	mgr.Lock()
 	defer mgr.Unlock()
@@ -203,6 +233,8 @@ func (mgr *MenuManager) RotateAction(a Action) {
 	mgr.rotateActions = append(mgr.rotateActions, a)
 }
 
+// ReleaseAction registers an action to be called when
+// the rotary button is released.
 func (mgr *MenuManager) ReleaseAction(a Action) {
 	mgr.Lock()
 	defer mgr.Unlock()
@@ -210,13 +242,16 @@ func (mgr *MenuManager) ReleaseAction(a Action) {
 	mgr.releaseActions = append(mgr.releaseActions, a)
 }
 
+// SwitchTo switches to the menu named `menu`.
+// NOTE: use this instead of directly talking to the display
+// server since it also switches the input focus.
 func (mgr *MenuManager) SwitchTo(name string) error {
 	mgr.Lock()
 	defer mgr.Unlock()
 
-	if menu, ok := mgr.Menus[name]; ok {
-		mgr.Active = menu
-		mgr.Active.Display(mgr.Config.Width)
+	if menu, ok := mgr.menus[name]; ok {
+		mgr.active = menu
+		mgr.display()
 	}
 
 	if _, err := mgr.lw.Printf("switch %s", name); err != nil {
@@ -228,13 +263,17 @@ func (mgr *MenuManager) SwitchTo(name string) error {
 	return nil
 }
 
+// AddTimedAction register an action to be called after pressing the rotary
+// button with a duration of `after`.
 func (mgr *MenuManager) AddTimedAction(after time.Duration, action Action) {
 	mgr.Lock()
 	defer mgr.Unlock()
 
-	mgr.TimedActions[after] = action
+	mgr.timedActions[after] = action
 }
 
+// AddMenu adds a (potentially new) menu to the manager with `name` and
+// `entries`. If the menu already exists it will be subsituted with the new one.
 func (mgr *MenuManager) AddMenu(name string, entries []Entry) error {
 	mgr.Lock()
 	defer mgr.Unlock()
@@ -244,9 +283,7 @@ func (mgr *MenuManager) AddMenu(name string, entries []Entry) error {
 		return err
 	}
 
-	for _, entry := range entries {
-		menu.Entries = append(menu.Entries, entry)
-	}
+	menu.Entries = append(menu.Entries, entries...)
 
 	// Why? Because AddMenu may be called more than once with different entries.
 	// If first a long menu is given and then a short, the diff will still
@@ -255,18 +292,19 @@ func (mgr *MenuManager) AddMenu(name string, entries []Entry) error {
 		log.Printf("Failed to truncate menu %s: %v", name, err)
 	}
 
-	if mgr.Active == nil {
-		mgr.Active = menu
-		mgr.Active.Display(mgr.Config.Width)
+	if mgr.active == nil {
+		mgr.active = menu
+		mgr.display()
 	}
 
 	// Pre-select first selectable entry:
 	menu.Scroll(0)
 
-	mgr.Menus[name] = menu
+	mgr.menus[name] = menu
 	return nil
 }
 
+// Close closes all input resources
 func (mgr *MenuManager) Close() error {
 	return mgr.rotary.Close()
 }

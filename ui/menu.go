@@ -4,27 +4,30 @@ import (
 	"github.com/studentkittens/eulenfunk/display"
 )
 
+// Menu is a collection of Entry interfaces grouped in a window.
+// It supports the usual menu semantics, i.e. moving down
+// and clicking an entry.
 type Menu struct {
-	Name    string
+	// Name is the name of the menu window.
+	// Should start with menu-[...]
+	Name string
+
+	// Entries is a list of Entry interfaces
 	Entries []Entry
-	Cursor  int
+
+	// Cursor is the current offset in the entries
+	Cursor int
 
 	lw *display.LineWriter
 }
 
+// NewMenu returns a new menu that will use `lw` to display itself
+// on the window `name`.
 func NewMenu(name string, lw *display.LineWriter) (*Menu, error) {
 	return &Menu{
 		Name: name,
 		lw:   lw,
 	}, nil
-}
-
-func (mn *Menu) ActiveEntryName() string {
-	if len(mn.Entries) == 0 {
-		return ""
-	}
-
-	return mn.Entries[mn.Cursor].Name()
 }
 
 func (mn *Menu) scrollToNextSelectable(up bool) {
@@ -46,6 +49,7 @@ func (mn *Menu) scrollToNextSelectable(up bool) {
 	}
 }
 
+// Scroll moves the menu `move` down (or up if negative)
 func (mn *Menu) Scroll(move int) {
 	mn.Cursor += move
 
@@ -58,10 +62,10 @@ func (mn *Menu) Scroll(move int) {
 	}
 }
 
+// Display draws the menu onto the display
 func (mn *Menu) Display(width int) error {
 	for pos, ClickEntry := range mn.Entries {
 		line := ClickEntry.Render(width, pos == mn.Cursor)
-
 		if _, err := mn.lw.Printf("line %s %d %s", mn.Name, pos, line); err != nil {
 			return err
 		}
@@ -70,6 +74,7 @@ func (mn *Menu) Display(width int) error {
 	return nil
 }
 
+// Click executes the action under the cursor
 func (mn *Menu) Click() error {
 	if len(mn.Entries) == 0 {
 		return nil

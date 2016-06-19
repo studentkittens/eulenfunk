@@ -8,31 +8,31 @@ import (
 )
 
 var (
-	STARTUP_SCREEN = []string{
+	startupScreen = []string{
 		"/ / / / / / / / / / / / / / / /",
 		"WELCOME TO EULENFUNK",
 		" GUT. ECHT. ANDERS. ",
 		"/ / / / / / / / / / / / / / / /",
 	}
 
-	SHUTDOWN_SCREEN = []string{
+	shutdownScreen = []string{
 		"SHUTTING DOWN - BYE!",
 		"                    ",
 		"PLEASE WAIT 1 MINUTE",
 		"BEFORE POWERING OFF!",
 	}
 
-	ABOUT_SCREEN = []string{
+	aboutScreen = []string{
 		"EULENFUNK IS MADE BY",
 		"  Christoph <qitta> Piechula (christoph@nullcat.de)",
 		"  Christopher <sahib> Pahl (sahib@online.de)",
 		"  Susanne <Trüffelkauz> Kießling (aggro@thene.org)",
 	}
 
-	SCREENS = map[string][]string{
-		"startup":  STARTUP_SCREEN,
-		"shutdown": SHUTDOWN_SCREEN,
-		"about":    ABOUT_SCREEN,
+	screens = map[string][]string{
+		"startup":  startupScreen,
+		"shutdown": shutdownScreen,
+		"about":    aboutScreen,
 	}
 )
 
@@ -44,7 +44,7 @@ func drawBlock(lw *display.LineWriter, window string, block []string) error {
 
 		// Needs scrolling for proper display:
 		if utf8.RuneCountInString(line) > 20 {
-			if _, err := lw.Printf("scroll %s %d 300ms", window, idx); err != nil {
+			if _, err := lw.Printf("scroll %s %d 500ms", window, idx); err != nil {
 				return err
 			}
 		}
@@ -54,7 +54,7 @@ func drawBlock(lw *display.LineWriter, window string, block []string) error {
 }
 
 func drawStaticScreens(lw *display.LineWriter) error {
-	for window, block := range SCREENS {
+	for window, block := range screens {
 		if err := drawBlock(lw, window, block); err != nil {
 			return err
 		}
@@ -64,7 +64,7 @@ func drawStaticScreens(lw *display.LineWriter) error {
 }
 
 func switchToStatic(lw *display.LineWriter, window string) {
-	if _, ok := SCREENS[window]; !ok {
+	if _, ok := screens[window]; !ok {
 		log.Printf("No such static window `%s`", window)
 	}
 
