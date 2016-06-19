@@ -3,6 +3,7 @@ package display
 import (
 	"bufio"
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"log"
@@ -154,8 +155,20 @@ func RunDumpClient(cfg *Config, ctx context.Context, window string, update bool)
 			fmt.Println("\033[H\033[2J")
 		}
 
-		n := int64(cfg.Width*cfg.Height + cfg.Height)
-		if _, err := io.CopyN(os.Stdout, lw, n); err != nil {
+		sizeBuf := make([]byte, 8)
+		n, err := lw.Read(sizeBuf)
+		if n != 8 {
+			log.Printf("Bad size header (%d != 8)", n)
+			continue
+		}
+
+		if err != nil {
+			log.Printf("Reading size header failed: %v", err)
+			continue
+		}
+
+		size := binary.LittleEndian.Uint64(sizeBuf)
+		if _, err := io.CopyN(os.Stdout, lw, int64(size)); err != nil {
 			return err
 		}
 

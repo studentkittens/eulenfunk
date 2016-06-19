@@ -2,7 +2,7 @@ package display
 
 import (
 	"bufio"
-	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"log"
@@ -31,7 +31,7 @@ const (
 	GlyphCactus = 7
 )
 
-var unicodeToLCDCustom = map[rune]byte{
+var unicodeToLCDCustom = map[rune]rune{
 	// Real custom characters:
 	'━': GlyphHBar,
 	'▶': GlyphPlay,
@@ -53,9 +53,9 @@ var unicodeToLCDCustom = map[rune]byte{
 	'৹': 178,
 }
 
-func encode(s string) []byte {
+func encode(s string) []rune {
 	// Iterate by rune:
-	encoded := []byte{}
+	encoded := []rune{}
 
 	for _, rn := range s {
 		b, ok := unicodeToLCDCustom[rn]
@@ -64,7 +64,7 @@ func encode(s string) []byte {
 				// Multibyte chars would be messed up anyways:
 				b = '?'
 			} else {
-				b = byte(rn)
+				b = rn
 			}
 		}
 
@@ -85,9 +85,10 @@ type Line struct {
 	Pos         int
 	ScrollDelay time.Duration
 
-	// TODO: rather use runes:
-	text      []byte
-	buf       []byte
+	text []rune
+	buf  []rune
+
+	// current offset mod len(buf)
 	scrollPos int
 }
 
@@ -95,8 +96,8 @@ type Line struct {
 func NewLine(pos int, w int) *Line {
 	ln := &Line{
 		Pos:  pos,
-		text: []byte{},
-		buf:  make([]byte, w),
+		text: []rune{},
+		buf:  make([]rune, w),
 	}
 
 	// Initial render:
@@ -156,17 +157,17 @@ func (ln *Line) SetText(text string, useEncoding bool) {
 		text += " ━❤━ "
 	}
 
-	var encodedText []byte
+	var encodedText []rune
 	if useEncoding {
 		encodedText = encode(text)
 	} else {
 		// Just take the incoming encoding,
 		// might render weirdly on LCD though.
-		encodedText = []byte(text)
+		encodedText = []rune(text)
 	}
 
 	// Check if we need to re-render...
-	if !bytes.Equal(encodedText, ln.text) {
+	if string(encodedText) != string(ln.text) {
 		ln.scrollPos = 0
 	}
 
@@ -188,7 +189,7 @@ func (ln *Line) SetScrollDelay(delay time.Duration) {
 	ln.redraw()
 }
 
-func scroll(buf []byte, text []byte, m int) {
+func scroll(buf []rune, text []rune, m int) {
 	for i := 0; i < len(buf); i++ {
 		buf[i] = 0
 	}
@@ -207,7 +208,7 @@ func scroll(buf []byte, text []byte, m int) {
 }
 
 // Render returns the current line contents with fixed width
-func (ln *Line) Render() []byte {
+func (ln *Line) Render() []rune {
 	ln.Lock()
 	defer ln.Unlock()
 
@@ -362,21 +363,18 @@ func (win *Window) Switch() {
 }
 
 // Render returns the whole current LCD matrix as bytes.
-func (win *Window) Render() []byte {
-	buf := &bytes.Buffer{}
-
+func (win *Window) Render() [][]rune {
 	hi := win.LineOffset + win.Height
 	if hi > win.NLines {
 		hi = win.NLines
 	}
 
-	// TODO: rewrite this to return a [][]rune
+	out := [][]rune{}
 	for _, line := range win.Lines[win.LineOffset:hi] {
-		buf.Write(line.Render())
-		buf.WriteRune('\n')
+		out = append(out, line.Render())
 	}
 
-	return buf.Bytes()
+	return out
 }
 
 ///////////////////////////
@@ -421,31 +419,11 @@ func (srv *server) renderToDriver() {
 		return
 	}
 
-	// TODO: Make this nicer, possibly just
-	//       render single lines and don't split what Render()
-	//       did?
-
-	lines, pos := srv.Active.Render(), 0
-	width := srv.Config.Width
-
-	for i := 0; i < len(lines); i += width + 1 {
-		lpos := fmt.Sprintf("%d ", pos)
-
-		buf := lines[i : i+width]
-
-		if _, err := srv.DriverPipe.Write([]byte(lpos)); err != nil {
+	for idx, line := range srv.Active.Render() {
+		dline := []byte(fmt.Sprintf("%d %s\n ", idx, string(line)))
+		if _, err := srv.DriverPipe.Write(dline); err != nil {
 			log.Printf("Failed to write to driver: %v", err)
 		}
-
-		if _, err := srv.DriverPipe.Write(buf); err != nil {
-			log.Printf("Failed to write to driver: %v", err)
-		}
-
-		if _, err := srv.DriverPipe.Write([]byte("\n")); err != nil {
-			log.Printf("Failed to write to driver: %v", err)
-		}
-
-		pos++
 	}
 }
 
@@ -558,7 +536,7 @@ func (srv *server) Truncate(window string, n int) {
 	srv.renderToDriver()
 }
 
-func (srv *server) Render() []byte {
+func (srv *server) RenderMatrix() []byte {
 	srv.Lock()
 	defer srv.Unlock()
 
@@ -566,7 +544,12 @@ func (srv *server) Render() []byte {
 		return nil
 	}
 
-	return srv.Active.Render()
+	out := ""
+	for _, line := range srv.Active.Render() {
+		out += string(line) + "\n"
+	}
+
+	return []byte(out)
 }
 
 //////////////////////
@@ -644,7 +627,16 @@ func handleConn(srv *server, conn net.Conn) {
 			srv.Truncate(name, pos)
 		case "render":
 			// NOTE: This is only used for --dump, not for the actual driver.
-			if _, err := conn.Write(srv.Render()); err != nil {
+			matrix := srv.RenderMatrix()
+			sizeBuf := make([]byte, 8)
+			binary.LittleEndian.PutUint64(sizeBuf, uint64(len(matrix)))
+
+			if _, err := conn.Write(sizeBuf); err != nil {
+				log.Printf("Failed to respond rendered size: %v", err)
+				continue
+			}
+
+			if _, err := conn.Write(matrix); err != nil {
 				log.Printf("Failed to respond rendered display: %v", err)
 				continue
 			}
