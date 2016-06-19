@@ -26,7 +26,6 @@ type MenuManager struct {
 	sync.Mutex
 	Config *Config
 
-	// TODO: cleanup
 	active               *Menu
 	menus                map[string]*Menu
 	timedActions         map[time.Duration]Action

@@ -159,8 +159,8 @@ func handleAmbilight(ctx *cli.Context, dropout context.Context) error {
 	cfg := &ambilight.Config{
 		Host:               ctx.String("ambi-host"),
 		Port:               ctx.Int("ambi-port"),
-		MPDHost:            ctx.GlobalString("mpd-host"),
-		MPDPort:            ctx.GlobalInt("mpd-port"),
+		MPDHost:            ctx.String("mpd-host"),
+		MPDPort:            ctx.Int("mpd-port"),
 		MusicDir:           musicDir,
 		MoodDir:            moodyDir,
 		UpdateMoodDatabase: ctx.Bool("update-mood-db"),
