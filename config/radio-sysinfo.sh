@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #CPU_USAGE=$(grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {printf("%.0f\n", usage)}')
-CPU_USAGE=$(mpstat | grep 'all' | awk '{ print 100 - $13 }')
+CPU_USAGE=$(mpstat 1 1 | awk '$3 ~ /CPU/ { for(i=1;i<=NF;i++) { if ($i ~ /%idle/) field=i } } $3 ~ /all/ { printf("%d",100 - $field) }')
 MEM_USAGE=$(free | grep Mem | awk '{printf("%.0f\n", $3/$2 * 100.0)}')
 IP_ADDR=$(ip addr show wlan0 | grep -m 1 'inet' | awk  '{print $2}' | sed 's/...$//g')
 UPTIME_HOURS=$(uptime | awk '{print $1}')

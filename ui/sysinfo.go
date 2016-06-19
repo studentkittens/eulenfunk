@@ -35,6 +35,6 @@ func RunSysinfo(lw *display.LineWriter, width int, ctx context.Context) {
 
 		}
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 }
