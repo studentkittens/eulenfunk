@@ -37,6 +37,7 @@ type MenuManager struct {
 	currValue, lastValue int
 	activeWindow         string
 	rotary               *util.Rotary
+	ignoreNextRelease    bool
 }
 
 func (mgr *MenuManager) callAction(action Action, typ string) {
@@ -61,19 +62,23 @@ func (mgr *MenuManager) handleButtonEvent(state bool) {
 
 	switch state {
 	case false:
-		log.Printf("Button released")
+		log.Printf("Button released (ignore: %v)", mgr.ignoreNextRelease)
 		mgr.timedActionExecd = make(map[time.Duration]bool)
 
-		for _, action := range mgr.releaseActions {
-			mgr.callAction(action, "release")
+		if !mgr.ignoreNextRelease {
+			for _, action := range mgr.releaseActions {
+				mgr.callAction(action, "release")
+			}
+
+			mgr.display()
 		}
 
-		mgr.display()
+		mgr.ignoreNextRelease = false
 	case true:
 		log.Printf("Button pressed")
 
 		// Check if we're actually in a menu:
-		if mgr.activeWindow == mgr.active.Name {
+		if mgr.ActiveWindow() == mgr.active.Name {
 			mgr.callAction(mgr.active.Click, "pressed")
 			mgr.display()
 		}
@@ -259,6 +264,7 @@ func (mgr *MenuManager) SwitchTo(name string) error {
 		return err
 	}
 
+	mgr.ignoreNextRelease = true
 	mgr.activeWindow = name
 	return nil
 }

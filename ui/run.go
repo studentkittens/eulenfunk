@@ -8,10 +8,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/studentkittens/eulenfunk/util"
 	"github.com/studentkittens/eulenfunk/ambilight"
 	"github.com/studentkittens/eulenfunk/display"
 	"github.com/studentkittens/eulenfunk/ui/mpd"
+	"github.com/studentkittens/eulenfunk/util"
 )
 
 func sysCommand(name string, args ...string) func() error {
@@ -167,6 +167,175 @@ func createRandomEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error) 
 
 /////////////////////////
 
+func releaseAction(mgr *MenuManager, MPD *mpd.Client) error {
+	switch currWin := mgr.ActiveWindow(); currWin {
+	case "mpd":
+		if err := MPD.TogglePlayback(); err != nil {
+			log.Printf("Failed to toggle playback: %v", err)
+		}
+	default:
+		// This is a bit of a hack:
+		// Enable "click to exit window" on most non-menu windows:
+		if !strings.Contains(currWin, "menu") {
+			return mgr.SwitchTo("menu-main")
+		}
+	}
+
+	return nil
+}
+
+func rotateAction(mgr *MenuManager, MPD *mpd.Client) error {
+	if mgr.ActiveWindow() != "mpd" {
+		return nil
+	}
+
+	log.Printf("rotate action")
+	switch mgr.Direction() {
+	case DirectionRight:
+		log.Printf("Play next")
+		if err := MPD.Next(); err != nil {
+			log.Printf("Failed to skip to next: %v", err)
+		}
+	case DirectionLeft:
+		log.Printf("Play prev")
+		if err := MPD.Next(); err != nil {
+			log.Printf("Failed to skip to prev: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func schuhuAction() error {
+	go func() {
+		cmd := sysCommand("aplay", "/root/hoot.wav")
+		if err := cmd(); err != nil {
+			log.Printf("Failed to make schu-hu: %v", err)
+		}
+	}()
+
+	return nil
+}
+
+/////////////////////////
+
+func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
+	outputEntry, err := createOutputEntry(mgr, MPD)
+	if err != nil {
+		log.Printf("Failed to create output entry: %v", err)
+		return err
+	}
+
+	partyModeEntry, err := createPartyModeEntry(mgr.Config, mgr)
+	if err != nil {
+		log.Printf("Failed to create party-mode entry: %v", err)
+		return err
+	}
+
+	playbackEntry, err := createPlaybackEntry(mgr, MPD)
+	if err != nil {
+		log.Printf("Failed to create playback entry: %v", err)
+		return err
+	}
+
+	randomEntry, err := createRandomEntry(mgr, MPD)
+	if err != nil {
+		log.Printf("Failed to create random entry: %v", err)
+		return err
+	}
+
+	mainMenu := []Entry{
+		&Separator{"MODES"},
+		&ClickEntry{
+			Text:       "Music info",
+			ActionFunc: switcher(mgr, "mpd"),
+		},
+		&ClickEntry{
+			Text: "Playlists",
+			ActionFunc: func() error {
+				entries := createPlaylistEntries(MPD)
+
+				// Add an exit button:
+				entries = append(entries, &ClickEntry{
+					Text:       "Exit",
+					ActionFunc: switcher(mgr, "menu-main"),
+				})
+
+				if err := mgr.AddMenu("menu-playlists", entries); err != nil {
+					return err
+				}
+
+				return switcher(mgr, "menu-playlists")()
+			},
+		},
+		&ClickEntry{
+			Text:       "Clock",
+			ActionFunc: switcher(mgr, "clock"),
+		},
+		&ClickEntry{
+			Text:       "System info",
+			ActionFunc: switcher(mgr, "sysinfo"),
+		},
+		&ClickEntry{
+			Text:       "Statistics",
+			ActionFunc: switcher(mgr, "stats"),
+		},
+		&Separator{"OPTIONS"},
+		partyModeEntry,
+		outputEntry,
+		playbackEntry,
+		randomEntry,
+		&Separator{"SYSTEM"},
+		&ClickEntry{
+			Text:       "Powermenu",
+			ActionFunc: switcher(mgr, "menu-power"),
+		},
+		&ClickEntry{
+			Text:       "About",
+			ActionFunc: switcher(mgr, "about"),
+		},
+	}
+
+	if err := mgr.AddMenu("menu-main", mainMenu); err != nil {
+		log.Printf("Add main-menu failed: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func createPowerMenu(mgr *MenuManager, lw *display.LineWriter) error {
+	powerMenu := []Entry{
+		&ClickEntry{
+			Text: "Poweroff",
+			ActionFunc: func() error {
+				switchToStatic(lw, "shutdown")
+				return sysCommand("systemctl", "poweroff")()
+			},
+		},
+		&ClickEntry{
+			Text: "Reboot",
+			ActionFunc: func() error {
+				switchToStatic(lw, "shutdown")
+				return sysCommand("systemctl", "reboot")()
+			},
+		},
+		&ClickEntry{
+			Text:       "Exit",
+			ActionFunc: switcher(mgr, "menu-main"),
+		},
+	}
+
+	if err := mgr.AddMenu("menu-power", powerMenu); err != nil {
+		log.Printf("Add main-power failed: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+/////////////////////////
+
 // Config allows the user to configure to which services the ui connects.
 type Config struct {
 	Width  int
@@ -185,6 +354,22 @@ type Config struct {
 /////////////////////////
 // MENU MAINLOOP LOGIC //
 /////////////////////////
+
+func switcher(mgr *MenuManager, name string) func() error {
+	return func() error {
+		return mgr.SwitchTo(name)
+	}
+}
+
+func initialSwitchToMPD(mgr *MenuManager, MPD *mpd.Client) {
+	initial := true
+	MPD.Register("player", func() {
+		if initial {
+			mgr.SwitchTo("mpd")
+			initial = false
+		}
+	})
+}
 
 // Run starts the UI with the settings in `cfg` and until `ctx` is canceled.
 func Run(cfg *Config, ctx context.Context) error {
@@ -211,25 +396,6 @@ func Run(cfg *Config, ctx context.Context) error {
 		return err
 	}
 
-	// Wait a second to give the startup screen a bit time
-	// to show before switching to mpd status.
-	go func() {
-		time.Sleep(1 * time.Second)
-		if err := mgr.SwitchTo("mpd"); err != nil {
-			log.Printf("Failed to switch initially to the mpd status: %v", err)
-		}
-	}()
-
-	// Some flags to coordinate actions:
-	ignoreRelease := false
-
-	switcher := func(name string) func() error {
-		return func() error {
-			ignoreRelease = true
-			return mgr.SwitchTo(name)
-		}
-	}
-
 	// Start auxillary services:
 	log.Printf("Starting background services...")
 	MPD, err := mpd.NewClient(&mpd.Config{
@@ -246,188 +412,31 @@ func Run(cfg *Config, ctx context.Context) error {
 
 	defer util.Closer(MPD)
 
+	// Wait until MPD is ready before switching to the MPD status.
+	initialSwitchToMPD(mgr, MPD)
+
 	go MPD.Run()
 	go RunClock(lw, cfg.Width, ctx)
 	go RunSysinfo(lw, cfg.Width, ctx)
 
-	// Create some special entries with extended logic:
-
-	outputEntry, err := createOutputEntry(mgr, MPD)
-	if err != nil {
-		log.Printf("Failed to create output entry: %v", err)
+	if err := createMainMenu(mgr, MPD); err != nil {
 		return err
 	}
 
-	partyModeEntry, err := createPartyModeEntry(cfg, mgr)
-	if err != nil {
-		log.Printf("Failed to create party-mode entry: %v", err)
+	if err := createPowerMenu(mgr, lw); err != nil {
 		return err
 	}
 
-	playbackEntry, err := createPlaybackEntry(mgr, MPD)
-	if err != nil {
-		log.Printf("Failed to create playback entry: %v", err)
-		return err
-	}
-
-	randomEntry, err := createRandomEntry(mgr, MPD)
-	if err != nil {
-		log.Printf("Failed to create random entry: %v", err)
-		return err
-	}
-
-	// Define the menu structure:
-
-	mainMenu := []Entry{
-		&Separator{"MODES"},
-		&ClickEntry{
-			Text:       "Music info",
-			ActionFunc: switcher("mpd"),
-		},
-		&ClickEntry{
-			Text: "Playlists",
-			ActionFunc: func() error {
-				entries := createPlaylistEntries(MPD)
-
-				// Add an exit button:
-				entries = append(entries, &ClickEntry{
-					Text:       "Exit",
-					ActionFunc: switcher("menu-main"),
-				})
-
-				if err := mgr.AddMenu("menu-playlists", entries); err != nil {
-					return err
-				}
-
-				return switcher("menu-playlists")()
-			},
-		},
-		&ClickEntry{
-			Text:       "Clock",
-			ActionFunc: switcher("clock"),
-		},
-		&ClickEntry{
-			Text:       "System info",
-			ActionFunc: switcher("sysinfo"),
-		},
-		&ClickEntry{
-			Text:       "Statistics",
-			ActionFunc: switcher("stats"),
-		},
-		&Separator{"OPTIONS"},
-		partyModeEntry,
-		outputEntry,
-		playbackEntry,
-		randomEntry,
-		&Separator{"SYSTEM"},
-		&ClickEntry{
-			Text:       "Powermenu",
-			ActionFunc: switcher("menu-power"),
-		},
-		&ClickEntry{
-			Text:       "About",
-			ActionFunc: switcher("about"),
-		},
-	}
-
-	powerMenu := []Entry{
-		&ClickEntry{
-			Text: "Poweroff",
-			ActionFunc: func() error {
-				switchToStatic(lw, "shutdown")
-				return sysCommand("systemctl", "poweroff")()
-			},
-		},
-		&ClickEntry{
-			Text: "Reboot",
-			ActionFunc: func() error {
-				switchToStatic(lw, "shutdown")
-				return sysCommand("systemctl", "reboot")()
-			},
-		},
-		&ClickEntry{
-			Text:       "Exit",
-			ActionFunc: switcher("menu-main"),
-		},
-	}
-
-	if err := mgr.AddMenu("menu-main", mainMenu); err != nil {
-		log.Printf("Add main-menu failed: %v", err)
-		return err
-	}
-
-	if err := mgr.AddMenu("menu-power", powerMenu); err != nil {
-		log.Printf("Add main-power failed: %v", err)
-		return err
-	}
-
-	mgr.AddTimedAction(10*time.Millisecond, func() error {
-		return nil
-	})
-
-	mgr.AddTimedAction(600*time.Millisecond, func() error {
-		ignoreRelease = true
-		return mgr.SwitchTo("menu-main")
-	})
-
-	mgr.AddTimedAction(3*time.Second, func() error {
-		ignoreRelease = true
-		return mgr.SwitchTo("menu-power")
-	})
-
-	mgr.AddTimedAction(8*time.Second, func() error {
-		ignoreRelease = true
-		go func() {
-			cmd := sysCommand("aplay", "/root/hoot.wav")
-			if err := cmd(); err != nil {
-				log.Printf("Failed to make schu-hu: %v", err)
-			}
-		}()
-		return nil
-	})
+	mgr.AddTimedAction(600*time.Millisecond, switcher(mgr, "menu-main"))
+	mgr.AddTimedAction(3*time.Second, switcher(mgr, "menu-power"))
+	mgr.AddTimedAction(8*time.Second, schuhuAction)
 
 	mgr.ReleaseAction(func() error {
-		if ignoreRelease {
-			ignoreRelease = false
-			return nil
-		}
-
-		switch currWin := mgr.ActiveWindow(); currWin {
-		case "mpd":
-			if err := MPD.TogglePlayback(); err != nil {
-				log.Printf("Failed to toggle playback: %v", err)
-			}
-		default:
-			// This is a bit of a hack:
-			// Enable "click to exit window" on most non-menu windows:
-			if !strings.Contains(currWin, "menu") {
-				return mgr.SwitchTo("menu-main")
-			}
-		}
-
-		return nil
+		return releaseAction(mgr, MPD)
 	})
 
 	mgr.RotateAction(func() error {
-		if mgr.ActiveWindow() != "mpd" {
-			return nil
-		}
-
-		log.Printf("rotate action")
-		switch mgr.Direction() {
-		case DirectionRight:
-			log.Printf("Play next")
-			if err := MPD.Next(); err != nil {
-				log.Printf("Failed to skip to next: %v", err)
-			}
-		case DirectionLeft:
-			log.Printf("Play prev")
-			if err := MPD.Next(); err != nil {
-				log.Printf("Failed to skip to prev: %v", err)
-			}
-		}
-
-		return nil
+		return rotateAction(mgr, MPD)
 	})
 
 	log.Printf("Waiting for a silent death...")
