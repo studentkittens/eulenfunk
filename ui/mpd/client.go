@@ -97,16 +97,28 @@ func isRadio(currSong mpd.Attrs) bool {
 	return ok
 }
 
-func format(currSong, status mpd.Attrs) ([]string, error) {
+func displayFormatted(lw *display.LineWriter, currSong, status mpd.Attrs) error {
+	var block []string
+	var err error
+
 	if status["state"] == PlaybackStop {
-		return formatStop(status)
+		block, err = formatStop(status)
+	} else if isRadio(currSong) {
+		block, err = formatRadio(currSong, status)
+	} else {
+		block, err = formatSong(currSong, status)
 	}
 
-	if isRadio(currSong) {
-		return formatRadio(currSong, status)
+	if err != nil {
+		return err
 	}
 
-	return formatSong(currSong, status)
+	if derr := displayInfo(lw, block); derr != nil {
+		log.Printf("Failed to display status info: %v", derr)
+		return derr
+	}
+
+	return nil
 }
 
 func formatTimeSpec(tm time.Duration) string {
@@ -470,129 +482,122 @@ func (cl *Client) Close() error {
 	return nil
 }
 
+func pinger(ctx context.Context, MPD *ReMPD) {
+	ticker := time.NewTicker(1 * time.Minute)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := MPD.Client().Ping(); err != nil {
+				log.Printf("ping to MPD failed. Welp. Reason: %v", err)
+			}
+		}
+	}
+}
+
+func periodicUpdate(ctx context.Context, MPD *ReMPD, updateCh chan<- string) {
+	// Do an initial update:
+	updateCh <- "player"
+	updateCh <- "stored_playlist"
+	updateCh <- "stats"
+
+	lo := time.NewTicker(1 * time.Second)
+	hi := time.NewTicker(time.Minute)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-lo.C:
+			updateCh <- "player"
+		case <-hi.C:
+			updateCh <- "stats"
+		}
+	}
+}
+
+func eventWatcher(ctx context.Context, watcher *ReWatcher, updateCh chan<- string) {
+	defer util.Closer(watcher)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case ev := <-watcher.Events:
+			updateCh <- ev
+		}
+	}
+}
+
+func (cl *Client) handleUpdate(ev string) {
+	switch ev {
+	case "stored_playlist":
+		if err := cl.updatePlaylists(); err != nil {
+			log.Printf("Failed to update playlists: %v", err)
+			return
+		}
+	case "stats":
+		stats, err := cl.MPD.Client().Stats()
+		if err != nil {
+			log.Printf("Failed to fetch statistics: %v", err)
+			return
+		}
+
+		if err := displayStats(cl.LW, stats); err != nil {
+			log.Printf("Failed to display playlists: %v", err)
+			return
+		}
+	case "player", "options":
+		song, err := cl.MPD.Client().CurrentSong()
+		if err != nil {
+			log.Printf("Unable to fetch current song: %v", err)
+			return
+		}
+
+		status, err := cl.MPD.Client().Status()
+		if err != nil {
+			log.Printf("Unable to fetch status: %v", err)
+			return
+		}
+
+		cl.Lock()
+		cl.Status = status
+		cl.CurrSong = song
+		cl.Unlock()
+
+		if err := displayFormatted(cl.LW, song, status); err != nil {
+			log.Printf("Failed to format current status: %v", err)
+			return
+		}
+	}
+
+	// Notify observers for all events:
+	cl.emit(ev)
+}
+
 // Run starts the client operations by keeping the status up-to-date
 // and drawing it on the `mpd` window.
 func (cl *Client) Run() {
 	// Make sure the mpd connection survives long timeouts:
-	go func() {
-		ticker := time.NewTicker(1 * time.Minute)
-
-		select {
-		case <-cl.ctx.Done():
-			break
-		case <-ticker.C:
-			if err := cl.MPD.Client().Ping(); err != nil {
-				log.Printf("ping to MPD failed. Welp. Reason: %v", err)
-			}
-		}
-	}()
+	go pinger(cl.ctx, cl.MPD)
 
 	updateCh := make(chan string)
 
 	// sync extra every few seconds:
-	go func() {
-		// Do an initial update:
-		updateCh <- "player"
-		updateCh <- "stored_playlist"
-
-		ticker := time.NewTicker(1 * time.Second)
-
-		for {
-			select {
-			case <-cl.ctx.Done():
-				return
-			case <-ticker.C:
-				updateCh <- "player"
-			}
-		}
-	}()
-
-	// Update the stats periodically by faking
-	// a "stats" event (not a real event):
-	go func() {
-		updateCh <- "stats"
-
-		ticker := time.NewTicker(time.Minute)
-
-		for {
-			select {
-			case <-cl.ctx.Done():
-				return
-			case <-ticker.C:
-				updateCh <- "stats"
-			}
-		}
-	}()
+	go periodicUpdate(cl.ctx, cl.MPD, updateCh)
 
 	// Also sync on every mpd event:
-	go func() {
-		watcher := NewReWatcher(cl.Config.MPDHost, cl.Config.MPDPort, cl.ctx)
-		defer util.Closer(watcher)
-
-		for {
-			select {
-			case <-cl.ctx.Done():
-				return
-			case ev := <-watcher.Events:
-				updateCh <- ev
-			}
-		}
-	}()
+	watcher := NewReWatcher(cl.Config.MPDHost, cl.Config.MPDPort, cl.ctx)
+	go eventWatcher(cl.ctx, watcher, updateCh)
 
 	for {
 		select {
 		case <-cl.ctx.Done():
 			return
 		case ev := <-updateCh:
-			switch ev {
-			case "stored_playlist":
-				if err := cl.updatePlaylists(); err != nil {
-					log.Printf("Failed to update playlists: %v", err)
-					continue
-				}
-			case "stats":
-				stats, err := cl.MPD.Client().Stats()
-				if err != nil {
-					log.Printf("Failed to fetch statistics: %v", err)
-					continue
-				}
-
-				if err := displayStats(cl.LW, stats); err != nil {
-					log.Printf("Failed to display playlists: %v", err)
-					continue
-				}
-			case "player", "options":
-				song, err := cl.MPD.Client().CurrentSong()
-				if err != nil {
-					log.Printf("Unable to fetch current song: %v", err)
-					continue
-				}
-
-				status, err := cl.MPD.Client().Status()
-				if err != nil {
-					log.Printf("Unable to fetch status: %v", err)
-					continue
-				}
-
-				cl.Lock()
-				cl.Status = status
-				cl.CurrSong = song
-				cl.Unlock()
-
-				block, err := format(song, status)
-				if err != nil {
-					log.Printf("Failed to format current status: %v", err)
-					continue
-				}
-
-				if err := displayInfo(cl.LW, block); err != nil {
-					log.Printf("Failed to display status info: %v", err)
-					continue
-				}
-			}
-
-			// Notify observers for all events:
-			cl.emit(ev)
+			cl.handleUpdate(ev)
 		}
 	}
 }
