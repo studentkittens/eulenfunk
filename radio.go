@@ -317,7 +317,7 @@ func main() {
 		Name:   "ui",
 		Usage:  "Handle window rendering and input control",
 		Action: withCancelCtx(dropout, handleUI),
-		Flags:  concat(displaydNetFlags, mpdNetFlags, ambiNetFlags),
+		Flags:  concat(displaydNetFlags, mpdNetFlags, ambiNetFlags, lightdNetFlags),
 	}, {
 		Name:   "lightd",
 		Usage:  "Utility server to lock the led ownage and enable nice atomic effects",

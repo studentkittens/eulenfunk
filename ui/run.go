@@ -257,7 +257,7 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 
 				// Add an exit button:
 				entries = append(entries, &ClickEntry{
-					Text:       "Exit",
+					Text:       "(Exit)",
 					ActionFunc: switcher(mgr, "menu-main"),
 				})
 
@@ -321,7 +321,7 @@ func createPowerMenu(mgr *MenuManager, lw *display.LineWriter) error {
 			},
 		},
 		&ClickEntry{
-			Text:       "Exit",
+			Text:       "(Exit)",
 			ActionFunc: switcher(mgr, "menu-main"),
 		},
 	}
