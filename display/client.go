@@ -13,6 +13,10 @@ import (
 	"golang.org/x/net/context"
 )
 
+// LineWriter is good at sending single formatted line to displayd.
+// It's not an abstraction over the text protocol, but an easy access to it.
+// It's methods will block if the displayd server does not exist yet or
+// crashed. It then attempts a reconnect in the background.
 type LineWriter struct {
 	host string
 	port int
@@ -22,6 +26,7 @@ type LineWriter struct {
 	cancel context.CancelFunc
 }
 
+// Write sends arbitary bytes to displayd. You should use Printf() instead.
 func (lw *LineWriter) Write(p []byte) (int, error) {
 	if !bytes.HasSuffix(p, []byte("\n")) {
 		p = append(p, '\n')
@@ -44,6 +49,8 @@ func (lw *LineWriter) Write(p []byte) (int, error) {
 	}
 }
 
+// Read reads a response from the display server.
+// This is only needed by the debugging dumping program.
 func (lw *LineWriter) Read(p []byte) (int, error) {
 	for {
 		select {
@@ -63,10 +70,12 @@ func (lw *LineWriter) Read(p []byte) (int, error) {
 	}
 }
 
+// Printf formats and sends a message to displayd in a fmt.Printf like fashion.
 func (lw *LineWriter) Printf(format string, args ...interface{}) (int, error) {
 	return lw.Write([]byte(fmt.Sprintf(format, args...)))
 }
 
+// Close cancels all pending operations and frees resources.
 func (lw *LineWriter) Close() error {
 	lw.cancel()
 	return lw.conn.Close()
@@ -102,6 +111,7 @@ func (lw *LineWriter) retryUntilSuccesfull() {
 	}
 }
 
+// Connect creates a LineWriter pointed to the displayd at $(cfg.Host):$(cfg.Port)
 func Connect(cfg *Config, ctx context.Context) (*LineWriter, error) {
 	subCtx, cancel := context.WithCancel(ctx)
 
@@ -116,6 +126,8 @@ func Connect(cfg *Config, ctx context.Context) (*LineWriter, error) {
 	return lw, nil
 }
 
+// RunDumpClient is a client that renders the content of `window` onto stdout.
+// Optionally it will clear & update the screen if `update` is true.
 func RunDumpClient(cfg *Config, ctx context.Context, window string, update bool) error {
 	lw, err := Connect(cfg, ctx)
 	if err != nil {
@@ -157,6 +169,8 @@ func RunDumpClient(cfg *Config, ctx context.Context, window string, update bool)
 	return nil
 }
 
+// RunInputClient is a dump client that can be used to send arbitary displayd
+// lines in a netcat or telnet like fashion from the commandline.
 func RunInputClient(cfg *Config, ctx context.Context, quit bool, window string) error {
 	lw, err := Connect(cfg, ctx)
 	if err != nil {

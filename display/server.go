@@ -13,33 +13,35 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/disorganizer/brig/util"
+
 	"golang.org/x/net/context"
 )
 
 // NOTE: Custom chars are repeated in 8-15;
 //       use 8 instead of 0 (=> nul-byte) therefore.
 const (
-	GLYPH_HBAR   = 8
-	GLYPH_PLAY   = 1
-	GLYPH_PAUSE  = 2
-	GLYPH_HEART  = 3
-	GLYPH_CROSS  = 4
-	GLYPH_CHECK  = 5
-	GLYPH_STOP   = 6
-	GLYPH_CACTUS = 7
+	GlyphHBar   = 8
+	GlyphPlay   = 1
+	GlyphPause  = 2
+	GlyphHeart  = 3
+	GlyphCross  = 4
+	GlyphCheck  = 5
+	GlyphStop   = 6
+	GlyphCactus = 7
 )
 
-var UnicodeToLCDCustom = map[rune]byte{
+var unicodeToLCDCustom = map[rune]byte{
 	// Real custom characters:
-	'━': GLYPH_HBAR,
-	'▶': GLYPH_PLAY,
-	'⏸': GLYPH_PAUSE,
-	'❤': GLYPH_HEART,
-	'×': GLYPH_CROSS,
-	'✓': GLYPH_CHECK,
-	'⏹': GLYPH_STOP,
+	'━': GlyphHBar,
+	'▶': GlyphPlay,
+	'⏸': GlyphPause,
+	'❤': GlyphHeart,
+	'×': GlyphCross,
+	'✓': GlyphCheck,
+	'⏹': GlyphStop,
 	// Existing characters on the LCD:
-	'ψ': GLYPH_CACTUS,
+	'ψ': GlyphCactus,
 	'ä': 132,
 	'Ä': 142,
 	'ü': 129,
@@ -56,7 +58,7 @@ func encode(s string) []byte {
 	encoded := []byte{}
 
 	for _, rn := range s {
-		b, ok := UnicodeToLCDCustom[rn]
+		b, ok := unicodeToLCDCustom[rn]
 		if !ok {
 			if rn > 255 {
 				// Multibyte chars would be messed up anyways:
@@ -84,18 +86,17 @@ type Line struct {
 	ScrollDelay time.Duration
 
 	// TODO: rather use runes:
-	text       []byte
-	buf        []byte
-	scrollPos  int
-	driverPipe io.Writer
+	text      []byte
+	buf       []byte
+	scrollPos int
 }
 
-func NewLine(pos int, w int, driverPipe io.Writer) *Line {
+// NewLine returns a new line at `pos`, `w` runes long.
+func NewLine(pos int, w int) *Line {
 	ln := &Line{
-		Pos:        pos,
-		text:       []byte{},
-		buf:        make([]byte, w),
-		driverPipe: driverPipe,
+		Pos:  pos,
+		text: []byte{},
+		buf:  make([]byte, w),
 	}
 
 	// Initial render:
@@ -134,6 +135,8 @@ func (ln *Line) redraw() {
 	scroll(ln.buf, ln.text, ln.scrollPos)
 }
 
+// Redraw makes sure the line is up-to-date.
+// It can be called if events happended that are out of reach of `Line`.
 func (ln *Line) Redraw() {
 	ln.Lock()
 	defer ln.Unlock()
@@ -141,16 +144,19 @@ func (ln *Line) Redraw() {
 	ln.redraw()
 }
 
+// SetText sets and updates the text of `Line`.  If `useEncoding` is false the
+// text is not converted to the special one-rune encoding of the LCD which is
+// useful for debugging on a normal terminal.
 func (ln *Line) SetText(text string, useEncoding bool) {
 	ln.Lock()
 	defer ln.Unlock()
 
+	// Add a nice separtor symbol in between scroll borders:
 	if utf8.RuneCountInString(text) > len(ln.buf) {
-		text += " ❤ψ❤ "
+		text += " ━❤━ "
 	}
 
 	var encodedText []byte
-
 	if useEncoding {
 		encodedText = encode(text)
 	} else {
@@ -168,6 +174,8 @@ func (ln *Line) SetText(text string, useEncoding bool) {
 	ln.redraw()
 }
 
+// SetScrollDelay sets the scroll speed of the line (i.e. the delay between one
+// "shift"). Shorter delay means faster scrolling.
 func (ln *Line) SetScrollDelay(delay time.Duration) {
 	ln.Lock()
 	defer ln.Unlock()
@@ -198,6 +206,7 @@ func scroll(buf []byte, text []byte, m int) {
 	}
 }
 
+// Render returns the current line contents with fixed width
 func (ln *Line) Render() []byte {
 	ln.Lock()
 	defer ln.Unlock()
@@ -211,30 +220,42 @@ func (ln *Line) Render() []byte {
 
 // Window consists of a fixed number of lines and a handle name
 type Window struct {
-	Name  string
+	// Name of the window
+	Name string
+
+	// Lines are all lines of
+	// Initially, those are `Height` lines.
 	Lines []*Line
 
 	// NLines is the number of lines a window has
 	// (might be less than len(Lines) due to op-truncate)
-	NLines        int
-	LineOffset    int
-	Width, Height int
-	DriverPipe    io.Writer
+	NLines int
 
+	// LineOffset is the current offset in Lines
+	// (as modified by Move and Truncate)
+	LineOffset int
+
+	// Width is the number of runes which fits in one line
+	Width int
+
+	// Height is the number of lines that can be shown simultaneously.
+	Height int
+
+	// UseEncoding defines if a special LCD encoding shall be used.
 	UseEncoding bool
 }
 
-func NewWindow(name string, driverPipe io.Writer, w, h int, useEncoding bool) *Window {
+// NewWindow returns a new window with the dimensions `w`x`h`, named by `name`.
+func NewWindow(name string, w, h int, useEncoding bool) *Window {
 	win := &Window{
 		Name:        name,
 		Width:       w,
 		Height:      h,
-		DriverPipe:  driverPipe,
 		UseEncoding: useEncoding,
 	}
 
 	for i := 0; i < h; i++ {
-		ln := NewLine(i, w, driverPipe)
+		ln := NewLine(i, w)
 		win.Lines = append(win.Lines, ln)
 		win.NLines++
 	}
@@ -242,6 +263,8 @@ func NewWindow(name string, driverPipe io.Writer, w, h int, useEncoding bool) *W
 	return win
 }
 
+// SetLine sets text of line `pos` to `text`.
+// If the line does not exist yet it will be created.
 func (win *Window) SetLine(pos int, text string) error {
 	if pos < 0 {
 		return fmt.Errorf("Bad line position %d", pos)
@@ -259,7 +282,7 @@ func (win *Window) SetLine(pos int, text string) error {
 
 		// Create the intermediate lines:
 		for i := len(win.Lines); i < len(newLines); i++ {
-			newLines[i] = NewLine(i, win.Width, win.DriverPipe)
+			newLines[i] = NewLine(i, win.Width)
 		}
 
 		win.Lines = newLines
@@ -270,6 +293,7 @@ func (win *Window) SetLine(pos int, text string) error {
 	return nil
 }
 
+// SetScrollDelay sets the scroll shift delay of line `pos` to `delay`.
 func (win *Window) SetScrollDelay(pos int, delay time.Duration) error {
 	if pos < 0 || pos >= win.NLines {
 		return fmt.Errorf("Bad line position %d", pos)
@@ -279,6 +303,7 @@ func (win *Window) SetScrollDelay(pos int, delay time.Duration) error {
 	return nil
 }
 
+// Move moves the window contents vertically by `n`.
 func (win *Window) Move(n int) {
 	if n == 0 {
 		// no-op
@@ -301,6 +326,7 @@ func (win *Window) Move(n int) {
 	return
 }
 
+// Truncate cuts off the window after `n` lines.
 func (win *Window) Truncate(n int) int {
 	nlines := 0
 
@@ -328,12 +354,14 @@ func (win *Window) Truncate(n int) int {
 	return nlines
 }
 
+// Switch makes `win` to the active window.
 func (win *Window) Switch() {
 	for _, line := range win.Lines {
 		line.Redraw()
 	}
 }
 
+// Render returns the whole current LCD matrix as bytes.
 func (win *Window) Render() []byte {
 	buf := &bytes.Buffer{}
 
@@ -342,6 +370,7 @@ func (win *Window) Render() []byte {
 		hi = win.NLines
 	}
 
+	// TODO: rewrite this to return a [][]rune
 	for _, line := range win.Lines[win.LineOffset:hi] {
 		buf.Write(line.Render())
 		buf.WriteRune('\n')
@@ -354,16 +383,28 @@ func (win *Window) Render() []byte {
 // SERVER IMPLEMENTATION //
 ///////////////////////////
 
+// Config gives the user to adjust some settings of displayd.
 type Config struct {
-	Host         string
-	Port         int
-	Width        int
-	Height       int
+	// Host of displayd (usually localhost)
+	Host string
+
+	// Port of displayd (usually 7777)
+	Port int
+
+	// Width is the number of runes per line in the LCD.
+	Width int
+
+	// Height is the number of lines on the LCD.
+	Height int
+
+	// DriverBinary is the name of the driver to write the output too.
 	DriverBinary string
-	NoEncoding   bool
+
+	// NoEncoding disables the special LCD encoding
+	NoEncoding bool
 }
 
-type Server struct {
+type server struct {
 	sync.Mutex
 	Config     *Config
 	Windows    map[string]*Window
@@ -372,7 +413,7 @@ type Server struct {
 	DriverPipe io.Writer
 }
 
-func (srv *Server) renderToDriver() {
+func (srv *server) renderToDriver() {
 	srv.Lock()
 	defer srv.Unlock()
 
@@ -408,7 +449,8 @@ func (srv *Server) renderToDriver() {
 	}
 }
 
-func NewServer(cfg *Config, ctx context.Context) (*Server, error) {
+// newServer returns a displayd instance based on `cfg` and the cancel context `ctx`.
+func newServer(cfg *Config, ctx context.Context) (*server, error) {
 	cmd := exec.Command(cfg.DriverBinary)
 	stdinPipe, err := cmd.StdinPipe()
 	if err != nil {
@@ -419,7 +461,7 @@ func NewServer(cfg *Config, ctx context.Context) (*Server, error) {
 		return nil, err
 	}
 
-	srv := &Server{
+	srv := &server{
 		Config:     cfg,
 		Windows:    make(map[string]*Window),
 		Quit:       make(chan bool, 1),
@@ -443,14 +485,13 @@ func NewServer(cfg *Config, ctx context.Context) (*Server, error) {
 	return srv, nil
 }
 
-func (srv *Server) createOrLookupWindow(name string) *Window {
+func (srv *server) createOrLookupWindow(name string) *Window {
 	win, ok := srv.Windows[name]
 
 	if !ok {
 		log.Printf("Creating new window `%s`", name)
 		win = NewWindow(
 			name,
-			srv.DriverPipe,
 			srv.Config.Width, srv.Config.Height,
 			!srv.Config.NoEncoding,
 		)
@@ -465,7 +506,7 @@ func (srv *Server) createOrLookupWindow(name string) *Window {
 	return win
 }
 
-func (srv *Server) Switch(name string) {
+func (srv *server) Switch(name string) {
 	srv.Lock()
 	defer srv.Unlock()
 
@@ -481,28 +522,28 @@ func (srv *Server) Switch(name string) {
 	return
 }
 
-func (srv *Server) SetLine(name string, pos int, text string) error {
+func (srv *server) SetLine(name string, pos int, text string) error {
 	srv.Lock()
 	defer srv.Unlock()
 
 	return srv.createOrLookupWindow(name).SetLine(pos, text)
 }
 
-func (srv *Server) SetScrollDelay(name string, pos int, delay time.Duration) error {
+func (srv *server) SetScrollDelay(name string, pos int, delay time.Duration) error {
 	srv.Lock()
 	defer srv.Unlock()
 
 	return srv.createOrLookupWindow(name).SetScrollDelay(pos, delay)
 }
 
-func (srv *Server) Move(window string, n int) {
+func (srv *server) Move(window string, n int) {
 	srv.Lock()
 	defer srv.Unlock()
 
 	srv.createOrLookupWindow(window).Move(n)
 }
 
-func (srv *Server) Truncate(window string, n int) {
+func (srv *server) Truncate(window string, n int) {
 	srv.Lock()
 	win := srv.createOrLookupWindow(window)
 	nlines := win.Truncate(n)
@@ -517,7 +558,7 @@ func (srv *Server) Truncate(window string, n int) {
 	srv.renderToDriver()
 }
 
-func (srv *Server) Render() []byte {
+func (srv *server) Render() []byte {
 	srv.Lock()
 	defer srv.Unlock()
 
@@ -532,9 +573,9 @@ func (srv *Server) Render() []byte {
 // NETWORK HANDLING //
 //////////////////////
 
-func handleConn(srv *Server, conn net.Conn) {
+func handleConn(srv *server, conn net.Conn) {
 	scanner := bufio.NewScanner(conn)
-	defer conn.Close()
+	defer util.Closer(conn)
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -622,6 +663,7 @@ func handleConn(srv *Server, conn net.Conn) {
 	}
 }
 
+// RunDaemon starts a new displayd server based on `cfg` and `ctx`.
 func RunDaemon(cfg *Config, ctx context.Context) error {
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	lsn, err := net.Listen("tcp", addr)
@@ -631,9 +673,9 @@ func RunDaemon(cfg *Config, ctx context.Context) error {
 
 	log.Printf("Listening on %s", addr)
 
-	defer lsn.Close()
+	defer util.Closer(lsn)
 
-	srv, err := NewServer(cfg, ctx)
+	srv, err := newServer(cfg, ctx)
 	if err != nil {
 		return err
 	}
