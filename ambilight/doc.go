@@ -13,6 +13,15 @@
 // is done and (linear) fading is done inbetween the individual samples
 // for a smoother look.
 //
+// The ambilightd can be controlled by a simple, line based network protocol
+// which currently supports the following commands:
+//
+//  off     -- Turn off the payback.
+//  on      -- Turn the playback on.
+//  state   -- Print the state ("1\n" or "0\n" on the socket)
+//  quit    -- Quit ambilightd.
+//  close   -- Terminate the connection.
+//
 // (*) Fixed number given by the moodbar, okay for most songs today,
 //     not very suitable for e.g. Moonsorrow with their 30+ minute songs.
 package ambilight

@@ -13,26 +13,40 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/net/context"
+
+	"github.com/disorganizer/brig/util"
 )
 
-// TODO: Cleanup, this is a bit older code
-//       and the effect syntax is awful.
+func max(r uint8, g uint8, b uint8) uint8 {
+	max := r
+	if max < g {
+		max = g
+	}
+	if max < b {
+		max = b
+	}
+	return max
+}
 
-type EffectQueue struct {
+type effectQueue struct {
 	StdInPipe io.Writer
 	Blocked   chan bool
 }
 
-func (q *EffectQueue) Push(e Effect) {
+func (q *effectQueue) Push(e effect) {
 	c := e.ComposeEffect()
 
 	for color := range c {
 		colorValue := fmt.Sprintf("%d %d %d\n", color.R, color.G, color.B)
-		q.StdInPipe.Write([]byte(colorValue))
+		if _, err := q.StdInPipe.Write([]byte(colorValue)); err != nil {
+			log.Printf("Failed to write to driver: %v", err)
+		}
 	}
 }
 
-func NewEffectQueue(driverBinary string) (*EffectQueue, error) {
+func newEffectQueue(driverBinary string) (*effectQueue, error) {
 	cmd := exec.Command(driverBinary, "cat")
 	stdinpipe, err := cmd.StdinPipe()
 	if err != nil {
@@ -42,43 +56,66 @@ func NewEffectQueue(driverBinary string) (*EffectQueue, error) {
 	blocked := make(chan bool, 1)
 	blocked <- false
 
-	return &EffectQueue{
+	return &effectQueue{
 		Blocked:   blocked,
 		StdInPipe: stdinpipe,
 	}, cmd.Start()
 }
 
-type SimpleColor struct {
+type rgbColor struct {
 	R, G, B uint8
 }
 
-type Effect interface {
-	ComposeEffect() chan SimpleColor
+type effect interface {
+	ComposeEffect() chan rgbColor
 }
 
-type Properties struct {
+// Common properties
+type properties struct {
 	Delay  time.Duration
-	Color  SimpleColor
+	Color  rgbColor
 	Repeat int
 }
 
-type FadeEffect struct {
-	Properties
+////////////////////////
+// INDIVIDUAL EFFECTS //
+////////////////////////
+
+// Fade to single color and back to black
+type fadeEffect struct {
+	properties
 }
 
-type FlashEffect struct {
-	Properties
+// Shortly flash a single color
+type flashEffect struct {
+	properties
 }
 
-func (color *SimpleColor) ComposeEffect() chan SimpleColor {
-	c := make(chan SimpleColor, 1)
-	c <- SimpleColor{color.R, color.G, color.B}
+// Blend between two different colors
+type blendEffect struct {
+	StartColor rgbColor
+	EndColor   rgbColor
+	Duration   time.Duration
+}
+
+// Warm, orange fire effect for nostalgic reasons.
+type fireEffect struct {
+	properties
+}
+
+/////////////////////
+// COMPOSE METHODS //
+/////////////////////
+
+func (color *rgbColor) ComposeEffect() chan rgbColor {
+	c := make(chan rgbColor, 1)
+	c <- rgbColor{color.R, color.G, color.B}
 	close(c)
 	return c
 }
 
-func (effect *FlashEffect) ComposeEffect() chan SimpleColor {
-	c := make(chan SimpleColor, 1)
+func (effect *flashEffect) ComposeEffect() chan rgbColor {
+	c := make(chan rgbColor, 1)
 	keepLooping := false
 	if effect.Repeat < 0 {
 		keepLooping = true
@@ -92,7 +129,7 @@ func (effect *FlashEffect) ComposeEffect() chan SimpleColor {
 
 			c <- effect.Color
 			time.Sleep(effect.Delay)
-			c <- SimpleColor{0, 0, 0}
+			c <- rgbColor{0, 0, 0}
 			time.Sleep(effect.Delay)
 			effect.Repeat--
 		}
@@ -101,19 +138,8 @@ func (effect *FlashEffect) ComposeEffect() chan SimpleColor {
 	return c
 }
 
-func max(r uint8, g uint8, b uint8) uint8 {
-	max := r
-	if max < g {
-		max = g
-	}
-	if max < b {
-		max = b
-	}
-	return max
-}
-
-func (effect *FadeEffect) ComposeEffect() chan SimpleColor {
-	c := make(chan SimpleColor, 1)
+func (effect *fadeEffect) ComposeEffect() chan rgbColor {
+	c := make(chan rgbColor, 1)
 
 	keepLooping := false
 	if effect.Repeat < 0 {
@@ -132,13 +158,13 @@ func (effect *FadeEffect) ComposeEffect() chan SimpleColor {
 			g := int(math.Floor(float64(effect.Color.G) / float64(max) * 100.0))
 			b := int(math.Floor(float64(effect.Color.B) / float64(max) * 100.0))
 
-			for i := 0; i < int(max); i += 1 {
-				c <- SimpleColor{uint8((i * r) / 100), uint8((i * g) / 100), uint8((i * b) / 100)}
+			for i := 0; i < int(max); i++ {
+				c <- rgbColor{uint8((i * r) / 100), uint8((i * g) / 100), uint8((i * b) / 100)}
 				time.Sleep(effect.Delay)
 			}
 
-			for i := int(max - 1); i >= 0; i -= 1 {
-				c <- SimpleColor{uint8((i * r) / 100), uint8((i * g) / 100), uint8((i * b) / 100)}
+			for i := int(max - 1); i >= 0; i-- {
+				c <- rgbColor{uint8((i * r) / 100), uint8((i * g) / 100), uint8((i * b) / 100)}
 				time.Sleep(effect.Delay)
 			}
 			effect.Repeat--
@@ -148,14 +174,8 @@ func (effect *FadeEffect) ComposeEffect() chan SimpleColor {
 	return c
 }
 
-type BlendEffect struct {
-	StartColor SimpleColor
-	EndColor   SimpleColor
-	Duration   time.Duration
-}
-
-func (effect *BlendEffect) ComposeEffect() chan SimpleColor {
-	c := make(chan SimpleColor, 1)
+func (effect *blendEffect) ComposeEffect() chan rgbColor {
+	c := make(chan rgbColor, 1)
 	go func() {
 		// How much colors should be generated during the effect?
 		N := 20 * effect.Duration.Seconds()
@@ -169,7 +189,7 @@ func (effect *BlendEffect) ComposeEffect() chan SimpleColor {
 			sg += (float64(effect.EndColor.G) - float64(effect.StartColor.G)) / N
 			sb += (float64(effect.EndColor.B) - float64(effect.StartColor.B)) / N
 
-			c <- SimpleColor{uint8(sr), uint8(sg), uint8(sb)}
+			c <- rgbColor{uint8(sr), uint8(sg), uint8(sb)}
 			time.Sleep(time.Duration(1/N*1000) * time.Millisecond)
 		}
 
@@ -179,23 +199,19 @@ func (effect *BlendEffect) ComposeEffect() chan SimpleColor {
 	return c
 }
 
-type FireEffect struct {
-	Properties
-}
-
-func (effect *FireEffect) ComposeEffect() chan SimpleColor {
+func (effect *fireEffect) ComposeEffect() chan rgbColor {
 	fn := func(t, n, jitter int, fac float64) uint8 {
 		j := float64(rand.Int()%(jitter<<1) - jitter)
 		f := float64(t - n>>1)
 		return uint8(fac * (float64(-255.0/262144.0)*f*f + 255 + j))
 	}
 
-	c := make(chan SimpleColor, 1)
+	c := make(chan rgbColor, 1)
 	go func() {
 		defer close(c)
 
 		for t := 0; t < effect.Repeat; t++ {
-			c <- SimpleColor{
+			c <- rgbColor{
 				fn(t, effect.Repeat, 50, 1.00),
 				fn(t, effect.Repeat, 70, 0.10),
 				fn(t, effect.Repeat, 80, 0.01),
@@ -210,12 +226,12 @@ func (effect *FireEffect) ComposeEffect() chan SimpleColor {
 ////////////// EFFECT SPEC PARSING //////////////////
 
 var (
-	REGEX_COLOR      = regexp.MustCompile("(c|color|)\\{(\\d{1,3}),(\\d{1,3}),(\\d{1,3})\\}")
-	REGEX_PROPERTIES = regexp.MustCompile(".*?\\{(.*)\\|(.*)\\|(.*)\\}")
+	regexColorr     = regexp.MustCompile(`(c|color|)\{(\d{1,3}),(\d{1,3}),(\d{1,3})\}`)
+	regexProperties = regexp.MustCompile(`.*?\{(.*)\|(.*)\|(.*)\}`)
 )
 
-func parseColor(s string) (*SimpleColor, error) {
-	matches := REGEX_COLOR.FindStringSubmatch(s)
+func parseColor(s string) (*rgbColor, error) {
+	matches := regexColorr.FindStringSubmatch(s)
 	if matches == nil {
 		return nil, fmt.Errorf("Bad color: %s", s)
 	}
@@ -234,12 +250,12 @@ func parseColor(s string) (*SimpleColor, error) {
 		triple = append(triple, uint8(c))
 	}
 
-	return &SimpleColor{triple[0], triple[1], triple[2]}, nil
+	return &rgbColor{triple[0], triple[1], triple[2]}, nil
 }
 
-func parseBlendEffect(s string) (*BlendEffect, error) {
+func parseBlendEffect(s string) (*blendEffect, error) {
 	// Same regex as for properties (by chance)
-	matches := REGEX_PROPERTIES.FindStringSubmatch(s)
+	matches := regexProperties.FindStringSubmatch(s)
 	if matches == nil {
 		return nil, fmt.Errorf("Bad blend effect: %s", s)
 	}
@@ -259,11 +275,11 @@ func parseBlendEffect(s string) (*BlendEffect, error) {
 		return nil, fmt.Errorf("Bad duration: `%s`: %v", matches[3], err)
 	}
 
-	return &BlendEffect{*srcColor, *dstColor, duration}, nil
+	return &blendEffect{*srcColor, *dstColor, duration}, nil
 }
 
-func parseProperties(s string) (*Properties, error) {
-	matches := REGEX_PROPERTIES.FindStringSubmatch(s)
+func parseProperties(s string) (*properties, error) {
+	matches := regexProperties.FindStringSubmatch(s)
 	if matches == nil || len(matches) < 4 {
 		return nil, fmt.Errorf("Bad effect properties: %s", s)
 	}
@@ -283,37 +299,37 @@ func parseProperties(s string) (*Properties, error) {
 		return nil, fmt.Errorf("Bad repeat count: `%s`: %v", matches[3], err)
 	}
 
-	return &Properties{duration, *color, repeatCnt}, nil
+	return &properties{duration, *color, repeatCnt}, nil
 }
 
-func parseFadeEffect(s string) (*FadeEffect, error) {
+func parseFadeEffect(s string) (*fadeEffect, error) {
 	props, err := parseProperties(strings.TrimPrefix(s, "fade"))
 	if err != nil {
 		return nil, err
 	}
 
-	return &FadeEffect{*props}, nil
+	return &fadeEffect{*props}, nil
 }
 
-func parseFlashEffect(s string) (*FlashEffect, error) {
+func parseFlashEffect(s string) (*flashEffect, error) {
 	props, err := parseProperties(strings.TrimPrefix(s, "flash"))
 	if err != nil {
 		return nil, err
 	}
 
-	return &FlashEffect{*props}, nil
+	return &flashEffect{*props}, nil
 }
 
-func parseFireEffect(s string) (*FireEffect, error) {
+func parseFireEffect(s string) (*fireEffect, error) {
 	props, err := parseProperties(strings.TrimPrefix(s, "fire"))
 	if err != nil {
 		return nil, err
 	}
 
-	return &FireEffect{*props}, nil
+	return &fireEffect{*props}, nil
 }
 
-func parseEffect(s string) (Effect, error) {
+func parseEffect(s string) (effect, error) {
 	sepIdx := strings.Index(s, "{")
 	name, rest := s[:sepIdx], s[sepIdx:]
 
@@ -335,8 +351,8 @@ func parseEffect(s string) (Effect, error) {
 
 //////////// SERVER MAIN //////////////
 
-func handleRequest(conn net.Conn, queue *EffectQueue) {
-	defer conn.Close()
+func handleRequest(conn io.ReadWriteCloser, queue *effectQueue) {
+	defer util.Closer(conn)
 
 	lock := func() {
 		timer := time.NewTimer(5 * time.Second)
@@ -404,14 +420,24 @@ func handleRequest(conn net.Conn, queue *EffectQueue) {
 	}
 }
 
+//////////////////////
+// PUBLIC INTERFACE //
+//////////////////////
+
+// Config offers some adjustment screws to the user of lightd
 type Config struct {
-	Host         string
-	Port         int
+	// Host where lightd will run
+	Host string
+	// Port wich lightd will listen on
+	Port int
+	// DriverBinary is the name of the binary lightd will output rgb triples on.
 	DriverBinary string
 }
 
-func Run(cfg *Config) error {
-	queue, err := NewEffectQueue(cfg.DriverBinary)
+// Run starts lightd with the options specified in `cfg`,
+// cancelling services when `ctx` is cancelled.
+func Run(cfg *Config, ctx context.Context) error {
+	queue, err := newEffectQueue(cfg.DriverBinary)
 	if err != nil {
 		log.Printf("Unable to hook up to lightd: %v", err)
 		return err
@@ -424,11 +450,28 @@ func Run(cfg *Config) error {
 		return err
 	}
 
-	defer lsn.Close()
+	defer util.Closer(lsn)
 	log.Println("Listening on " + addr)
 
 	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
+		if tcpLsn, ok := lsn.(*net.TCPListener); ok {
+			if err := tcpLsn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {
+				log.Printf("Setting deadline failed: %v", err)
+				return err
+			}
+		}
+
 		conn, err := lsn.Accept()
+		if err, ok := err.(*net.OpError); ok && err.Timeout() {
+			continue
+		}
+
 		if err != nil {
 			log.Printf("Error accepting: %v", err.Error())
 			return err

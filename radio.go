@@ -150,7 +150,7 @@ func main() {
 				return nil
 			}
 
-			return lightd.Run(cfg)
+			return lightd.Run(cfg, killCtx)
 		},
 	}, {
 		Name:  "display",
