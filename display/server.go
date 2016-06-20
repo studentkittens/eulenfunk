@@ -154,7 +154,7 @@ func (ln *Line) SetText(text string, useEncoding bool) {
 
 	// Add a nice separtor symbol in between scroll borders:
 	if utf8.RuneCountInString(text) > len(ln.buf) {
-		text += " ━❤━ "
+		text += "   ━❤━   "
 	}
 
 	var encodedText []rune
