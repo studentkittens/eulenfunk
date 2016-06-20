@@ -12,4 +12,4 @@ CPU_FREQ=$(cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq | awk '{ pr
 printf "CPU: %3d%%  MEM: %3d%%\n" ${CPU_USAGE} ${MEM_USAGE}
 printf "ADDR: %14s\n" ${IP_ADDR}
 printf "❤ %sH  %4sMHz\n" ${UPTIME_HOURS} ${CPU_FREQ}
-printf "ψ %3.3f%%   %3.3f৹C\n"  ${WIFI_SIGNAL} ${CPU_TEMP}
+printf "ψ %3.3f%%   %3.3f C\n"  ${WIFI_SIGNAL} ${CPU_TEMP}
