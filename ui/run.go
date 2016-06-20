@@ -213,7 +213,11 @@ func rotateAction(mgr *MenuManager, MPD *mpd.Client) error {
 }
 
 func schuhuAction() error {
-	go runBinary("aplay", "/root/hoot.wav")
+	go func() {
+		for i := 0; i < 10; i++ {
+			runBinary("aplay", "/root/hoot.wav")
+		}
+	}()
 	return nil
 }
 

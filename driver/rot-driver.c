@@ -43,14 +43,14 @@ void updateButton() {
     struct encoder *encoder = encoders;
     for(; encoder < encoders + N_ENCODERS; encoder++) {
         int button_press = digitalRead(encoder->pin_btn);
-	if(button_press == LOW) {
-		gettimeofday((struct timeval *)&encoder->button_time, NULL);
-		encoder->button_was_pressed = true;
-	} else {
-		encoder->button_time.tv_sec = 0;
-		encoder->button_time.tv_usec = 0;
-		encoder->button_was_released = true;
-	}
+        if(button_press == LOW) {
+            gettimeofday((struct timeval *)&encoder->button_time, NULL);
+            encoder->button_was_pressed = true;
+        } else {
+            encoder->button_time.tv_sec = 0;
+            encoder->button_time.tv_usec = 0;
+            encoder->button_was_released = true;
+        }
     }
 } 
 
@@ -108,7 +108,7 @@ int main(void) {
             ROTARY_PIN_A,
             ROTARY_PIN_B,
             ROTARY_BUTTON
-    );
+            );
 
     long last_value = -1;
     double hold_time = 0;
@@ -121,14 +121,14 @@ int main(void) {
         long curr = lround(encoder->value);
         if(curr != last_value) {
             printf("v %ld\n", curr);
-	    fflush(stdout);
+            fflush(stdout);
             last_value = curr;
         }
 
         if(encoder->button_was_pressed) {
             encoder->button_was_pressed = false;
             printf("p 1\n");
-	    fflush(stdout);
+            fflush(stdout);
         }
 
         if(encoder->button_time.tv_sec > 0) {
@@ -138,7 +138,7 @@ int main(void) {
             hold_time = now.tv_sec - encoder->button_time.tv_sec;
             hold_time += (now.tv_usec - encoder->button_time.tv_usec) / (1000.0 * 1000.0);
             printf("t %f\n", hold_time);
-	    fflush(stdout);
+            fflush(stdout);
         } else {
             hold_time = 0;
         }
@@ -146,7 +146,7 @@ int main(void) {
         if(encoder->button_was_released) {
             encoder->button_was_released = false;
             printf("p 0\n");
-	    fflush(stdout);
+            fflush(stdout);
         }
 
         // Sleep for a short amount to save cpu-time:
