@@ -420,8 +420,19 @@ func (srv *server) renderToDriver() {
 	}
 
 	for idx, line := range srv.Active.Render() {
-		dline := []byte(fmt.Sprintf("%d %s\n", idx, string(line)))
-		if _, err := srv.DriverPipe.Write(dline); err != nil {
+		if _, err := srv.DriverPipe.Write([]byte(fmt.Sprintf("%d", idx))); err != nil {
+			log.Printf("Failed to write to driver: %v", err)
+		}
+
+		// Convert []rune to []byte manually:
+		binaryLine := make([]byte, len(line))
+		for off, rn := range line {
+			binaryLine[off] = byte(rn)
+		}
+
+		binaryLine = append(binaryLine, '\n')
+
+		if _, err := srv.DriverPipe.Write(binaryLine); err != nil {
 			log.Printf("Failed to write to driver: %v", err)
 		}
 	}
