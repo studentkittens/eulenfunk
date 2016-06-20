@@ -420,7 +420,7 @@ func (srv *server) renderToDriver() {
 	}
 
 	for idx, line := range srv.Active.Render() {
-		if _, err := srv.DriverPipe.Write([]byte(fmt.Sprintf("%d", idx))); err != nil {
+		if _, err := srv.DriverPipe.Write([]byte(fmt.Sprintf("%d ", idx))); err != nil {
 			log.Printf("Failed to write to driver: %v", err)
 		}
 
