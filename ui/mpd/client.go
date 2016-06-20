@@ -502,6 +502,7 @@ func periodicUpdate(ctx context.Context, MPD *ReMPD, updateCh chan<- string) {
 	updateCh <- "player"
 	updateCh <- "stored_playlist"
 	updateCh <- "stats"
+	updateCh <- "output"
 
 	lo := time.NewTicker(1 * time.Second)
 	hi := time.NewTicker(time.Minute)
