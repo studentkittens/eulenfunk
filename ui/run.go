@@ -10,13 +10,14 @@ import (
 
 	"github.com/studentkittens/eulenfunk/ambilight"
 	"github.com/studentkittens/eulenfunk/display"
+	"github.com/studentkittens/eulenfunk/lightd"
 	"github.com/studentkittens/eulenfunk/ui/mpd"
 	"github.com/studentkittens/eulenfunk/util"
 )
 
-func sysCommand(name string, args ...string) func() error {
-	return func() error {
-		return exec.Command(name, args...).Run()
+func runBinary(name string, args ...string) {
+	if err := exec.Command(name, args...).Run(); err != nil {
+		log.Printf("Failed to execute `%s`: %v", name, err)
 	}
 }
 
@@ -212,14 +213,33 @@ func rotateAction(mgr *MenuManager, MPD *mpd.Client) error {
 }
 
 func schuhuAction() error {
-	go func() {
-		cmd := sysCommand("aplay", "/root/hoot.wav")
-		if err := cmd(); err != nil {
-			log.Printf("Failed to make schu-hu: %v", err)
-		}
-	}()
-
+	go runBinary("aplay", "/root/hoot.wav")
 	return nil
+}
+
+func shutdown(cfg *Config, lw *display.LineWriter, mode, effect string) error {
+	lightdCfg := &lightd.Config{
+		Host: cfg.LightdHost,
+		Port: cfg.LightdPort,
+	}
+
+	switchToStatic(lw, "shutdown")
+	if err := lightd.Send(lightdCfg, effect); err != nil {
+		log.Printf("NOTE: Failed to send flash effect to lightd: %v", err)
+	}
+
+	// Give it a bit of time to work:
+	time.Sleep(1 * time.Second)
+	runBinary("systemctl", mode)
+	return nil
+}
+
+func poweroffAction(cfg *Config, lw *display.LineWriter) error {
+	return shutdown(cfg, lw, "poweroff", "flash{200ms|{255,0,0}|5}")
+}
+
+func rebootAction(cfg *Config, lw *display.LineWriter) error {
+	return shutdown(cfg, lw, "reboot", "flash{200ms|{255,150,0}|5}")
 }
 
 /////////////////////////
@@ -314,15 +334,13 @@ func createPowerMenu(mgr *MenuManager, lw *display.LineWriter) error {
 		&ClickEntry{
 			Text: "Poweroff",
 			ActionFunc: func() error {
-				switchToStatic(lw, "shutdown")
-				return sysCommand("systemctl", "poweroff")()
+				return rebootAction(mgr.Config, lw)
 			},
 		},
 		&ClickEntry{
 			Text: "Reboot",
 			ActionFunc: func() error {
-				switchToStatic(lw, "shutdown")
-				return sysCommand("systemctl", "reboot")()
+				return rebootAction(mgr.Config, lw)
 			},
 		},
 		&ClickEntry{
@@ -354,6 +372,9 @@ type Config struct {
 
 	AmbilightHost string
 	AmbilightPort int
+
+	LightdHost string
+	LightdPort int
 }
 
 /////////////////////////

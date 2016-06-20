@@ -51,6 +51,8 @@ func handleUI(ctx *cli.Context, dropout context.Context) error {
 		MPDPort:       ctx.Int("mpd-port"),
 		AmbilightHost: ctx.String("ambi-host"),
 		AmbilightPort: ctx.Int("ambi-port"),
+		LightdHost:    ctx.String("ambi-host"),
+		LightdPort:    ctx.Int("ambi-port"),
 	}, dropout)
 }
 
