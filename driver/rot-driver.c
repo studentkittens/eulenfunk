@@ -33,6 +33,7 @@ struct encoder {
     volatile struct timeval button_time;
     volatile bool button_was_pressed;
     volatile bool button_was_released;
+    volatile bool button_curr_pressed;
 };
 
 struct encoder encoders[MAX_ENCODERS];
@@ -44,12 +45,16 @@ void updateButton() {
     for(; encoder < encoders + N_ENCODERS; encoder++) {
         int button_press = digitalRead(encoder->pin_btn);
         if(button_press == LOW) {
+            /* Button was pressed */
             gettimeofday((struct timeval *)&encoder->button_time, NULL);
             encoder->button_was_pressed = true;
+            encoder->button_curr_pressed = true;
         } else {
+            /* Button was released */
             encoder->button_time.tv_sec = 0;
             encoder->button_time.tv_usec = 0;
             encoder->button_was_released = true;
+            encoder->button_curr_pressed = false;
         }
     }
 } 
@@ -125,7 +130,7 @@ int main(void) {
             last_value = curr;
         }
 
-        if(encoder->button_was_pressed) {
+        if(encoder->button_was_pressed && encoder->button_curr_pressed) {
             encoder->button_was_pressed = false;
             printf("p 1\n");
             fflush(stdout);
@@ -143,7 +148,7 @@ int main(void) {
             hold_time = 0;
         }
 
-        if(encoder->button_was_released) {
+        if(encoder->button_was_released && !encoder->button_curr_pressed) {
             encoder->button_was_released = false;
             printf("p 0\n");
             fflush(stdout);
