@@ -91,7 +91,12 @@ func createOutputEntry(mgr *MenuManager, MPD *mpd.Client) (*ToggleEntry, error) 
 		// Stupid closure trick so we bind the right loop var:
 		actionMap[output] = func(name string) func() error {
 			return func() error {
-				return MPD.SwitchToOutput(name)
+				if err := MPD.SwitchToOutput(name); err != nil {
+					return err
+				}
+
+				// Playback might be paused when switching outputs:
+				return MPD.Play()
 			}
 		}(output)
 	}
