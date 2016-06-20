@@ -14,8 +14,10 @@ driver:
 build: eulenfunk driver
 
 install: build
-	cp config/radio-sysinfo.sh $(BIN)
+	cp config/scripts/*.sh $(BIN)
 	cp config/systemd/*.service /usr/lib/systemd/system
+	cp config/udev/*.rules /etc/udev/rules.d 
+
 	systemctl daemon-reload
 
 	cp driver/radio-led $(BIN)
