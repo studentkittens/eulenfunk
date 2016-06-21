@@ -276,7 +276,7 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 	mainMenu := []Entry{
 		&Separator{"MODES"},
 		&ClickEntry{
-			Text:       "Music info",
+			Text:       "Current song",
 			ActionFunc: switcher(mgr, "mpd"),
 		},
 		&ClickEntry{
@@ -335,6 +335,7 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 
 func createPowerMenu(mgr *MenuManager, lw *display.LineWriter) error {
 	powerMenu := []Entry{
+		&Separator{"POWER MENU"},
 		&ClickEntry{
 			Text: "Poweroff",
 			ActionFunc: func() error {
@@ -393,7 +394,10 @@ func switcher(mgr *MenuManager, name string) func() error {
 
 func initialSwitchToMPD(mgr *MenuManager, MPD *mpd.Client) {
 	initial := true
+
 	MPD.Register("player", func() {
+		// Wait for the first "real" event.
+		// First one is just emiited on startup.
 		if initial {
 			if err := mgr.SwitchTo("mpd"); err != nil {
 				log.Printf("Initial switch to mpd failed: %v", err)
@@ -445,7 +449,6 @@ func Run(cfg *Config, ctx context.Context) error {
 
 	defer util.Closer(MPD)
 
-	// Wait until MPD is ready before switching to the MPD status.
 	initialSwitchToMPD(mgr, MPD)
 
 	go MPD.Run()

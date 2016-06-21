@@ -313,6 +313,8 @@ func moodbarRunner(server *server, colors <-chan timedColor) {
 				}
 
 				time.Sleep(color.Duration)
+			} else {
+				time.Sleep(100 * time.Millisecond)
 			}
 		}
 	}
@@ -645,6 +647,7 @@ func createNetworkListener(server *server) error {
 			}
 
 			log.Printf("Accepting connection from %s", conn.RemoteAddr())
+
 			go handleConn(server, conn)
 		}
 	}()

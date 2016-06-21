@@ -164,7 +164,7 @@ func formatStatusLine(currSong, status mpd.Attrs) string {
 		}
 	} else {
 		// Pad the elapsed time to the right if no total time available:
-		length = "   " + length
+		length = "     " + length
 	}
 
 	bitrateStr := ""
