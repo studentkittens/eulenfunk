@@ -35,8 +35,8 @@ func (cl *Client) Mount(device, label string) error {
 }
 
 // Unmount sends a "unmount <device>" message to the automountd daemon.
-func (cl *Client) Unmount(device string) error {
-	_, err := cl.conn.Write([]byte(fmt.Sprintf("unmount %s\n", device)))
+func (cl *Client) Unmount(device, label string) error {
+	_, err := cl.conn.Write([]byte(fmt.Sprintf("unmount %s %s\n", device, label)))
 	return err
 }
 

@@ -209,24 +209,17 @@ func handleAutomount(ctx *cli.Context, dropout context.Context) error {
 	unmount := ctx.Bool("unmount")
 
 	if device != "" || label != "" {
-		if device == "" {
-			log.Printf("Need --device for mounting and unmounting")
-			return nil
-		}
-
-		if unmount {
-			return automount.WithClient(cfg, func(cl *automount.Client) error {
-				return cl.Unmount(device)
-			})
-		}
-
-		if label == "" {
-			log.Printf("Need --label for mounting")
+		if device == "" || label == "" {
+			log.Printf("Need --device and --label for mounting and unmounting")
 			return nil
 		}
 
 		return automount.WithClient(cfg, func(cl *automount.Client) error {
-			return cl.Mount(device, label)
+			if unmount {
+				return cl.Unmount(device, label)
+			} else {
+				return cl.Mount(device, label)
+			}
 		})
 	}
 

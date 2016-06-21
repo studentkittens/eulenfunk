@@ -35,8 +35,13 @@ type server struct {
 }
 
 func runBinary(name string, args ...string) error {
-	if err := exec.Command(name, args...).Run(); err != nil {
+	if stdout, err := exec.Command(name, args...).Output(); err != nil {
 		log.Printf("Failed to execute `%s`: %v", name, err)
+
+		log.Printf("Stdout output was: %s", stdout)
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			log.Printf("Stderr output was: %s", exitErr.Stderr)
+		}
 		return err
 	}
 
@@ -183,12 +188,23 @@ func (srv *server) mount(device, label string) error {
 	return nil
 }
 
-func (srv *server) unmount(device string) error {
+func (srv *server) unmount(device, label string) error {
 	log.Printf("Unmounting`%s`\n", device)
-	return runBinary("umount", device)
+	if err := runBinary("umount", device); err != nil {
+		return err
+	}
+
+	destPath := filepath.Join(srv.Config.MusicDir, label)
+	if err := os.Remove(destPath); err != nil {
+		log.Printf("Failed to remove mount dir: %v", err)
+		return err
+	}
+
+	return nil
 }
 
 func (srv *server) handleLine(line string) bool {
+	log.Printf("Received: %v", line)
 	split := strings.Split(line, " ")
 
 	switch split[0] {
@@ -199,8 +215,8 @@ func (srv *server) handleLine(line string) bool {
 			}
 		}
 	case "unmount":
-		if len(split) >= 2 {
-			if err := srv.unmount(split[1]); err != nil {
+		if len(split) >= 3 {
+			if err := srv.unmount(split[1], split[2]); err != nil {
 				log.Printf("Failed to mount: %v", err)
 			}
 		}

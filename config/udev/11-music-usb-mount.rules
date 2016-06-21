@@ -24,10 +24,10 @@ PROGRAM=="/usr/bin/basename '%E{dir_name}'", ENV{dir_name}="%c"
 ENV{dir_name}=="", ENV{dir_name}="usbhd-%k"
 
 # Mount the device
-ACTION=="add", ENV{dir_name}!="", RUN+="/usr/eulenfunk automount -d '%E{device}' -l '%E{dir_name}'"
+ACTION=="add", ENV{dir_name}!="", RUN+="/root/go/bin/eulenfunk automount -d '%E{device}' -l '%E{dir_name}'"
 
 # Clean up after removal
-ACTION=="remove", ENV{dir_name}!="", RUN+="/bin/umount -l '/media/%E{dir_name}'"
+ACTION=="remove", ENV{dir_name}!="", RUN+="/root/go/bin/eulenfunk automount -u -d '%E{device}' -l '%E{dir_name}'"
 ACTION=="remove", ENV{crypto}!="", RUN+="/sbin/cryptsetup luksClose %k"
 ACTION=="remove", ENV{dir_name}!="", RUN+="/bin/rmdir '/media/%E{dir_name}'"
 
