@@ -51,7 +51,7 @@ func (mn *Menu) scrollToNextSelectable(up bool) {
 
 // Scroll moves the menu `move` down (or up if negative)
 func (mn *Menu) Scroll(move int) {
-	mn.Cursor = (mn.Cursor + move) % len(mn.Entries)
+	mn.Cursor += move
 
 	up := move >= 0
 	mn.scrollToNextSelectable(up)

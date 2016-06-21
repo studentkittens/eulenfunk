@@ -34,7 +34,7 @@ hardwarebezogenenen Arbeiten nach bestem Grundlagenwissen umgesetzt.
 Der Name des Projektes ist \frqq\texttt{Eulenfunk}\flqq. Die Bezeichnung der
 Eule wurde analog zum Tierreich gewählt, da die *Eule* hier als Vogel aufgrund
 ihrer Erkennungsmerkmale von anderen Vögeln in der Regel als *Fressfeind*[^EULE]
-klassifiziert wird. Analog dazu ist ein *Do-It-Yourself*--Internetradio ---
+klassifiziert wird. Analog dazu ist ein *Do--It--Yourself*--Internetradio ---
 welches je nach Konfiguration günstiger und mit mehr Funktionalität ausgestattet
 werden kann wie ein *Closed--Source*--Produkt --- möglicherweise ein Dorn im
 Auge aller kommerziellen Internet--Radio--Anbieter sein könnte.
@@ -43,7 +43,7 @@ Auge aller kommerziellen Internet--Radio--Anbieter sein könnte.
 
 Diese Studienarbeit soll einen Überblick über die verwendeten, beziehungsweise
 benötigten Komponenten für den Bau eines *Raspberry Pi*--Internetradios
-verschaffen. Desweiteren soll das Wissen für die Ansteuerung bestimmter
+verschaffen. Anschließend soll das Wissen für die Ansteuerung bestimmter
 Hardware--Komponenten mittels der *Raspberry Pi*--GPIO[^GPIO] Schnittstelle vermittelt
 werden.
 
@@ -55,7 +55,7 @@ werden.
 \end{figure}
 
 Abbildung \ref{fertig} zeigt den *Eulenfunk* Prototypen, welcher im Zeitraum von
-drei Wochen im Rahmen des Hardwaresysteme Kürprojekts entstanden ist. Auf
+drei Wochen im Rahmen des Hardwaresysteme Kür--Projekts entstanden ist. Auf
 Vimeo[^VIMEO] ist auch ein Video des aktuellen Prototyps zu sehen.
 
 
@@ -78,10 +78,10 @@ Die Autoren dieses Projekts leben in einer Wohngemeinschaft zusammen. Die Küche
 ist der Ort an welchem gemeinsam gekocht und gespeist wird. Für eine angenehme
 Atmosphäre und als Nachrichten--Quelle sorgte in der Küche sorgte früher ein
 Analog--Radio der Firma *AEG*, welches aufgrund der schlechten Empfangsqualität
-durch eine Kombination aus ,,alter Stereoanlage'', ,,altem Raspberry Pi'' und
-einem ,,alten Thinkpad x61t'' ersetzt wurde. In dieser Kombination fungierte
+durch eine Kombination aus »alter Stereoanlage«, »altem Raspberry Pi« und
+einem »alten Thinkpad x61t« ersetzt wurde. In dieser Kombination fungierte
 die Stereoanlage als Soundausgabe--Komponente, auf dem *Raspberry Pi* lief der
-linux--basierte Player Volumio[^VOL], welcher mit dem Touchscreen des *Thinkpad
+Linux--basierte Player Volumio[^VOL], welcher mit dem Touchscreen des *Thinkpad
 x61t* über eine Weboberfläche gesteuert wurde. Diese Kombination hat zwar
 funktioniert, jedoch war sie alles andere als Benutzerfreundlich, da zuerst die
 Stereoanlage und Laptop  eingeschaltet werden mussten und eine WLAN--Verbindung
@@ -101,14 +101,14 @@ beispielsweise online unter *bestendrei.de*[^TEST].
 
 Das *Problem* bei den kommerziellen Anbietern ist, dass man hier jeweils an die
 vorgegebenen Funktionalitäten des Herstellers gebunden ist. Bei einem
-Do--it--yourself--Projekt auf Basis Freier Software bzw eines freien
+Do--it--yourself--Projekt auf Basis Freier Software beziehungsweise eines freien
 Hardwaredesigns, hat man die Möglichkeit alle gewünschten Funktionalitäten ---
 auch Features die von keinem kommerziellen Anbieter unterstützt werden --- zu
 integrieren. Beispiele für Funktionalitäten, welche bei kommerziellen Produkten
 nur schwer bzw. vereinzelt zu finden sind:
 
 * Unterstützung bestimmter WLAN--Authentifizierungsstandards
-* Einhängen von benutzerdefinierten Shares wie *Samba*, *NFS*, *SSHFS*
+* Einhängen von benutzerdefinierten Dateifreigaben wie *Samba*, *NFS*, *SSHFS*
 * Unterstützung verschiedener *lossy* und *lossless* Formate *OGG VORBIS*, *FLAC*, u.a.
 * Integration verschiedener Dienste wie beispielsweise *Spotify* möglich
 * Benutzerdefinierte Anzeigemöglichkeiten (Uhrzeit, Wetter, et. cetera.)
@@ -131,7 +131,7 @@ aus dem Jahr 2012.
 
 Das Radio soll dem Benutzer folgende Hardwarekonfigurationsmöglichkeiten bieten:
 
-* Anschluß passive Lautsprecher/Kopfhörer möglich 
+* Anschluss passive Lautsprecher/Kopfhörer möglich 
 * Lautstärkeregelung über Hardware möglich
 * Verwendung des Internen Lautsprechers des alten Radios
 * Statusinformationen über aktuelles Lied beispielsweise über LCD
@@ -145,9 +145,9 @@ Das Radio soll dem Benutzer folgende Hardwarekonfigurationsmöglichkeiten bieten
 Die Software soll generisch gehalten werden um eine möglichst einfache
 Erweiterbarkeit zu  gewährleisten. 
 
-Hier was zu Menu--Steuerung schrieben und Umfang?
+Hier was zu Menü--Steuerung schrieben und Umfang?
 
-## Optik-- und Usabilityanforderungen
+## Optik-- und Usability--Anforderungen
 
 Die Eingabe--Peripherie soll möglichst einfach gehalten werden, um eine *schöne*
 Produkt--Optik zu gewährleisten. Folgende 
@@ -156,8 +156,8 @@ Produkt--Optik zu gewährleisten. Folgende
 * Keine *hässlichen* Knöpfe
 * *Retro--Look*-Aussehen wünschenswert
 
-Design soll im Grunde *minimalistisch*  gehalten werden, das heisst, es sollen
-nur so wenige ,,Bedienelemente'' wie nötig angebracht werden.
+Design soll im Grunde *minimalistisch*  gehalten werden, das heißt, es sollen
+nur so wenige »Bedienelemente« wie nötig angebracht werden.
 
 ## Kosten/Nutzen--Verhältnis
 
@@ -177,7 +177,7 @@ noch erworben werden:
 * Kleinbauteile wie LEDs, Widerstände (vorhanden, Arduino--Kit)
 * USB--Hub für Anschluss von beispielsweise ext. Festplatte (vorhanden)
 * USB--Soundkarte (vorhanden)
-* WIFI--Adapter (vorhanden)
+* Wi--Fi--Adapter (vorhanden)
 * Netzteil (vorhanden, div. 5V)
 * Audioverstärker (muss erworben werden)
 * Drehimpulsregler (muss erworben werden)
@@ -250,21 +250,22 @@ GPIO--Pin mit max. 16mA belastbar. Der der gesamte GPIO--Header sollte mit nicht
 mehr als 50mA belastet werden, da es darüber hinaus zu Hardwareschäden kommen
 kann (vgl. [@gay2014raspberry], Seite 20 ff.).
 
-Die *Logic Levels* der GPIO--Pins sind beim
+Die *Logik--Pegel* der GPIO--Pins sind beim
 *Raspberry Pi* wie folgt definiert [vgl. @gay2014raspberry], Seite 23 ff.:
 
 * <= 0,8V, input low
 * >= 1,3V, input high
 
 
-Die Ansteuerung Ansteuerung von LED über GPIO erfolgt binär. Das heisst, dass
+Die Ansteuerung Ansteuerung von LED über GPIO erfolgt binär. Das heißt, dass
 die LED entweder aus (GPIO low) oder an sein kann (GPIO high).
 
-TODO: ELCH? In der ,,analogen'' Welt ist es jedoch möglich eine LED über das
+TODO: ELCH? In der »analogen« Welt ist es jedoch möglich eine LED über das
 Senken der Spannung zu dimmen. Um ein Dimmen in der digitalen Welt zu erreichen
-wird ein Modulationsverfahren angwandt, welches Pulsweitenmodulation heisst.
-Hierbei wird...TODO: ELCH? Weitere Informationen finden sich auch unter
-[@richardson2014make], Seite 121 ff. und [@gay2014mastering], Seite 421 ff..
+wird ein Modulationsverfahren angewandt, welches Pulsweitenmodulation heißt.
+Hierbei wird...TODO: ELCH? Unter [@richardson2014make], Seite 121 ff. und
+[@gay2014mastering], Seite 421 ff. finden sich weitere Integration.
+
 Software PWM unter [@gay2014experimenting], Seite 183 ff. zeigt beispielsweise
 eine 6% CPU--Last pro GPIO--Pin bei einer PWM--Softwareimplementierung. TODO:
 ELCH?
@@ -299,8 +300,8 @@ lediglich nur zwei.
 
 Da für den seriellen Betrieb beispielsweise über den I2C--Bus zusätzliche
 Hardware benötigt wird, wird die parallele Ansteuerung über die GPIO--Pins
-bevorzugt. Für weitere Informationen zum seriellen Betrieb über I2C siehe auch
-[@horan2013practical], Seite 61, ff.
+bevorzugt. Weitere Informationen zum seriellen Betrieb über I2C sind unter 
+[@horan2013practical], Seite 61, ff. zu finden.
 
 \begin{figure}[h!]
   \centering
@@ -319,7 +320,7 @@ schwachen beziehungsweise unzureichenden Darstellungskontrast gehabt, weswegen
 der 5V Betrieb gewählt wurde. 
 
 Die Hintergrundbeleuchtung des Displays wurde direkt über ein Potentiometer mit
-10K$\Omega$ an die 5V Spannungsversogrung angeschlossen. Es wurde hier dierekt
+10K$\Omega$ an die 5V Spannungsversorgung angeschlossen. Es wurde hier direkt
 die Speisung vom Netzteil gewählt um den GPIO--Header nicht unnötig zu belasten.
 
 Laut Datenblatt[^LCD] kann die Hintergrundbeleuchtung entweder mit 3.4V ohne
@@ -340,16 +341,15 @@ $$  R_{ges} = \frac{R_1 \times R_2}{R_1 + R_2} = \frac{100\Omega \times 100\Omeg
 Für eine minimale Anzahl an Bedienelementen zu erhalten, wird bei *Eulenfunk*
 ein Drehimpulsgeber mit Schalter gewählt. Für erste Testzwecke wurde vom Herrn
 Schäferling ein *ALPS STEC12E08* bereitgestellt. Dieser wurde im Laufe der
-Entwciklung durch einen *ALPS STEC11B09*[^ALPS] ersetzt, da dieser mittels Mutter und
-Schraube am Gehäuse besser befästigt werden kann. 
+Entwicklung durch einen *ALPS STEC11B09*[^ALPS] ersetzt, da dieser mittels Mutter und
+Schraube am Gehäuse besser befestigt werden kann. 
 
 Der verwendete Drehimpulsgeber hat insgesamt fünf Anschlüsse. Zwei
 Signalleitungen (A und B), zwei mal *GND* (für Drehgeber und Schalter jeweils
 eine) und einen Anschluss für den Schalter. Beim drehen eines Drehimpulsgebers
 wird ein Rechtecksignal generiert. Je nach Muster der beiden Datensignale A oder
 B, kann entschieden werden ob es sich um eine Rechts-- oder Linksdrehung
-handelt. Weitere Hintergrundinformationen zu Drehimpulsgeber siehe auch
-[@2014projekte], Seite 361 ff.
+handelt. Siehe [@2014projekte], Seite 361 ff. für weitere Hintergrundinformationen zu Drehimpulsgeber.
 
 Abbildung \ref{alps} zeigt den Anschluss des Drehimpulsgebers am *Raspberry Pi*. 
 
@@ -378,7 +378,7 @@ U-PHONO UFO202*[^DAC] gesetzt.
 ## Audioverstärkermodul
 
 Da eine Soundkarte in der Regel zu wenig Leistung hat um einem Lautsprecher
-,,vernünftig'' anzusteuern wird ein Audioverstärker benötigt. Da neben dem
+»vernünftig« anzusteuern wird ein Audioverstärker benötigt. Da neben dem
 Anschluss von externen Lautsprechern auch eine Lautstärkeregelung über ein Poti
 erfolgen soll, ist die Entscheidung einfachheitshalber auf ein
 Audioverstärker--Modul auf Basis vom PAM8403[^POW] Stereo-Verstärker mit Potentiometer gefallen.
@@ -391,13 +391,13 @@ Das Audioverstärker--Module hat folgende Anschlusspins:
 * Right--Side--Out (+), Right--Side--Out (-)
 
 Laut diverser Onlinequellen[^MONO], dürfen die Ausgänge für einen Mono--Betrieb
-eines auf dem PAM8403--basierten Verstärkers nicht paralell geschaltet werden.
+eines auf dem PAM8403--basierten Verstärkers nicht parallel geschaltet werden.
 Aus diesem Grund kommt ein ein 4--poliger
 *EIN--EIN--Kippschalter*[^KIPPSCHALTER] zum Einsatz. So kann zwischen dem
-interen Lautsprecher (Mono--Betrieb) und den externen Stereo
+internen Lautsprecher (Mono--Betrieb) und den externen Stereo
 Lautsprecher--Anschlüssen sauber per Hardware hin und her geschaltet werden.
 
-Damit beim Mono--Betrieb nicht nur ein Channal verwendet wird, ermöglicht
+Damit beim Mono--Betrieb nicht nur ein Kanal verwendet wird, ermöglicht
 *Eulenfunk* das umschalten zwischen Mono-- und Stereo--Betrieb in Software.
 
 [^MONO]: PAM8403 Mono--Betrieb: http://electronics.stackexchange.com/questions/95743/can-you-bridge-or-parallel-the-outputs-of-the-pam8403-amplifier
@@ -407,11 +407,11 @@ Damit beim Mono--Betrieb nicht nur ein Channal verwendet wird, ermöglicht
 
 ## LED--Transistorschaltung
 
-Die Ansteuerun einer LED mittels GPIO--Pin ist recht simpel. Sollen jedoch
+Die Ansteuerung einer LED mittels GPIO--Pin ist recht simpel. Sollen jedoch
 mehrere LEDs angesteuert werden, so wird in der Regel pro LED ein GPIO--Pin
 benötigt. LEDs sollten nie ohne Vorwiderstand an den *Raspberry Pi*
 angeschlossen werden, da durch den hohen Stromfluss die LED beschädigt werden
-könnte. Desweiteren muss bei LEDs auch auf die Polung geachtet werden, die
+könnte. Weiterhin muss bei LEDs auch auf die Polung geachtet werden, die
 abgeflachte Seite --- meist mit dem kürzerem Beinchen -- ist in der Regel die
 Kathode (Minuspol). Abbildung \ref{led} zeigt exemplarisch den Anschluss einer
 *classic LED rot*[^LEDS], mit einer Flussspannung von $U_{LED}$ $\approx$ 2V, die mit
@@ -442,11 +442,11 @@ können online beispielsweise unter *led-treiber.de*[^LED] eingesehen werden.
 \end{figure}
 
 Je nach Typ und Farbe ist der benötigte Strom um ein vielfaches höher wie in
-unserem Beipsiel. Die in \ref{led} abgebildete LED kann vom GPIO--Pin nur einen
+unserem Beispiel. Die in \ref{led} abgebildete LED kann vom GPIO--Pin nur einen
 max. Strom von 16 mA beziehen
 
 In *Eulenfunk* sollen mehrere intensiv leuchtende LEDs verbaut werden. Da die
-GPIO--Pins in ihrer Leistung sehr begrenzt ist, würde es sich anbeiten eine
+GPIO--Pins in ihrer Leistung sehr begrenzt ist, würde es sich anbieten eine
 externe Stromquelle zu verwenden. Um die Speisung über eine externe Stromquelle
 zu ermöglichen kann eine Transistorschaltung verwendet werden (vgl. [@exploring],
 Seite 217 ff.). 
@@ -460,10 +460,10 @@ Spannung an der Basis (GPIO--Pin, 3,3V) geringer war die die Betriebsspannung
 für die LED (5V). 
 
 Der zweite Anlauf mit dem NPN--Transistor BC547C und einer RGB--LED[^RGBGP] mit
-gemeinsamen Pluspol hat das gewünsche Ergebnis geliefert.
+gemeinsamen Pluspol hat das gewünschte Ergebnis geliefert.
 
 Da der Hersteller für die von der Hochschule bereitgestellten Transistoren
-ubekannt ist, wurden typische Durchschnittswerte für die Dimensionierung der
+unbekannt ist, wurden typische Durchschnittswerte für die Dimensionierung der
 Restlichen Bauteile verwendet.
 
 Wie es aussieht sind die meisten BC547C Transistor Typen für einen max. Strom
@@ -481,7 +481,7 @@ folgt aus:
 
  $$I_{Basis} = \frac{I_{CE}}{h_{FE}} = \frac{0.08A}{300} \approx 270\mu A$$
 
-Der BC547C Transitor benötigt eine durchschnittliche  $U_{BE}$ = 0,7V zum
+Der BC547C Transistor benötigt eine durchschnittliche  $U_{BE}$ = 0,7V zum
 durchschalten. Die GPIO-Pins des *Raspberry Pi* haben einen Spannungspegel von
 3.3V. Daraus ergibt sich folgende Berechnung des Basis--Vorwiderstandes:
 
@@ -507,9 +507,9 @@ $$R_{LED} = \frac{U_{Betriebsspannung} - U_{LED}}{I_{LED}} = \frac{5V - 3,15V}{2
 
 ## USB--Hub und Netzteil
 
-Der *Rapberry Pi* hat in unserer Revision nur zwei USB--Schnittstellen, diese
+Der *Raspberry Pi* hat in unserer Revision nur zwei USB--Schnittstellen, diese
 sind bereits durch die Hardware--Komponenten USB--DAC (Soundkarte) und das
-WIFI--Modul belegt. Um den Anschluss eines externen Datenträgers, auch mit
+Wi--Fi--Modul belegt. Um den Anschluss eines externen Datenträgers, auch mit
 größerer Last wie beispielsweise einer Festplatte zu ermöglichen wird ein
 aktiver USB--Hub benötigt.
 
@@ -519,7 +519,7 @@ und speisen zusätzlich über die USB--Schnittstellen den *Raspberry Pi*. Dieses
 Verhalten wurde bemerkt, also der *Raspberry Pi* ohne Power--Connector alleine
 mit nur der USB--Verbindung zum Hub bootete.
 
-Bei der Speisung über die USB--Schnittstelle wird die interne Sicherungschaltung
+Bei der Speisung über die USB--Schnittstelle wird die interne Sicherungsschaltung
 des *Pi* umgangen, deswegen wird in der Regel von einem Betrieb eines USB--Hub
 mit *backfeed* abgeraten (vgl . [@suehle2014hacks], Seite 26 ff.). Für den Prototypen wird
 jedoch der USB--Hub und das dazugehörige Netzteil für den Betrieb von
@@ -527,17 +527,14 @@ jedoch der USB--Hub und das dazugehörige Netzteil für den Betrieb von
 
 **Nachtrag:** Die Speisung über das 5V, 2A des USB--Hubs ist recht instabil. Bei
 Lastspitzen kommt es anscheinend zu Störeinwirkungen die sich auf die
-GPIO--Perpherie auswirken (LCD--Anzeige rendert inkorekt). Ein weiterer Punkt
+GPIO--Peripherie auswirken (LCD--Anzeige rendert inkorekt). Ein weiterer Punkt
 sind Störfrequenzen, welche teilweise in Form von Störgeräuschen die
 Audioausgabe überlagern (Hintergrundgeräusche beim Einschalten aller LEDs).
 Insgesamt wurden drei Netzteile --- jeweils 5V, 2A ---ausprobiert. Von diesen
 war lediglich ein einziges als 'akzeptabel' einzustufen. Die restlichen zwei
 führen bei Lastspitzen zu Problemen (Abstürze, fehlerhaftes Rendering auf
-Display, GPIO--Flips, et cetera). Das *backfeeding* des USB--Hubs scheint die
+Display, GPIO--Flips, et cetera). Das *backfeed* des USB--Hubs scheint die
 genannten Probleme teilweise zu verstärken (vgl . [@suehle2014hacks], Seite 27).
-
-TODO: rf-electronic erwähnen, refs durchgehen und schaubild (gesamtübersicht
-komponenten, typos)
 
 ## Gehäuse
 
@@ -545,7 +542,7 @@ komponenten, typos)
 
 Abbildung \ref{ral} zeigt ein Muster der Gehäusefront--Farbe hellelfenbeinweiß RAL
 1015. Dieser Farbton wird für die Front verwendet um *Eulenfunk* einen dezenten
-,,Retro''--Look verpassen.
+»Retro«--Look verpassen.
 
 \begin{figure}[h!]
   \centering
@@ -558,10 +555,9 @@ Das Plexiglas für die Front wurde von der Firma *ira-Kunststoffe* in
 Schwarzenbach/Saale zugeschnitten. In der Plexiglasfront wurden mit Hilfe vom
 Herrn Schäferling zwei 5mm Löcher (Drehimpulsgeber, Lautstärkeregler--Poti)
 gebohrt. Anschließend wurde die Plexiglas--Front von der Innenseite
-lackiert[^LACK], hierbei wurden die Flächen für LCD und die drei LEDs
-abgeklebt. Desweiteren werden schwarze Knöpfe in Alu--Optik mit 
-$\diameter$ 30mm  für den Lautstärkeregler und
-den Drehimpulsgeber verwendet.
+lackiert[^LACK], hierbei wurden die Flächen für LCD und die drei LEDs abgelebt.
+Zudem werden schwarze Knöpfe in Alu--Optik mit $\diameter$ 30mm  für den
+Lautstärkeregler und den Drehimpulsgeber verwendet.
 
 ### Hinterseite
 
@@ -584,20 +580,20 @@ Distributionen ist *Raspbian* eine der bekanntesten Distribution -- welche auf
 grafischer Benutzeroberfläche mit sich. 
 
 Neben den unter [@pietraszak2014buch], Seite 29 ff. genannten Distributionen
-gibt es mittlerweile auch Windows 10 IoT (Internet of Things) für den *Rapberry
-Pi*. Dieses speziell für den Embedded Bereich ausgerichtete Windwos benötigt
-jedoch eine ARMv7--CPU als Mindestanforderung, was unseren ,,alten Raspberry''
-ausschließen würde. Desweiteren wäre für uns eine propritäre Lösung ein
-K.O.--Kriterium, da diese alle Vorteile von Freier Software zu nichte machen
+gibt es mittlerweile auch Windows 10 IoT (Internet of Things) für den *Raspberry
+Pi*. Dieses speziell für den Embedded Bereich ausgerichtete Windows benötigt
+jedoch eine ARMv7--CPU als Mindestanforderung, was unseren »alten Raspberry«
+ausschließen würde. Außerdem wäre für uns eine proprietäre Lösung ein
+K.O.--Kriterium, da diese alle Vorteile von Freier Software zunichte machen
 würde.
 
 [^WINIOT]: ARMv7 für Win 10 IoT:  \url{http://raspberrypi.stackexchange.com/questions/39715/can-you-put-windows-10-iot-core-on-raspberry-pi-zero}
 
-### Wahl des Betriebbsystems
+### Wahl des Betriebssystem
 
 *Arch Linux ARM*[^ARCH] ist eine minimalistische und sehr performante
-Linux--Distribution welche im Gegensatz zu *Raspbian* ohne Desktopumgebung
-geliefert wird (vgl. [@schmidt2014raspberry], Seite 13 ff.) Desweiteren ist
+Linux--Distribution welche im Gegensatz zu *Raspbian* ohne Desktop--Umgebung
+geliefert wird (vgl. [@schmidt2014raspberry], Seite 13 ff.) Darüber hinaus ist
 *Arch Linux* ein bekannter Vertreter von Rolling--Release--Distributionen. Ein
 weiterer Vorteil für unseren Einsatzzweck hier ist bei *Arch Linux* das *AUR*
 (Arch User Repository)[^AUR], dieses erlaubt es eigene Software auf eine
@@ -607,7 +603,7 @@ schnelle und unkomplizierte Weise der Allgemeinheit zur Verfügung zu stellen.
 
 Nach der Installation[^INSTALL] und dem ersten Booten des Grundsystems muss die
 Netzwerk--Schnittstelle konfiguriert werden. Arch Linux ARM bietet mit *netctl*
-ein profilbasierte Konfigurationsmöglichkeit. Ein Profil kann über das
+ein Profil--basierte Konfigurationsmöglichkeit. Ein Profil kann über das
 *ncurses*--basierte Tool `wifi-menu` erstellt werden. In unserem Fall wurde das
 Profil `wlan0-Phobos` erstellt. Anschließend kann das erstellte Profil mit
 *netctl* verwendet werden. 
@@ -645,11 +641,11 @@ mit dem Profil `wlan0-Phobos`.
 
 ### Abspielsoftware
 
-Für den Betrieb des Internetradios soll der Music--Player--Daemon verwendet
+Für den Betrieb des Internetradios soll der MPD (Music--Player--Daemon) verwendet
 werden, da *Eulenfunk* auf einem eigens entwickeltem MPD--Client basieren soll
 (mehr zur Eulenkfunk Software siehe Kapitel Software). Andere Projekte greifen
-oft auf Abspielsoftware wie den MOC [vgl. @pietraszak2014buch], Seite 189 ff.
-oder Mplayer [@exploring] Seite 638 ff. zu. 
+oft auf Abspielsoftware wie den *MOC* [vgl. @pietraszak2014buch], Seite 189 ff.
+oder *mplayer* [@exploring] Seite 638 ff. zu. 
 
 
 ```bash
@@ -694,8 +690,8 @@ werden.
 ### Allgemein
 
 Der aktuelle Prototyp hat lediglich nur ein Poti um die Hintergrundbeleuchtung
-des LCD zu regeln. Ein anderer Ansatz wäre der Einsatz eines Ralais, welches es
-ermöglichen würde die LCD--Hintergrundbeleuchtung softwareseitig ein und auszuschalten.
+des LCD zu regeln. Ein anderer Ansatz wäre der Einsatz eines Relais, welches es
+ermöglichen würde die LCD--Hintergrundbeleuchtung Software--seitig ein und auszuschalten.
 
 ### Audio--Visualisierung
 
@@ -709,7 +705,7 @@ auf die Verwendung einer GPU--beschleunigte--FFT[^FFT] zurückgegriffen werden
 (vgl. [@Sabarinath2015], Seite 657 ff.).
 
 Ein alternativer Ansatz wäre auch die Realisierung einer Musik--Visualisierung
-mittels Hardwarekomponenten. Ein möglicher Ansatz aus hardwarebasierten
+mittels Hardwarekomponenten. Ein möglicher Ansatz aus Hardware--basierten
 Hochpass-- und Tiefpassfiltern in Form einer Disco--Beleuchtung wird unter
 [@2014projekte], Seite 261 ff. beschrieben.
 
@@ -725,15 +721,15 @@ synchronisieren kann. Eine Erweiterung um eine Echtzeituhr wird in
 
 ### Fernbedienung
 
-Eine weitere Erweiterung wäre die integration einer Fernbedienung. Diese ließe
+Eine weitere Erweiterung wäre die Integration einer Fernbedienung. Diese ließe
 sich relativ einfach mittels eine Infrarot--Sensors und beispielsweise der
-*lirc*--Library umsetzen. Weitere Informationen siehe auch
-[@warner2013hacking], Seite 190 ff.
+*lirc*--Bibliothek umsetzen. Siehe auch [@warner2013hacking], Seite 190 ff. für
+weitere Informationen.
 
 
 ### Batteriebetrieb
 
-Da die Strom-- beziehungsweise Spannungsversorgung beim *Rapberry Pi*
+Da die Strom-- beziehungsweise Spannungsversorgung beim *Raspberry Pi*
 problematisch ist, wäre auch ein Batterie beziehungsweise Akkubetrieb möglich.
 Eine einfache Schaltung für einen Batteriebetrieb würde sich beispielsweise mit
 einem *LM7805*--Spannungsregler oder einem Abwärtswandler realisieren lassen
@@ -752,9 +748,10 @@ Die relativ junge Linux--Distribution *Alpine Linux*[^APL] wäre eine Mögliche
 Verbesserung für den Einsatz des Internetradios. Diese Distribution hat ihren
 Fokus auf Ressourceneffizienz und Systemsicherheit. Ein weiterer Vorteil wäre
 der `diskless mode`, welcher das Komplette Betriebssystem in den Arbeitsspeicher
-lädt. In diesem Modus müssen Änderungen mit einem commit-Tool explizit auf die
-Festplatte geschrieben werden. Das hätte den Vorteil, dass man die Abnutzung des
-Flash--Speichers, durch unnötige Schreib/Lese--Vogänge, minimieren würde.
+lädt. In diesem Modus müssen Änderungen mit einem *Alpine Local Backup
+(lbu)*--Tool explizit auf die Festplatte geschrieben werden. Das hätte den
+Vorteil, dass man die Abnutzung des Flash--Speichers, durch unnötige
+Schreib/Lese--Vorgänge, minimieren würde.
 
 [^APL]: Alpine Linux für Raspberry Pi: \url{https://wiki.alpinelinux.org/wiki/Raspberry_Pi}
 
