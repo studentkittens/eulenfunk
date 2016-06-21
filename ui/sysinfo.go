@@ -29,7 +29,7 @@ func RunSysinfo(lw *display.LineWriter, width int, ctx context.Context) {
 		}
 
 		for idx, line := range bytes.Split(sysinfo, []byte("\n")) {
-			if _, err := lw.Printf("line sysinfo %d %s", idx, line); err != nil {
+			if err := lw.Line("sysinfo", idx, string(line)); err != nil {
 				log.Printf("Failed to print sysinfo: %v", err)
 			}
 

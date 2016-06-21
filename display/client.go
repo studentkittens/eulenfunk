@@ -76,6 +76,74 @@ func (lw *LineWriter) Printf(format string, args ...interface{}) (int, error) {
 	return lw.Write([]byte(fmt.Sprintf(format, args...)))
 }
 
+// Line writes a line in `window` at lineno `pos` consisting of `text`
+func (lw *LineWriter) Line(window string, pos int, text string) error {
+	_, err := lw.Printf("line %s %d %s", window, pos, text)
+	return err
+}
+
+// ScrollDelay sets the delay between a scroll increment of the line in the
+// window `window` at position `pos` to `delay`.
+func (lw *LineWriter) ScrollDelay(window string, pos int, delay time.Duration) error {
+	_, err := lw.Printf("scroll %s %d %s", window, pos, delay.String())
+	return err
+}
+
+// Switch makes `window` the active window.
+func (lw *LineWriter) Switch(window string) error {
+	_, err := lw.Printf("switch %s", window)
+	return err
+}
+
+// Move moves the window `window` down by `plus` lines.
+// `plus` may be negative to go up again.
+// Think of it as vertical scrolling.
+func (lw *LineWriter) Move(window string, plus int) error {
+	_, err := lw.Printf("move %s %d", window, plus)
+	return err
+}
+
+// Truncate cuts off the window contents of `window` at the
+// absolute offset `cutoff`. Lines above will be cleared.
+func (lw *LineWriter) Truncate(window string, cutoff int) error {
+	_, err := lw.Printf("truncate %s %d", window, cutoff)
+	return err
+}
+
+// Quit makes displayd quit.
+func (lw *LineWriter) Quit() error {
+	_, err := lw.Printf("quit")
+	return err
+}
+
+// Render returns a display of the current active window.
+func (lw *LineWriter) Render() ([]byte, error) {
+	buf := &bytes.Buffer{}
+
+	if _, err := lw.Printf("render"); err != nil {
+		return nil, err
+	}
+
+	sizeBuf := make([]byte, 8)
+	n, err := lw.Read(sizeBuf)
+	if n != 8 {
+		log.Printf("Bad size header (%d != 8)", n)
+		return nil, fmt.Errorf("Bad size header")
+	}
+
+	if err != nil {
+		log.Printf("Reading size header failed: %v", err)
+		return nil, err
+	}
+
+	size := binary.LittleEndian.Uint64(sizeBuf)
+	if _, err := io.CopyN(buf, lw, int64(size)); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
 // Close cancels all pending operations and frees resources.
 func (lw *LineWriter) Close() error {
 	lw.cancel()
@@ -149,37 +217,26 @@ func DumpClient(cfg *Config, ctx context.Context, window string, update bool) er
 	}
 
 	for !cancelled(ctx) {
-		if _, err := lw.Printf("render"); err != nil {
-			return err
-		}
-
 		if update {
 			// Clear the screen:
 			fmt.Println("\033[H\033[2J")
 		}
 
-		sizeBuf := make([]byte, 8)
-		n, err := lw.Read(sizeBuf)
-		if n != 8 {
-			log.Printf("Bad size header (%d != 8)", n)
-			continue
-		}
-
+		matrix, err := lw.Render()
 		if err != nil {
-			log.Printf("Reading size header failed: %v", err)
-			continue
+			return err
 		}
 
-		size := binary.LittleEndian.Uint64(sizeBuf)
-		if _, err := io.CopyN(os.Stdout, lw, int64(size)); err != nil {
+		if _, err := io.Copy(os.Stdout, bytes.NewReader(matrix)); err != nil {
 			return err
 		}
 
 		if update {
 			time.Sleep(50 * time.Millisecond)
-		} else {
-			break
+			continue
 		}
+
+		break
 	}
 
 	return nil
@@ -193,13 +250,12 @@ func InputClient(cfg *Config, ctx context.Context, quit bool, window string) err
 		return err
 	}
 
-	if _, err := lw.Printf("switch %s", window); err != nil {
+	if err := lw.Switch(window); err != nil {
 		return err
 	}
 
 	if quit {
-		_, err := lw.Printf("quit")
-		return err
+		return lw.Quit()
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -210,7 +266,7 @@ func InputClient(cfg *Config, ctx context.Context, quit bool, window string) err
 		default:
 		}
 
-		if _, err := lw.Printf(scanner.Text()); err != nil {
+		if _, err := lw.Write([]byte(scanner.Text())); err != nil {
 			return err
 		}
 	}

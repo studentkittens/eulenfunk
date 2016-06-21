@@ -124,7 +124,7 @@ func (mgr *MenuManager) handleValueEvent(value int) {
 	diff := mgr.currValue - mgr.lastValue
 
 	mgr.active.Scroll(diff)
-	if _, err := mgr.lw.Printf("move %s %d", name, diff); err != nil {
+	if err := mgr.lw.Move(name, diff); err != nil {
 		log.Printf("move failed: %v", err)
 	}
 
@@ -143,7 +143,7 @@ func NewMenuManager(cfg *Config, lw *display.LineWriter, initialWin string) (*Me
 	}
 
 	// Switch to mpd initially:
-	if _, err := lw.Printf("switch %s", initialWin); err != nil {
+	if err := lw.Switch(initialWin); err != nil {
 		return nil, err
 	}
 
@@ -258,7 +258,7 @@ func (mgr *MenuManager) SwitchTo(name string) error {
 		mgr.display()
 	}
 
-	if _, err := mgr.lw.Printf("switch %s", name); err != nil {
+	if err := mgr.lw.Switch(name); err != nil {
 		log.Printf("switch failed: %v", err)
 		return err
 	}
@@ -293,7 +293,7 @@ func (mgr *MenuManager) AddMenu(name string, entries []Entry) error {
 	// Why? Because AddMenu may be called more than once with different entries.
 	// If first a long menu is given and then a short, the diff will still
 	// contain the lines of the longer one:
-	if _, err := mgr.lw.Printf("truncate %s %d", name, len(entries)); err != nil {
+	if err := mgr.lw.Truncate(name, len(entries)); err != nil {
 		log.Printf("Failed to truncate menu %s: %v", name, err)
 	}
 

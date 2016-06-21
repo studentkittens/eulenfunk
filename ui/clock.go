@@ -27,11 +27,11 @@ func RunClock(lw *display.LineWriter, width int, ctx context.Context) {
 		tm := util.Center(fmt.Sprintf("%02d:%02d:%02d", hur, min, sec), width, ' ')
 		dt := util.Center(fmt.Sprintf("%d %s %d", day, mon.String(), yer), width, ' ')
 
-		if _, err := lw.Printf("line clock 1 %s", tm); err != nil {
+		if err := lw.Line("clock", 1, tm); err != nil {
 			log.Printf("Failed to send line 1 of clock: %v", err)
 		}
 
-		if _, err := lw.Printf("line clock 2 %s", dt); err != nil {
+		if err := lw.Line("clock", 2, dt); err != nil {
 			log.Printf("Failed to send line 1 of clock: %v", err)
 		}
 

@@ -48,13 +48,13 @@ var (
 
 func drawBlock(lw *display.LineWriter, window string, block []string) error {
 	for idx, line := range block {
-		if _, err := lw.Printf("line %s %d %s", window, idx, line); err != nil {
+		if err := lw.Line(window, idx, line); err != nil {
 			return err
 		}
 
 		// Needs scrolling for proper display:
 		if utf8.RuneCountInString(line) > 20 {
-			if _, err := lw.Printf("scroll %s %d 500ms", window, idx); err != nil {
+			if err := lw.ScrollDelay(window, idx, 500*time.Millisecond); err != nil {
 				return err
 			}
 		}
@@ -95,7 +95,7 @@ func switchToStatic(lw *display.LineWriter, window string) {
 		log.Printf("No such static window `%s`", window)
 	}
 
-	if _, err := lw.Printf("switch %s", window); err != nil {
+	if err := lw.Switch(window); err != nil {
 		log.Printf("Failed to switch to static screen: %v", err)
 	}
 }
