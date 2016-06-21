@@ -478,13 +478,29 @@ und speisen zusätzlich über die USB--Schnittstellen den *Raspberry Pi*. Dieses
 Verhalten wurde bemerkt, also der *Raspberry Pi* ohne Power--Connector alleine
 mit nur der USB--Verbindung zum Hub bootete.
 
-Da bei der Speisung über die USB--Schnittstelle die interne Sicherungschaltung
-des *Pi* umgangen wird, besteht hier die zusätzliche Gefahr eines
-Hardwaredefektes durch die Speisung einer zusätzlichen Spannungsquelle. Weitere
-Informationen zu dem Problem finden sich unter [@suehle2014hacks].
+Bei der Speisung über die USB--Schnittstelle wird die interne Sicherungschaltung
+des *Pi* umgangen, deswegen wird in der Regel von einem Betrieb eines USB--Hub
+mit *backfeed* abgeraten (vgl . [@suehle2014hacks]). Für den Prototypen wird
+jedoch der USB--Hub und das dazugehörige Netzteil für den Betrieb von
+*Eulenfunk* verwendet. Das Netzteil ist für 5V bei max. 2A ausgelegt.
 
+**Nachtrag:** Die Speisung über das 5V, 2A des USB--Hubs ist recht instabil. Bei
+Lastspitzen kommt es anscheinend zu Störeinwirkungen die sich auf die
+GPIO--Perpherie auswirken (LCD--Anzeige rendert inkorekt). Ein weiterer Punkt
+sind Störfrequenzen, welche teilweise in Form von Störgeräuschen die
+Audioausgabe überlagern (Hintergrundgeräusche beim Einschalten aller LEDs).
+Insgesamt wurden drei Netzteile --- jeweils 5V, 2A ---ausprobiert. Von diesen
+war lediglich ein einziges als 'akzeptabel' einzustufen. Die restlichen zwei
+führen bei Lastspitzen zu Problemen (Abstürze, fehlerhaftes Rendering auf
+Display, GPIO--Flips, et cetera). Das *backfeeding* des USB--Hubs scheint die
+genannten Probleme teilweise zu verstärken.
+
+TODO: rf-electronic erwähnen, refs durchgehen und schaubild (gesamtübersicht
+komponenten, typos)
 
 ## Gehäuse
+
+### Vorderseite
 
 Abbildung \ref{ral} zeigt ein Muster der Gehäusefront--Farbe hellelfenbeinweiß RAL
 1015. Dieser Farbton wird für die Front verwendet um *Eulenfunk* einen dezenten
@@ -505,6 +521,14 @@ lackiert[^LACK], hierbei wurden die Flächen für LCD und die drei LEDs
 abgeklebt. Desweiteren werden schwarze Knöpfe in Alu--Optik mit 
 $\diameter$ 30mm  für den Lautstärkeregler und
 den Drehimpulsgeber verwendet.
+
+### Hinterseite
+
+Für die Hinterseite wird die alte Abdeckung verwendet. Diese musste Teilweise
+leicht modifiziert werden. An dieser befinden sich zwei Potis für
+Kontrastregelung und Hintergrundbeleuchtung des LCD, eine
+USB--Female--Kabelpeitsche, zwei Cinch Stecker für externe Lautsprecher und ein
+Kippschalter zum Umschalten zwischen internen und externen Lautsprechern.
 
 [^LACK]: Buntlack, hellelfenbein: \url{http://www.obi.de/decom/product/OBI_Buntlack_Spray_Hellelfenbein_hochglaenzend_150_ml/3468725}
 
@@ -623,6 +647,12 @@ eines *Raspberry Pi* zu entwickeln --- kann durchaus als erfolgreich betrachtet
 werden. 
 
 ## Erweiterungen und alternative Ansätze
+
+### Allgemein
+
+Der aktuelle Prototyp hat lediglich nur ein Poti um die Hintergrundbeleuchtung
+des LCD zu regeln. Ein anderer Ansatz wäre der Einsatz eines Ralais, welches es
+ermöglichen würde die LCD--Hintergrundbeleuchtung softwareseitig ein und auszuschalten.
 
 ### Audio--Visualisierung
 
