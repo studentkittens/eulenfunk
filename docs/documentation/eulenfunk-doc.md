@@ -78,8 +78,8 @@ Die Autoren dieses Projekts leben in einer Wohngemeinschaft zusammen. Die Küche
 ist der Ort an welchem gemeinsam gekocht und gespeist wird. Für eine angenehme
 Atmosphäre und als Nachrichten--Quelle sorgte in der Küche sorgte früher ein
 Analog--Radio der Firma *AEG*, welches aufgrund der schlechten Empfangsqualität
-durch eine Kombination aus ,,alter Stereoanlage'', ,,altem Raspberry Pi'' und
-einem ,,alten Thinkpad x61t'' ersetzt wurde. In dieser Kombination fungierte
+durch eine Kombination aus »alter Stereoanlage«, »altem Raspberry Pi« und
+einem »alten Thinkpad x61t« ersetzt wurde. In dieser Kombination fungierte
 die Stereoanlage als Soundausgabe--Komponente, auf dem *Raspberry Pi* lief der
 Linux--basierte Player Volumio[^VOL], welcher mit dem Touchscreen des *Thinkpad
 x61t* über eine Weboberfläche gesteuert wurde. Diese Kombination hat zwar
@@ -157,7 +157,7 @@ Produkt--Optik zu gewährleisten. Folgende
 * *Retro--Look*-Aussehen wünschenswert
 
 Design soll im Grunde *minimalistisch*  gehalten werden, das heißt, es sollen
-nur so wenige ,,Bedienelemente'' wie nötig angebracht werden.
+nur so wenige »Bedienelemente« wie nötig angebracht werden.
 
 ## Kosten/Nutzen--Verhältnis
 
@@ -260,7 +260,7 @@ Die *Logik--Pegel* der GPIO--Pins sind beim
 Die Ansteuerung Ansteuerung von LED über GPIO erfolgt binär. Das heißt, dass
 die LED entweder aus (GPIO low) oder an sein kann (GPIO high).
 
-TODO: ELCH? In der ,,analogen'' Welt ist es jedoch möglich eine LED über das
+TODO: ELCH? In der »analogen« Welt ist es jedoch möglich eine LED über das
 Senken der Spannung zu dimmen. Um ein Dimmen in der digitalen Welt zu erreichen
 wird ein Modulationsverfahren angewandt, welches Pulsweitenmodulation heißt.
 Hierbei wird...TODO: ELCH? Unter [@richardson2014make], Seite 121 ff. und
@@ -378,7 +378,7 @@ U-PHONO UFO202*[^DAC] gesetzt.
 ## Audioverstärkermodul
 
 Da eine Soundkarte in der Regel zu wenig Leistung hat um einem Lautsprecher
-,,vernünftig'' anzusteuern wird ein Audioverstärker benötigt. Da neben dem
+»vernünftig« anzusteuern wird ein Audioverstärker benötigt. Da neben dem
 Anschluss von externen Lautsprechern auch eine Lautstärkeregelung über ein Poti
 erfolgen soll, ist die Entscheidung einfachheitshalber auf ein
 Audioverstärker--Modul auf Basis vom PAM8403[^POW] Stereo-Verstärker mit Potentiometer gefallen.
@@ -542,7 +542,7 @@ genannten Probleme teilweise zu verstärken (vgl . [@suehle2014hacks], Seite 27)
 
 Abbildung \ref{ral} zeigt ein Muster der Gehäusefront--Farbe hellelfenbeinweiß RAL
 1015. Dieser Farbton wird für die Front verwendet um *Eulenfunk* einen dezenten
-,,Retro''--Look verpassen.
+»Retro«--Look verpassen.
 
 \begin{figure}[h!]
   \centering
@@ -582,7 +582,7 @@ grafischer Benutzeroberfläche mit sich.
 Neben den unter [@pietraszak2014buch], Seite 29 ff. genannten Distributionen
 gibt es mittlerweile auch Windows 10 IoT (Internet of Things) für den *Raspberry
 Pi*. Dieses speziell für den Embedded Bereich ausgerichtete Windows benötigt
-jedoch eine ARMv7--CPU als Mindestanforderung, was unseren ,,alten Raspberry''
+jedoch eine ARMv7--CPU als Mindestanforderung, was unseren »alten Raspberry«
 ausschließen würde. Außerdem wäre für uns eine proprietäre Lösung ein
 K.O.--Kriterium, da diese alle Vorteile von Freier Software zunichte machen
 würde.
