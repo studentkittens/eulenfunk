@@ -194,6 +194,18 @@ func (srv *server) unmount(device, label string) error {
 		return err
 	}
 
+	addr := fmt.Sprintf("%s:%d", srv.Config.MPDHost, srv.Config.MPDPort)
+	client, err := mpd.Dial("tcp", addr)
+	if err != nil {
+		return err
+	}
+
+	defer util.Closer(client)
+
+	if err := client.PlaylistRemove(label); err != nil {
+		return err
+	}
+
 	destPath := filepath.Join(srv.Config.MusicDir, label)
 	if err := os.Remove(destPath); err != nil {
 		log.Printf("Failed to remove mount dir: %v", err)
