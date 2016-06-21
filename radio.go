@@ -209,7 +209,7 @@ func handleAutomount(ctx *cli.Context, dropout context.Context) error {
 	unmount := ctx.Bool("unmount")
 
 	if device != "" || label != "" {
-		if device != "" {
+		if device == "" {
 			log.Printf("Need --device for mounting and unmounting")
 			return nil
 		}

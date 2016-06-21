@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -65,7 +66,6 @@ func (srv *server) playlistFromDir(client *mpd.Client, label string) error {
 	for _, uri := range uris {
 		log.Printf("Adding `%s`", uri)
 		cmdlist.PlaylistAdd(label, uri)
-		log.Printf("Failed to add `%s` to playlist `%s`: %v", uri, label, err)
 	}
 
 	return cmdlist.End()
@@ -167,6 +167,10 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 
 func (srv *server) mount(device, label string) error {
 	destPath := filepath.Join(srv.Config.MusicDir, label)
+	if err := os.MkdirAll(destPath, 0777); err != nil {
+		return err
+	}
+
 	log.Printf("Mounting `%s` to `%s`\n", device, destPath)
 	if err := runBinary("mount", device, destPath); err != nil {
 		return err
