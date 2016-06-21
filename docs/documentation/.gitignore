@@ -4,7 +4,6 @@
 *.log
 *.out
 *.pdf
-*.tex
 *.toc
 *.lof
 *.lot

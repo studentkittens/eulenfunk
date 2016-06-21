@@ -263,8 +263,9 @@ die LED entweder aus (GPIO low) oder an sein kann (GPIO high).
 TODO: ELCH? In der ,,analogen'' Welt ist es jedoch möglich eine LED über das
 Senken der Spannung zu dimmen. Um ein Dimmen in der digitalen Welt zu erreichen
 wird ein Modulationsverfahren angewandt, welches Pulsweitenmodulation heißt.
-Hierbei wird...TODO: ELCH? Weitere Informationen finden sich auch unter
-[@richardson2014make], Seite 121 ff. und [@gay2014mastering], Seite 421 ff..
+Hierbei wird...TODO: ELCH? Unter [@richardson2014make], Seite 121 ff. und
+[@gay2014mastering], Seite 421 ff. finden sich weitere Integration.
+
 Software PWM unter [@gay2014experimenting], Seite 183 ff. zeigt beispielsweise
 eine 6% CPU--Last pro GPIO--Pin bei einer PWM--Softwareimplementierung. TODO:
 ELCH?
@@ -299,8 +300,8 @@ lediglich nur zwei.
 
 Da für den seriellen Betrieb beispielsweise über den I2C--Bus zusätzliche
 Hardware benötigt wird, wird die parallele Ansteuerung über die GPIO--Pins
-bevorzugt. Für weitere Informationen zum seriellen Betrieb über I2C siehe auch
-[@horan2013practical], Seite 61, ff.
+bevorzugt. Weitere Informationen zum seriellen Betrieb über I2C sind unter 
+[@horan2013practical], Seite 61, ff. zu finden.
 
 \begin{figure}[h!]
   \centering
@@ -348,8 +349,7 @@ Signalleitungen (A und B), zwei mal *GND* (für Drehgeber und Schalter jeweils
 eine) und einen Anschluss für den Schalter. Beim drehen eines Drehimpulsgebers
 wird ein Rechtecksignal generiert. Je nach Muster der beiden Datensignale A oder
 B, kann entschieden werden ob es sich um eine Rechts-- oder Linksdrehung
-handelt. Weitere Hintergrundinformationen zu Drehimpulsgeber siehe auch
-[@2014projekte], Seite 361 ff.
+handelt. Siehe [@2014projekte], Seite 361 ff. für weitere Hintergrundinformationen zu Drehimpulsgeber.
 
 Abbildung \ref{alps} zeigt den Anschluss des Drehimpulsgebers am *Raspberry Pi*. 
 
@@ -723,8 +723,8 @@ synchronisieren kann. Eine Erweiterung um eine Echtzeituhr wird in
 
 Eine weitere Erweiterung wäre die Integration einer Fernbedienung. Diese ließe
 sich relativ einfach mittels eine Infrarot--Sensors und beispielsweise der
-*lirc*--Bibliothek umsetzen. Weitere Informationen siehe auch
-[@warner2013hacking], Seite 190 ff.
+*lirc*--Bibliothek umsetzen. Siehe auch [@warner2013hacking], Seite 190 ff. für
+weitere Informationen.
 
 
 ### Batteriebetrieb
