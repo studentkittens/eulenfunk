@@ -7,6 +7,7 @@ import (
 	"os/signal"
 
 	"github.com/studentkittens/eulenfunk/ambilight"
+	"github.com/studentkittens/eulenfunk/automount"
 	"github.com/studentkittens/eulenfunk/display"
 	"github.com/studentkittens/eulenfunk/lightd"
 	"github.com/studentkittens/eulenfunk/ui"
@@ -188,6 +189,50 @@ func handleAmbilight(ctx *cli.Context, dropout context.Context) error {
 	return ambilight.Run(cfg, dropout)
 }
 
+func handleAutomount(ctx *cli.Context, dropout context.Context) error {
+	cfg := &automount.Config{
+		AutomountHost: ctx.String("automount-host"),
+		AutomountPort: ctx.Int("automount-port"),
+		MPDHost:       ctx.String("mpd-host"),
+		MPDPort:       ctx.Int("mpd-port"),
+		MusicDir:      ctx.String("music-dir"),
+	}
+
+	if ctx.Bool("quit") {
+		return automount.WithClient(cfg, func(cl *automount.Client) error {
+			return cl.Quit()
+		})
+	}
+
+	device := ctx.String("device")
+	label := ctx.String("label")
+	unmount := ctx.Bool("unmount")
+
+	if device != "" || label != "" {
+		if device != "" {
+			log.Printf("Need --device for mounting and unmounting")
+			return nil
+		}
+
+		if unmount {
+			return automount.WithClient(cfg, func(cl *automount.Client) error {
+				return cl.Unmount(device)
+			})
+		}
+
+		if label == "" {
+			log.Printf("Need --label for mounting")
+			return nil
+		}
+
+		return automount.WithClient(cfg, func(cl *automount.Client) error {
+			return cl.Mount(device, label)
+		})
+	}
+
+	return automount.Run(cfg, dropout)
+}
+
 //////////////////////////
 
 type handlerFunc func(ctx *cli.Context, dropout context.Context) error
@@ -322,6 +367,44 @@ func main() {
 		Usage:  "Handle window rendering and input control",
 		Action: withCancelCtx(dropout, handleUI),
 		Flags:  concat(displaydNetFlags, mpdNetFlags, ambiNetFlags, lightdNetFlags),
+	}, {
+		Name:   "automount",
+		Usage:  "Control the automount for usb sticks filled with music",
+		Action: withCancelCtx(dropout, handleAutomount),
+		Flags: concat(mpdNetFlags, []cli.Flag{
+			cli.StringFlag{
+				Name:   "automount-host",
+				Value:  "localhost",
+				Usage:  "The host on which the control daemon listens on",
+				EnvVar: "AUTOMOUNT_HOST",
+			},
+			cli.IntFlag{
+				Name:   "automount-port",
+				Value:  5555,
+				Usage:  "The port on which the control daemon listens on",
+				EnvVar: "AUTOMOUNT_PORT",
+			},
+			cli.StringFlag{
+				Name:  "device,d",
+				Value: "",
+				Usage: "The device (under /dev) to mount; absolute path.",
+			},
+			cli.StringFlag{
+				Name:  "label,l",
+				Value: "",
+				Usage: "Which label the device has",
+			},
+			cli.StringFlag{
+				Name:   "music-dir,m",
+				Value:  "",
+				Usage:  "The root directory of the music collection",
+				EnvVar: "AUTOMOUNT_MUSIC_DIR",
+			},
+			cli.BoolFlag{
+				Name:  "unmount,u",
+				Usage: "Unmount the device",
+			},
+		}),
 	}, {
 		Name:   "lightd",
 		Usage:  "Utility server to lock the led ownage and enable nice atomic effects",

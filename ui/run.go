@@ -338,7 +338,7 @@ func createPowerMenu(mgr *MenuManager, lw *display.LineWriter) error {
 		&ClickEntry{
 			Text: "Poweroff",
 			ActionFunc: func() error {
-				return rebootAction(mgr.Config, lw)
+				return poweroffAction(mgr.Config, lw)
 			},
 		},
 		&ClickEntry{
