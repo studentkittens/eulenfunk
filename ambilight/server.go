@@ -72,7 +72,8 @@ type server struct {
 	Context context.Context
 	Cancel  context.CancelFunc
 
-	enabled bool
+	enabled     bool
+	wasDisabled bool
 }
 
 // Enabled returns true if playback should be running:
@@ -344,6 +345,7 @@ func adjust(srv *server, locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- ti
 	if !srv.Enabled() {
 		sendColor(locker, timedColor{0, 0, 0, 0}, colorsCh)
 		*colors = []timedColor{}
+		srv.wasDisabled = true
 		return 0
 	}
 
@@ -354,9 +356,11 @@ func adjust(srv *server, locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- ti
 		currIdx = int((ev.ElapsedMs / ev.TotalMs) * 1000)
 	}
 
-	if !ev.SongChanged {
+	if !ev.SongChanged || srv.wasDisabled {
 		return currIdx
 	}
+
+	srv.wasDisabled = false
 
 	data, err := readMoodbarFile(ev.Path)
 	if err == nil {
