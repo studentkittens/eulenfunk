@@ -217,9 +217,9 @@ func handleAutomount(ctx *cli.Context, dropout context.Context) error {
 		return automount.WithClient(cfg, func(cl *automount.Client) error {
 			if unmount {
 				return cl.Unmount(device, label)
-			} else {
-				return cl.Mount(device, label)
 			}
+
+			return cl.Mount(device, label)
 		})
 	}
 

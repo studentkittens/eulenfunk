@@ -85,10 +85,10 @@ func displayStats(lw *display.LineWriter, stats mpd.Attrs) error {
 
 func formatStop(status mpd.Attrs) ([]string, error) {
 	return []string{
-		fmt.Sprintf("        ⏹          "),
-		fmt.Sprintf("Playback stopped.  "),
-		fmt.Sprintf("Turn knob to start "),
-		fmt.Sprintf("        ⏹          "),
+		"        ⏹          ",
+		"Playback stopped.  ",
+		"Turn knob to start ",
+		"        ⏹          ",
 	}, nil
 }
 
@@ -162,6 +162,9 @@ func formatStatusLine(currSong, status mpd.Attrs) string {
 		if totalSec, err := strconv.Atoi(timeStr); err == nil {
 			length += "/" + formatTimeSpec(time.Duration(totalSec)*time.Second)
 		}
+	} else {
+		// Pad the elapsed time to the right if no total time available:
+		length = "   " + length
 	}
 
 	bitrateStr := ""
@@ -184,7 +187,7 @@ func formatRadio(currSong, status mpd.Attrs) ([]string, error) {
 	block := []string{
 		currSong["Title"],
 		fmt.Sprintf("Radio: %s", currSong["Name"]),
-		fmt.Sprintf("Bitrate: %s Kbit/s", status["bitrate"]),
+		"",
 		formatStatusLine(currSong, status),
 	}
 

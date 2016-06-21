@@ -190,7 +190,7 @@ func (srv *server) mount(device, label string) error {
 
 func (srv *server) unmount(device, label string) error {
 	log.Printf("Unmounting`%s`\n", device)
-	if err := runBinary("umount", device); err != nil {
+	if err := runBinary("umount", "-l", device); err != nil {
 		return err
 	}
 
