@@ -393,18 +393,18 @@ func switcher(mgr *MenuManager, name string) func() error {
 }
 
 func initialSwitchToMPD(mgr *MenuManager, MPD *mpd.Client) {
-	evcnt := 0
+	initial := true
 
 	MPD.Register("player", func() {
 		// Wait for the first "real" event.
 		// First one is just emiited on startup.
-		if evcnt == 1 {
+		if initial {
 			if err := mgr.SwitchTo("mpd"); err != nil {
 				log.Printf("Initial switch to mpd failed: %v", err)
 			}
-		}
 
-		evcnt++
+			initial = false
+		}
 	})
 }
 
