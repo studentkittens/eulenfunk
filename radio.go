@@ -146,7 +146,7 @@ func handleAmbilightCommand(ctx *cli.Context, cfg *ambilight.Config) (bool, erro
 			return true, err
 		}
 
-		fmt.Printf("%t", enabled)
+		fmt.Printf("%t\n", enabled)
 		return true, nil
 	case quit:
 		return true, client.Quit()
