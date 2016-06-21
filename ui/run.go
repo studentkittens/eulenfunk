@@ -282,7 +282,7 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 		&ClickEntry{
 			Text: "Playlists",
 			ActionFunc: func() error {
-				entries := createPlaylistEntries(MPD)
+				entries := createPlaylistEntries(mgr, MPD)
 
 				// Add an exit button:
 				entries = append(entries, &ClickEntry{

@@ -247,7 +247,7 @@ func createBlend(c1, c2 timedColor, N int) []timedColor {
 		l = (l*l)/2 + (l / 2)
 
 		// Convert back to (gamma corrected) RGB for catlight:
-		r, g, b := colorful.Hcl(h, c, l).FastLinearRgb()
+		r, g, b := colorful.Hcl(h, c, l).LinearRgb()
 		//hcl := colorful.Hcl(h, c, l)
 		//r, g, b := hcl.R, hcl.G, hcl.B
 		colors = append(colors, timedColor{
@@ -300,10 +300,6 @@ func MoodbarRunner(server *server, colors <-chan timedColor) {
 				return
 			}
 
-			if !server.Enabled() {
-				continue
-			}
-
 			blendInterval := 2
 			if color.Duration > 20*time.Millisecond {
 				blendInterval = int(math.Sqrt(float64(color.Duration/time.Millisecond))) / 2
@@ -322,10 +318,6 @@ func MoodbarRunner(server *server, colors <-chan timedColor) {
 				}
 
 				time.Sleep(color.Duration)
-			} else {
-				// Blend is exhausted and no new colors available.
-				// Sleep a bit to spare CPU.
-				time.Sleep(50 * time.Millisecond)
 			}
 		}
 	}
@@ -338,7 +330,6 @@ func sendColor(locker *lightd.Locker, col timedColor, colorsCh chan<- timedColor
 		}
 	}
 
-	// Do not crash when colorsCh is closed:
 	colorsCh <- col
 	time.Sleep(col.Duration)
 
@@ -349,33 +340,39 @@ func sendColor(locker *lightd.Locker, col timedColor, colorsCh chan<- timedColor
 	}
 }
 
-func adjust(locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- timedColor, colors *[]timedColor) int {
-	// Only required if the song changed:
-	currIdx := 0
-
-	if ev.SongChanged {
-		data, err := readMoodbarFile(ev.Path)
-		if err != nil {
-			log.Printf("Failed to read moodbar at `%s`: %v", ev.Path, err)
-
-			// Return to black:
-			if UseDefaultMoodbar {
-				*colors = DefaultMoodbar
-			} else {
-				sendColor(locker, timedColor{0, 0, 0, 0}, colorsCh)
-				*colors = []timedColor{}
-				return 0
-			}
-		} else {
-			*colors = data
-		}
+func adjust(srv *server, locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- timedColor, colors *[]timedColor) int {
+	if !srv.Enabled() {
+		sendColor(locker, timedColor{0, 0, 0, 0}, colorsCh)
+		*colors = []timedColor{}
+		return 0
 	}
+
+	currIdx := 0
 
 	// Adjust the moodbar seek offset (1000 samples per total time)
 	if ev.TotalMs > 0 {
 		currIdx = int((ev.ElapsedMs / ev.TotalMs) * 1000)
+	}
+
+	if !ev.SongChanged {
+		return currIdx
+	}
+
+	data, err := readMoodbarFile(ev.Path)
+	if err == nil {
+		*colors = data
+		return currIdx
+	}
+
+	log.Printf("Failed to read moodbar at `%s`: %v", ev.Path, err)
+
+	// Return to black:
+	if UseDefaultMoodbar {
+		*colors = DefaultMoodbar
 	} else {
-		currIdx = 0
+		sendColor(locker, timedColor{0, 0, 0, 0}, colorsCh)
+		*colors = []timedColor{}
+		return 0
 	}
 
 	return currIdx
@@ -398,7 +395,7 @@ func eatColor(locker *lightd.Locker, currEv *mpdEvent, currCol *timedColor, colo
 
 // MoodbarAdjuster tried to synchronize the music to the moodbar.
 // It will send the correct current color to MoodbarRunner.
-func MoodbarAdjuster(cfg *Config, eventCh <-chan mpdEvent, colorsCh chan<- timedColor) {
+func MoodbarAdjuster(srv *server, eventCh <-chan mpdEvent, colorsCh chan<- timedColor) {
 	var (
 		currIdx int
 		colors  []timedColor
@@ -408,8 +405,8 @@ func MoodbarAdjuster(cfg *Config, eventCh <-chan mpdEvent, colorsCh chan<- timed
 	initialSend := true
 
 	lightdConfig := &lightd.Config{
-		Host: cfg.LightdHost,
-		Port: cfg.LightdPort,
+		Host: srv.Config.LightdHost,
+		Port: srv.Config.LightdPort,
 	}
 
 	locker, err := lightd.NewLocker(lightdConfig)
@@ -431,7 +428,7 @@ func MoodbarAdjuster(cfg *Config, eventCh <-chan mpdEvent, colorsCh chan<- timed
 			}
 
 			// A new event happened, we need to adjust or even load a new moodbar file:
-			currIdx = adjust(locker, &ev, colorsCh, &colors)
+			currIdx = adjust(srv, locker, &ev, colorsCh, &colors)
 			currEv = &ev
 		default:
 			if currIdx >= len(colors) || currEv == nil {
@@ -553,7 +550,7 @@ func Watcher(server *server) error {
 
 	// Start the respective go routines:
 	go MoodbarRunner(server, colorsCh)
-	go MoodbarAdjuster(server.Config, eventCh, colorsCh)
+	go MoodbarAdjuster(server, eventCh, colorsCh)
 	go StatusUpdater(server, updateCh, eventCh)
 
 	// Also sync extra every few seconds:
@@ -581,15 +578,7 @@ func Watcher(server *server) error {
 	return nil
 }
 
-func turnOff(driverStdin io.Writer) {
-	// Wait a short amount to make sure other colors get flushed:
-	time.Sleep(250 * time.Millisecond)
-	if _, err := driverStdin.Write([]byte("0 0 0\n")); err != nil {
-		log.Printf("Failed to turn light off: %v", err)
-	}
-}
-
-func handleConn(server *server, driverStdin io.Writer, conn net.Conn) {
+func handleConn(server *server, conn net.Conn) {
 	defer util.Closer(conn)
 
 	scn := bufio.NewScanner(conn)
@@ -598,7 +587,6 @@ func handleConn(server *server, driverStdin io.Writer, conn net.Conn) {
 		case "off":
 			log.Printf("Disabling ambilight...")
 			server.Enable(false)
-			go turnOff(driverStdin)
 		case "on":
 			log.Printf("Enabling ambilight...")
 			server.Enable(true)
@@ -657,7 +645,7 @@ func createNetworkListener(server *server) error {
 			}
 
 			log.Printf("Accepting connection from %s", conn.RemoteAddr())
-			go handleConn(server, stdin, conn)
+			go handleConn(server, conn)
 		}
 	}()
 

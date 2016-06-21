@@ -2,7 +2,7 @@ package ui
 
 import "github.com/studentkittens/eulenfunk/ui/mpd"
 
-func createPlaylistEntries(MPD *mpd.Client) []Entry {
+func createPlaylistEntries(mgr *MenuManager, MPD *mpd.Client) []Entry {
 	entries := []Entry{&Separator{"Playlists"}}
 
 	for _, name := range MPD.ListPlaylists() {
@@ -12,7 +12,11 @@ func createPlaylistEntries(MPD *mpd.Client) []Entry {
 			// Closure trick so we don't get the last loop var:
 			ActionFunc: func(name string) func() error {
 				return func() error {
-					return MPD.LoadAndPlayPlaylist(name)
+					if err := MPD.LoadAndPlayPlaylist(name); err != nil {
+						return err
+					}
+
+					return mgr.SwitchTo("mpd")
 				}
 			}(name),
 		})

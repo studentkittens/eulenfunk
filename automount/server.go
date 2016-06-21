@@ -229,7 +229,7 @@ func (srv *server) handleLine(line string) bool {
 	case "unmount":
 		if len(split) >= 3 {
 			if err := srv.unmount(split[1], split[2]); err != nil {
-				log.Printf("Failed to mount: %v", err)
+				log.Printf("Failed to unmount: %v", err)
 			}
 		}
 	case "close":
