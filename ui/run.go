@@ -320,8 +320,11 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 			ActionFunc: switcher(mgr, "menu-power"),
 		},
 		&ClickEntry{
-			Text:       "About",
-			ActionFunc: switcher(mgr, "about"),
+			Text: "About",
+			ActionFunc: func() error {
+				schuhuAction()
+				return mgr.SwitchTo("about")
+			},
 		},
 	}
 

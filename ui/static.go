@@ -2,6 +2,7 @@ package ui
 
 import (
 	"log"
+	"time"
 	"unicode/utf8"
 
 	"github.com/studentkittens/eulenfunk/display"
@@ -14,25 +15,34 @@ var (
 		" GUT. ECHT. ANDERS. ",
 		"/ / / / / / / / / / / / / / / /",
 	}
-
 	shutdownScreen = []string{
 		"SHUTTING DOWN - BYE!",
 		"                    ",
 		"PLEASE WAIT 1 MINUTE",
 		"BEFORE POWERING OFF!",
 	}
-
-	aboutScreen = []string{
-		"EULENFUNK IS MADE BY",
-		"  Christoph <qitta> Piechula (christoph@nullcat.de)",
-		"  Christopher <sahib> Pahl (sahib@online.de)",
-		"  Susanne <Trüffelkauz> Kießling (aggro@thene.org)",
+	aboutNamesScreen = []string{
+		"━━ MADE WITH ❤ BY ━━",
+		"  Christoph Piechula",
+		"  Christopher Pahl  ",
+		"  Susanne Kießling  ",
 	}
-
-	screens = map[string][]string{
-		"startup":  startupScreen,
-		"shutdown": shutdownScreen,
-		"about":    aboutScreen,
+	aboutNicksScreen = []string{
+		"━━ MADE WITH ❤ BY ━━",
+		"christoph@nullcat.de",
+		"     sahib@online.de",
+		"  susanne@nullcat.de",
+	}
+	aboutFuncScreen = []string{
+		"━━ MADE WITH ❤ BY ━━",
+		" ψ Hardware Engineer",
+		" ▶ Software Engineer",
+		" ✓ Design Micrathene",
+	}
+	screens = map[string][][]string{
+		"startup":  [][]string{startupScreen},
+		"shutdown": [][]string{shutdownScreen},
+		"about":    [][]string{aboutNamesScreen, aboutNicksScreen, aboutFuncScreen},
 	}
 )
 
@@ -53,10 +63,27 @@ func drawBlock(lw *display.LineWriter, window string, block []string) error {
 	return nil
 }
 
+func pageThrough(lw *display.LineWriter, window string, blocks [][]string) {
+	i := 0
+	for {
+		if err := drawBlock(lw, window, blocks[i]); err != nil {
+			log.Printf("Failed to page through %s: %v", window, err)
+		}
+
+		time.Sleep(2 * time.Second)
+		i = (i + 1) % len(blocks)
+	}
+}
+
 func drawStaticScreens(lw *display.LineWriter) error {
-	for window, block := range screens {
-		if err := drawBlock(lw, window, block); err != nil {
-			return err
+	for window, blocks := range screens {
+		if len(blocks) == 1 {
+			// One static draw is enough:
+			if err := drawBlock(lw, window, blocks[0]); err != nil {
+				return err
+			}
+		} else {
+			go pageThrough(lw, window, blocks)
 		}
 	}
 
