@@ -1,4 +1,5 @@
-/etc/udev/rules.d/11-media-by-label-auto-mount.rules
+## This is a modified version of:
+## https://wiki.archlinux.de/title/Udev#Unter_.2Fmedia_einbinden.3B_Partitions_Label_verwenden_falls_vorhanden
 
 KERNEL!="sd[a-z]*", GOTO="media_by_label_auto_mount_end"
 ACTION=="add", PROGRAM!="/sbin/blkid %N", GOTO="media_by_label_auto_mount_end"

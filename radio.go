@@ -87,7 +87,7 @@ func handleLightd(ctx *cli.Context, dropout context.Context) error {
 		return locker.Close()
 	}
 
-	return nil
+	return lightd.Run(cfg, dropout)
 }
 
 func handleDisplayClient(ctx *cli.Context, dropout context.Context) error {
