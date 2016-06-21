@@ -231,7 +231,7 @@ func createBlend(c1, c2 timedColor, N int) []timedColor {
 		l = (l*l)/2 + (l / 2)
 
 		// Convert back to (gamma corrected) RGB for catlight:
-		r, g, b := colorful.Hcl(h, c, l).FastLinearRgb()
+		r, g, b := colorful.Hcl(h, c, l).LinearRgb()
 		//hcl := colorful.Hcl(h, c, l)
 		//r, g, b := hcl.R, hcl.G, hcl.B
 		colors = append(colors, timedColor{
@@ -313,6 +313,8 @@ func moodbarRunner(server *server, colors <-chan timedColor) {
 				}
 
 				time.Sleep(color.Duration)
+			} else {
+				time.Sleep(100 * time.Millisecond)
 			}
 		}
 	}
@@ -645,6 +647,7 @@ func createNetworkListener(server *server) error {
 			}
 
 			log.Printf("Accepting connection from %s", conn.RemoteAddr())
+
 			go handleConn(server, conn)
 		}
 	}()
