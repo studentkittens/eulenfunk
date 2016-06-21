@@ -282,7 +282,7 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 		&ClickEntry{
 			Text: "Playlists",
 			ActionFunc: func() error {
-				entries := createPlaylistEntries(MPD)
+				entries := createPlaylistEntries(mgr, MPD)
 
 				// Add an exit button:
 				entries = append(entries, &ClickEntry{
@@ -338,7 +338,7 @@ func createPowerMenu(mgr *MenuManager, lw *display.LineWriter) error {
 		&ClickEntry{
 			Text: "Poweroff",
 			ActionFunc: func() error {
-				return rebootAction(mgr.Config, lw)
+				return poweroffAction(mgr.Config, lw)
 			},
 		},
 		&ClickEntry{

@@ -63,8 +63,6 @@ type Config struct {
 
 // server holds all runtime info for ambilightd.
 type server struct {
-	sync.Mutex
-
 	Config *Config
 	MPD    *mpd.ReMPD
 
@@ -72,24 +70,10 @@ type server struct {
 	Context context.Context
 	Cancel  context.CancelFunc
 
+	stateCh chan bool
 	enabled bool
-}
 
-// Enabled returns true if playback should be running:
-// (It is enabled by default)
-func (srv *server) Enabled() bool {
-	srv.Lock()
-	defer srv.Unlock()
-
-	return srv.enabled
-}
-
-// Enable alters the playback state of the server
-func (srv *server) Enable(enabled bool) {
-	srv.Lock()
-	defer srv.Unlock()
-
-	srv.enabled = enabled
+	mu sync.Mutex
 }
 
 // Current status of the MPD player:
@@ -247,7 +231,7 @@ func createBlend(c1, c2 timedColor, N int) []timedColor {
 		l = (l*l)/2 + (l / 2)
 
 		// Convert back to (gamma corrected) RGB for catlight:
-		r, g, b := colorful.Hcl(h, c, l).FastLinearRgb()
+		r, g, b := colorful.Hcl(h, c, l).LinearRgb()
 		//hcl := colorful.Hcl(h, c, l)
 		//r, g, b := hcl.R, hcl.G, hcl.B
 		colors = append(colors, timedColor{
@@ -275,9 +259,9 @@ func createDriverPipe(cfg *Config) (io.WriteCloser, error) {
 	return stdin, nil
 }
 
-// MoodbarRunner sets the current color and blends to it
+// moodbarRunner sets the current color and blends to it
 // by remembering the last color and calculating a gradient between both.
-func MoodbarRunner(server *server, colors <-chan timedColor) {
+func moodbarRunner(server *server, colors <-chan timedColor) {
 	cfg := server.Config
 
 	stdin, err := createDriverPipe(cfg)
@@ -293,14 +277,21 @@ func MoodbarRunner(server *server, colors <-chan timedColor) {
 	// Blend between lastColor and current color.
 	var blend []timedColor
 
+	var enabled = true
+
 	for {
 		select {
+		case newState := <-server.stateCh:
+			enabled = newState
+			if !enabled {
+				blend = []timedColor{timedColor{0, 0, 0, 0}}
+			}
 		case color, ok := <-colors:
 			if !ok {
 				return
 			}
 
-			if !server.Enabled() {
+			if !enabled {
 				continue
 			}
 
@@ -322,10 +313,6 @@ func MoodbarRunner(server *server, colors <-chan timedColor) {
 				}
 
 				time.Sleep(color.Duration)
-			} else {
-				// Blend is exhausted and no new colors available.
-				// Sleep a bit to spare CPU.
-				time.Sleep(50 * time.Millisecond)
 			}
 		}
 	}
@@ -338,7 +325,6 @@ func sendColor(locker *lightd.Locker, col timedColor, colorsCh chan<- timedColor
 		}
 	}
 
-	// Do not crash when colorsCh is closed:
 	colorsCh <- col
 	time.Sleep(col.Duration)
 
@@ -349,33 +335,33 @@ func sendColor(locker *lightd.Locker, col timedColor, colorsCh chan<- timedColor
 	}
 }
 
-func adjust(locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- timedColor, colors *[]timedColor) int {
-	// Only required if the song changed:
+func adjust(srv *server, locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- timedColor, colors *[]timedColor) int {
 	currIdx := 0
-
-	if ev.SongChanged {
-		data, err := readMoodbarFile(ev.Path)
-		if err != nil {
-			log.Printf("Failed to read moodbar at `%s`: %v", ev.Path, err)
-
-			// Return to black:
-			if UseDefaultMoodbar {
-				*colors = DefaultMoodbar
-			} else {
-				sendColor(locker, timedColor{0, 0, 0, 0}, colorsCh)
-				*colors = []timedColor{}
-				return 0
-			}
-		} else {
-			*colors = data
-		}
-	}
 
 	// Adjust the moodbar seek offset (1000 samples per total time)
 	if ev.TotalMs > 0 {
 		currIdx = int((ev.ElapsedMs / ev.TotalMs) * 1000)
+	}
+
+	if !ev.SongChanged {
+		return currIdx
+	}
+
+	data, err := readMoodbarFile(ev.Path)
+	if err == nil {
+		*colors = data
+		return currIdx
+	}
+
+	log.Printf("Failed to read moodbar at `%s`: %v", ev.Path, err)
+
+	// Return to black:
+	if UseDefaultMoodbar {
+		*colors = DefaultMoodbar
 	} else {
-		currIdx = 0
+		sendColor(locker, timedColor{0, 0, 0, 0}, colorsCh)
+		*colors = []timedColor{}
+		return 0
 	}
 
 	return currIdx
@@ -396,9 +382,9 @@ func eatColor(locker *lightd.Locker, currEv *mpdEvent, currCol *timedColor, colo
 	}
 }
 
-// MoodbarAdjuster tried to synchronize the music to the moodbar.
-// It will send the correct current color to MoodbarRunner.
-func MoodbarAdjuster(cfg *Config, eventCh <-chan mpdEvent, colorsCh chan<- timedColor) {
+// moodbarAdjuster tried to synchronize the music to the moodbar.
+// It will send the correct current color to moodbarRunner.
+func moodbarAdjuster(srv *server, eventCh <-chan mpdEvent, colorsCh chan<- timedColor) {
 	var (
 		currIdx int
 		colors  []timedColor
@@ -408,8 +394,8 @@ func MoodbarAdjuster(cfg *Config, eventCh <-chan mpdEvent, colorsCh chan<- timed
 	initialSend := true
 
 	lightdConfig := &lightd.Config{
-		Host: cfg.LightdHost,
-		Port: cfg.LightdPort,
+		Host: srv.Config.LightdHost,
+		Port: srv.Config.LightdPort,
 	}
 
 	locker, err := lightd.NewLocker(lightdConfig)
@@ -431,7 +417,7 @@ func MoodbarAdjuster(cfg *Config, eventCh <-chan mpdEvent, colorsCh chan<- timed
 			}
 
 			// A new event happened, we need to adjust or even load a new moodbar file:
-			currIdx = adjust(locker, &ev, colorsCh, &colors)
+			currIdx = adjust(srv, locker, &ev, colorsCh, &colors)
 			currEv = &ev
 		default:
 			if currIdx >= len(colors) || currEv == nil {
@@ -465,10 +451,10 @@ func fetchMPDInfo(client *gompd.Client) (gompd.Attrs, gompd.Attrs, error) {
 	return song, status, nil
 }
 
-// StatusUpdater is triggerd on "player" events and fetches the current state infos
+// statusUpdater is triggerd on "player" events and fetches the current state infos
 // needed for the moodbar sync. It then proceeds to generate a mpdEvent that
-// MoodbarAdjuster will receive.
-func StatusUpdater(server *server, updateCh <-chan bool, eventCh chan<- mpdEvent) {
+// moodbarAdjuster will receive.
+func statusUpdater(server *server, updateCh <-chan bool, eventCh chan<- mpdEvent) {
 	lastSongID := ""
 
 	for range updateCh {
@@ -542,19 +528,19 @@ func Watcher(server *server) error {
 
 	defer util.Closer(watcher)
 
-	// Watcher -> StatusUpdater
+	// Watcher -> statusUpdater
 	updateCh := make(chan bool)
 
-	// StatusUpdater -> MoodbarAdjuster
+	// statusUpdater -> moodbarAdjuster
 	eventCh := make(chan mpdEvent)
 
-	// MoodbarAdjuster -> MoodbarRunner
+	// moodbarAdjuster -> moodbarRunner
 	colorsCh := make(chan timedColor)
 
 	// Start the respective go routines:
-	go MoodbarRunner(server, colorsCh)
-	go MoodbarAdjuster(server.Config, eventCh, colorsCh)
-	go StatusUpdater(server, updateCh, eventCh)
+	go moodbarRunner(server, colorsCh)
+	go moodbarAdjuster(server, eventCh, colorsCh)
+	go statusUpdater(server, updateCh, eventCh)
 
 	// Also sync extra every few seconds:
 	go func() {
@@ -581,15 +567,7 @@ func Watcher(server *server) error {
 	return nil
 }
 
-func turnOff(driverStdin io.Writer) {
-	// Wait a short amount to make sure other colors get flushed:
-	time.Sleep(250 * time.Millisecond)
-	if _, err := driverStdin.Write([]byte("0 0 0\n")); err != nil {
-		log.Printf("Failed to turn light off: %v", err)
-	}
-}
-
-func handleConn(server *server, driverStdin io.Writer, conn net.Conn) {
+func handleConn(server *server, conn net.Conn) {
 	defer util.Closer(conn)
 
 	scn := bufio.NewScanner(conn)
@@ -597,16 +575,26 @@ func handleConn(server *server, driverStdin io.Writer, conn net.Conn) {
 		switch cmd := scn.Text(); cmd {
 		case "off":
 			log.Printf("Disabling ambilight...")
-			server.Enable(false)
-			go turnOff(driverStdin)
+			server.stateCh <- false
+
+			server.mu.Lock()
+			server.enabled = false
+			server.mu.Unlock()
 		case "on":
 			log.Printf("Enabling ambilight...")
-			server.Enable(true)
+			server.stateCh <- true
+
+			server.mu.Lock()
+			server.enabled = true
+			server.mu.Unlock()
 		case "state":
 			resp := []byte("0\n")
-			if server.Enabled() {
+
+			server.mu.Lock()
+			if server.enabled {
 				resp = []byte("1\n")
 			}
+			server.mu.Unlock()
 
 			if _, err := conn.Write(resp); err != nil {
 				log.Printf("Failed to write back state response: %v", err)
@@ -657,7 +645,7 @@ func createNetworkListener(server *server) error {
 			}
 
 			log.Printf("Accepting connection from %s", conn.RemoteAddr())
-			go handleConn(server, stdin, conn)
+			go handleConn(server, conn)
 		}
 	}()
 
@@ -695,9 +683,9 @@ func Run(cfg *Config, ctx context.Context) error {
 		MPD:     MPD,
 		Context: subCtx,
 		Cancel:  cancel,
+		stateCh: make(chan bool),
+		enabled: true,
 	}
-
-	server.Enable(true)
 
 	if err := createNetworkListener(server); err != nil {
 		return err
