@@ -204,7 +204,7 @@ func rotateAction(mgr *MenuManager, MPD *mpd.Client) error {
 		}
 	case DirectionLeft:
 		log.Printf("Play prev")
-		if err := MPD.Next(); err != nil {
+		if err := MPD.Prev(); err != nil {
 			log.Printf("Failed to skip to prev: %v", err)
 		}
 	}
