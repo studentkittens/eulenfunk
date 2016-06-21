@@ -8,7 +8,6 @@ include-headers:
     - \usepackage[babel, german=quotes]{csquotes}
 fontsize: 11pt
 sections: yes
-rights:  Creative Commons Non-Commercial Share Alike 3.0
 toc: yes
 lof: yes
 lot: no
@@ -21,18 +20,14 @@ date: \today
 
 # Vorwort 
 
+TODO: thanks: rf-electronic, Herr Schäferling
+
 ## Disclaimer
 
 Das vorliegende Projekt, ist im Rahmen einer Studienarbeit im Fach
 Hardwaresysteme an der Hochschule Augsburg entstanden. Da die Autoren nicht aus
 dem Bereich der *Technischen Informatik* sind, wurden jegliche
 hardwarebezogenenen Arbeiten nach bestem Grundlagenwissen umgesetzt.
-
-Diese Studienarbeit soll einen Überblick über die verwendeten, beziehungsweise
-benötigten Komponenten für den Bau eines *Raspberry Pi*--Internetradios
-verschaffen. Desweiteren soll das Wissen für die Ansteuerung bestimmter
-Hardware--Komponenten mittels der *Raspberry Pi*--GPIO[^GPIO] Schnittstelle vermittelt
-werden.
 
 ## Namensgebung
 
@@ -44,8 +39,34 @@ welches je nach Konfiguration günstiger und mit mehr Funktionalität ausgestatt
 werden kann wie ein *Closed--Source*--Produkt --- möglicherweise ein Dorn im
 Auge aller kommerziellen Internet--Radio--Anbieter sein könnte.
 
-[^EULE]: Lebensweise der Eule: \url{https://de.wikipedia.org/wiki/Eulen\#Lebensweise}
+## Zielsetzung 
 
+Diese Studienarbeit soll einen Überblick über die verwendeten, beziehungsweise
+benötigten Komponenten für den Bau eines *Raspberry Pi*--Internetradios
+verschaffen. Desweiteren soll das Wissen für die Ansteuerung bestimmter
+Hardware--Komponenten mittels der *Raspberry Pi*--GPIO[^GPIO] Schnittstelle vermittelt
+werden.
+
+\begin{figure}[h!]
+  \centering
+\includegraphics[width=0.2\textwidth]{images/eulenfunksh.png}
+  \caption{Endprodukt}
+  \label{fertig}
+\end{figure}
+
+Abbildung \ref{fertig} zeigt den *Eulenfunk* Prototypen, welcher im Zeitraum von
+drei Wochen im Rahmen des Hardwaresysteme Kürprojekts entstanden ist. Auf
+Vimeo[^VIMEO] ist auch ein Video des aktuellen Prototyps zu sehen.
+
+
+## Verwendete Software
+
+Für die Entwicklung und Dokumentation wurden folgende *GNU/Linux* Tools
+verwendet *Pandoc/LaTeX* (Dokumentation), *Vim* (Softwareentwicklung), *Fritzing* (Schaltpläne).
+
+
+[^VIMEO]: Eulenfunk Prototyp: \url{https://vimeo.com/170011672}
+[^EULE]: Lebensweise der Eule: \url{https://de.wikipedia.org/wiki/Eulen\#Lebensweise}
 [^GPIO]: General-purpose input/output Schnittstelle: \url{https://en.wikipedia.org/wiki/General-purpose_input/output}
 
 
@@ -162,14 +183,25 @@ noch erworben werden:
 * Drehimpulsregler (muss erworben werden)
 * Farbe (Lack), Kunststoffabdeckung und Drehknöpfe für das Gehäuse (muss erworben werden)
 
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.7\textwidth]{images/uebersicht.png}
+  \caption{Grobe Übersicht der verwendeten Komponenten im Zusammenspiel}
+  \label{uebersicht}
+\end{figure}
+
+Abbildung \ref{uebersicht} zeigt eine konzeptuelle Übersichts des Zusammenspiels
+der einzelnen Komponenten.
+
 [^AEG]: AEG Küchenradio 4104: \url{https://www.amazon.de/AEG-MR-4104-Desgin-Uhrenradio-buche/dp/B000HD19W8}
+
 
 
 
 ## Raspberry Pi
 
 Der vorhandene Raspberry ist aus dem Jahr 2012. Die genaue Hardware--Revision kann
-auf Linux unter ``proc`` ausgelesen werden, siehe auch [@gay2014raspberry]:
+auf Linux unter ``proc`` ausgelesen werden, siehe auch [@gay2014raspberry], Seite 46:
 
 ```bash
 
@@ -189,8 +221,8 @@ auf Linux unter ``proc`` ausgelesen werden, siehe auch [@gay2014raspberry]:
     Serial          : 00000000b8b9a4c2
 ```
 
-Laut Tabelle unter [@gay2014raspberry] handelt es sich hierbei um das Modell B
-Revision 1+ mit 256MB RAM.
+Laut Tabelle unter [@gay2014raspberry], Seite 45 handelt es sich hierbei um das
+Modell B Revision 1+ mit 256MB RAM.
 
 Je nach Raspberry Revision sind die Pins teilweise unterschiedlich belegt. Seit
 Modell B, Revision 2.0 ist noch zusätzlich der P5 Header dazu gekommen.
@@ -216,18 +248,26 @@ Abbildung \ref{gpio}[^SRC] zeigt die GPIO--Header des *Raspberry Pi* Modell B Re
 Die GPIO--Pins des *Raspberry Pi* haben eine Logikspannung von 3.3V und sind pro
 GPIO--Pin mit max. 16mA belastbar. Der der gesamte GPIO--Header sollte mit nicht
 mehr als 50mA belastet werden, da es darüber hinaus zu Hardwareschäden kommen
-kann (siehe auch [@gay2014raspberry]).
+kann (vgl. [@gay2014raspberry], Seite 20 ff.).
+
+Die *Logic Levels* der GPIO--Pins sind beim
+*Raspberry Pi* wie folgt definiert [vgl. @gay2014raspberry], Seite 23 ff.:
+
+* <= 0,8V, input low
+* >= 1,3V, input high
+
 
 Die Ansteuerung Ansteuerung von LED über GPIO erfolgt binär. Das heisst, dass
 die LED entweder aus (GPIO low) oder an sein kann (GPIO high).
 
-TODO: ELCH?
-In der ,,analogen'' Welt ist es jedoch möglich eine LED über das Senken der
-Spannung zu dimmen. Um ein Dimmen in der digitalen Welt zu erreichen wird ein
-Modulationsverfahren angwandt, welches Pulsweitenmodulation heisst. Hierbei
-wird...elch? Weitere Informationen finden sich auch unter [@richardson2014make]
-[@gay2014raspberry] und [@gay2014mastering]. Software PWM in [@gay2014experimenting].
-Hier beispielsweise 6% CPU--Last pro GPIO--Pin. 
+TODO: ELCH? In der ,,analogen'' Welt ist es jedoch möglich eine LED über das
+Senken der Spannung zu dimmen. Um ein Dimmen in der digitalen Welt zu erreichen
+wird ein Modulationsverfahren angwandt, welches Pulsweitenmodulation heisst.
+Hierbei wird...TODO: ELCH? Weitere Informationen finden sich auch unter
+[@richardson2014make], Seite 121 ff. und [@gay2014mastering], Seite 421 ff..
+Software PWM unter [@gay2014experimenting], Seite 183 ff. zeigt beispielsweise
+eine 6% CPU--Last pro GPIO--Pin bei einer PWM--Softwareimplementierung. TODO:
+ELCH?
 
 ## LCD--Anzeige
 
@@ -260,7 +300,7 @@ lediglich nur zwei.
 Da für den seriellen Betrieb beispielsweise über den I2C--Bus zusätzliche
 Hardware benötigt wird, wird die parallele Ansteuerung über die GPIO--Pins
 bevorzugt. Für weitere Informationen zum seriellen Betrieb über I2C siehe auch
-[@horan2013practical].
+[@horan2013practical], Seite 61, ff.
 
 \begin{figure}[h!]
   \centering
@@ -309,7 +349,7 @@ eine) und einen Anschluss für den Schalter. Beim drehen eines Drehimpulsgebers
 wird ein Rechtecksignal generiert. Je nach Muster der beiden Datensignale A oder
 B, kann entschieden werden ob es sich um eine Rechts-- oder Linksdrehung
 handelt. Weitere Hintergrundinformationen zu Drehimpulsgeber siehe auch
-[@2014projekte].
+[@2014projekte], Seite 361 ff.
 
 Abbildung \ref{alps} zeigt den Anschluss des Drehimpulsgebers am *Raspberry Pi*. 
 
@@ -408,7 +448,8 @@ max. Strom von 16 mA beziehen
 In *Eulenfunk* sollen mehrere intensiv leuchtende LEDs verbaut werden. Da die
 GPIO--Pins in ihrer Leistung sehr begrenzt ist, würde es sich anbeiten eine
 externe Stromquelle zu verwenden. Um die Speisung über eine externe Stromquelle
-zu ermöglichen kann eine Transistorschaltung verwendet werden (vgl. [@traled]). 
+zu ermöglichen kann eine Transistorschaltung verwendet werden (vgl. [@exploring],
+Seite 217 ff.). 
 
 Für die Transistorschaltung wurden vom Herrn Schäferling NPN (BC547C) und PNP
 (BC557C) bereitgestellt. Für den ersten Testaufbau wurde der PNP--Transistor und
@@ -480,7 +521,7 @@ mit nur der USB--Verbindung zum Hub bootete.
 
 Bei der Speisung über die USB--Schnittstelle wird die interne Sicherungschaltung
 des *Pi* umgangen, deswegen wird in der Regel von einem Betrieb eines USB--Hub
-mit *backfeed* abgeraten (vgl . [@suehle2014hacks]). Für den Prototypen wird
+mit *backfeed* abgeraten (vgl . [@suehle2014hacks], Seite 26 ff.). Für den Prototypen wird
 jedoch der USB--Hub und das dazugehörige Netzteil für den Betrieb von
 *Eulenfunk* verwendet. Das Netzteil ist für 5V bei max. 2A ausgelegt.
 
@@ -493,7 +534,7 @@ Insgesamt wurden drei Netzteile --- jeweils 5V, 2A ---ausprobiert. Von diesen
 war lediglich ein einziges als 'akzeptabel' einzustufen. Die restlichen zwei
 führen bei Lastspitzen zu Problemen (Abstürze, fehlerhaftes Rendering auf
 Display, GPIO--Flips, et cetera). Das *backfeeding* des USB--Hubs scheint die
-genannten Probleme teilweise zu verstärken.
+genannten Probleme teilweise zu verstärken (vgl . [@suehle2014hacks], Seite 27).
 
 TODO: rf-electronic erwähnen, refs durchgehen und schaubild (gesamtübersicht
 komponenten, typos)
@@ -536,17 +577,19 @@ Kippschalter zum Umschalten zwischen internen und externen Lautsprechern.
 ## Betriebssystem
 
 Mittlerweile gibt es für den *Raspberry Pi* viele offiziell zugeschnittene
-Betriebssysteme[^OS] (vgl. [@dembowski2013raspberry]). Bei den den Linux
+Betriebssysteme (vgl. [@pietraszak2014buch], Seite 29 ff., [@warner2013hacking],
+Seite 47 ff.). Bei den den Linux
 Distributionen ist *Raspbian* eine der bekanntesten Distribution -- welche auf
 *Debian* basiert. *Raspbian* bringt ein komplettes Linux--basiertes System mit
 grafischer Benutzeroberfläche mit sich. 
 
-Neben den unter[^OS] genannten Distributionen gibt es mittlerweile auch Windows
-10 IoT (Internet of Things) für den *Rapberry Pi*. Dieses speziell für den
-Embedded Bereich ausgerichtete Windwos benötigt jedoch eine ARMv7--CPU als
-Mindestanforderung, was unseren ,,alten Raspberry'' ausschließen würde.
-Desweiteren wäre für uns eine propritäre Lösung ein K.O.--Kriterium, da
-diese alle Vorteile von Freier Software zu nichte machen würde.
+Neben den unter [@pietraszak2014buch], Seite 29 ff. genannten Distributionen
+gibt es mittlerweile auch Windows 10 IoT (Internet of Things) für den *Rapberry
+Pi*. Dieses speziell für den Embedded Bereich ausgerichtete Windwos benötigt
+jedoch eine ARMv7--CPU als Mindestanforderung, was unseren ,,alten Raspberry''
+ausschließen würde. Desweiteren wäre für uns eine propritäre Lösung ein
+K.O.--Kriterium, da diese alle Vorteile von Freier Software zu nichte machen
+würde.
 
 [^WINIOT]: ARMv7 für Win 10 IoT:  \url{http://raspberrypi.stackexchange.com/questions/39715/can-you-put-windows-10-iot-core-on-raspberry-pi-zero}
 
@@ -554,11 +597,11 @@ diese alle Vorteile von Freier Software zu nichte machen würde.
 
 *Arch Linux ARM*[^ARCH] ist eine minimalistische und sehr performante
 Linux--Distribution welche im Gegensatz zu *Raspbian* ohne Desktopumgebung
-geliefert wird (vgl. [@schmidt2014raspberry]) Desweiteren ist *Arch Linux* ein
-bekannter Vertreter von Rolling--Release--Distributionen. Ein weiterer Vorteil
-für unseren Einsatzzweck hier ist bei *Arch Linux* das *AUR* (Arch User
-Repository)[^AUR], dieses erlaubt es eigene Software auf eine schnelle und
-unkomplizierte Weise der Allgemeinheit zur Verfügung zu stellen.
+geliefert wird (vgl. [@schmidt2014raspberry], Seite 13 ff.) Desweiteren ist
+*Arch Linux* ein bekannter Vertreter von Rolling--Release--Distributionen. Ein
+weiterer Vorteil für unseren Einsatzzweck hier ist bei *Arch Linux* das *AUR*
+(Arch User Repository)[^AUR], dieses erlaubt es eigene Software auf eine
+schnelle und unkomplizierte Weise der Allgemeinheit zur Verfügung zu stellen.
 
 ### Einrichtung des Grundsystems
 
@@ -597,7 +640,6 @@ mit dem Profil `wlan0-Phobos`.
 
 [^AUR]: Arch User Repository: \url{https://aur.archlinux.org/}
 [^ARCH]: Arch Linux ARM: \url{https://archlinuxarm.org/}
-[^OS]: Betriebssystem--Images Raspberry Pi: \url{https://www.raspberrypi.org/downloads/}
 [^INSTALL]: Arch Linux Installation für Raspberry Pi: https://archlinuxarm.org/platforms/armv6/raspberry-pi#installation
 
 
@@ -605,8 +647,9 @@ mit dem Profil `wlan0-Phobos`.
 
 Für den Betrieb des Internetradios soll der Music--Player--Daemon verwendet
 werden, da *Eulenfunk* auf einem eigens entwickeltem MPD--Client basieren soll
-(mehr zur Eulenkfunk Software siehe Kapitel Software).
-Andere Projekte greifen oft auf Abspielsoftware wie den MOC oder Mplayer zu. 
+(mehr zur Eulenkfunk Software siehe Kapitel Software). Andere Projekte greifen
+oft auf Abspielsoftware wie den MOC [vgl. @pietraszak2014buch], Seite 189 ff.
+oder Mplayer [@exploring] Seite 638 ff. zu. 
 
 
 ```bash
@@ -663,12 +706,12 @@ live gestreamter Musik gut. Bei live gestreamter Musik könnte für die
 Visualisierung eine Fast--Fourier--Transformation in Echtzeit durchgeführt
 werden. Da jedoch die Ressourcen des *Raspberry Pi* sehr begrenzt sollte hier
 auf die Verwendung einer GPU--beschleunigte--FFT[^FFT] zurückgegriffen werden
-(vgl. [@Sabarinath2015]).
+(vgl. [@Sabarinath2015], Seite 657 ff.).
 
 Ein alternativer Ansatz wäre auch die Realisierung einer Musik--Visualisierung
 mittels Hardwarekomponenten. Ein möglicher Ansatz aus hardwarebasierten
 Hochpass-- und Tiefpassfiltern in Form einer Disco--Beleuchtung wird unter
-[@2014projekte] beschrieben.
+[@2014projekte], Seite 261 ff. beschrieben.
 
 ### Echtzeit--Uhr
 
@@ -677,7 +720,7 @@ sich bei *Eulenfunk* um eine Internet--Radio handelt wurde auf eine Echtzeituhr
 (real time clock, RTC) verzichtet, da sich die Uhr *Eulenfunk* aufgrund der
 permanenten Internetverbindung mittels NTP[^NTP] über das Internet
 synchronisieren kann. Eine Erweiterung um eine Echtzeituhr wird in
-[@horan2013practical] und [@gay2014experimenting] ausführlich beschreiben.
+[@horan2013practical], Seite 145 ff. und [@gay2014experimenting], Seite 77 ff. ausführlich beschreiben.
 
 
 ### Fernbedienung
@@ -685,7 +728,16 @@ synchronisieren kann. Eine Erweiterung um eine Echtzeituhr wird in
 Eine weitere Erweiterung wäre die integration einer Fernbedienung. Diese ließe
 sich relativ einfach mittels eine Infrarot--Sensors und beispielsweise der
 *lirc*--Library umsetzen. Weitere Informationen siehe auch
-[@kurniawanraspberry].
+[@warner2013hacking], Seite 190 ff.
+
+
+### Batteriebetrieb
+
+Da die Strom-- beziehungsweise Spannungsversorgung beim *Rapberry Pi*
+problematisch ist, wäre auch ein Batterie beziehungsweise Akkubetrieb möglich.
+Eine einfache Schaltung für einen Batteriebetrieb würde sich beispielsweise mit
+einem *LM7805*--Spannungsregler oder einem Abwärtswandler realisieren lassen
+([vgl. @gay2014mastering], Seite 24 ff.). 
 
 [^NTP]: Network Time Protocol:
 \url{https://de.wikipedia.org/wiki/Network_Time_Protocol}
