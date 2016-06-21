@@ -276,7 +276,7 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 	mainMenu := []Entry{
 		&Separator{"MODES"},
 		&ClickEntry{
-			Text:       "Music info",
+			Text:       "Current song",
 			ActionFunc: switcher(mgr, "mpd"),
 		},
 		&ClickEntry{
@@ -335,6 +335,7 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 
 func createPowerMenu(mgr *MenuManager, lw *display.LineWriter) error {
 	powerMenu := []Entry{
+		&Separator{"POWER MENU"},
 		&ClickEntry{
 			Text: "Poweroff",
 			ActionFunc: func() error {
