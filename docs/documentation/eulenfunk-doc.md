@@ -22,12 +22,12 @@ date: \today
 
 TODO: thanks: rf-electronic, Herr Schäferling
 
-## Disclaimer
+## Haftungsausschluss 
 
-Das vorliegende Projekt, ist im Rahmen einer Studienarbeit im Fach
+Das vorliegende Projekt ist im Rahmen einer Studienarbeit im Fach
 Hardwaresysteme an der Hochschule Augsburg entstanden. Da die Autoren nicht aus
 dem Bereich der *Technischen Informatik* sind, wurden jegliche
-hardwarebezogenenen Arbeiten nach bestem Grundlagenwissen umgesetzt.
+hardwareseitigen Arbeiten nach bestem Grundlagenwissen umgesetzt.
 
 ## Namensgebung
 
@@ -35,11 +35,17 @@ Der Name des Projektes ist \frqq\texttt{Eulenfunk}\flqq. Die Bezeichnung der
 Eule wurde analog zum Tierreich gewählt, da die *Eule* hier als Vogel aufgrund
 ihrer Erkennungsmerkmale von anderen Vögeln in der Regel als *Fressfeind*[^EULE]
 klassifiziert wird. Analog dazu ist ein *Do--It--Yourself*--Internetradio ---
-welches je nach Konfiguration günstiger und mit mehr Funktionalität ausgestattet
-werden kann wie ein *Closed--Source*--Produkt --- möglicherweise ein Dorn im
-Auge aller kommerziellen Internet--Radio--Anbieter sein könnte.
+welches je nach Konfiguration, im Vergleich zu einem *Closed--Source*--Produkt,
+günstiger und mit mehr Funktionalität ausgestattet werden kann ---
+möglicherweise ein Dorn im Auge kommerzieller Internet--Radio--Anbieter.
 
 ## Zielsetzung 
+
+Das grundlegende Projektziel ist aus vorhandenen alten Hardware--Komponenten ein
+möglichst optisch und klanglich ansprechendes Internetradio zu entwickeln. Dabei
+liegt der Schwerpunkt vor allem auch auf einem guten Kosten/Nutzen--Verhältnis.
+Als Basis für das Projekt dient ein defektes Analog--Radio und ein *Raspberry
+Pi* aus dem Jahr 2012.
 
 Diese Studienarbeit soll einen Überblick über die verwendeten, beziehungsweise
 benötigten Komponenten für den Bau eines *Raspberry Pi*--Internetradios
@@ -49,23 +55,29 @@ werden.
 
 \begin{figure}[h!]
   \centering
-\includegraphics[width=0.2\textwidth]{images/eulenfunksh.png}
-  \caption{Endprodukt}
+\includegraphics[width=0.5\textwidth]{images/front_3.png}
+  \caption{Aktueller Prototyp}
   \label{fertig}
 \end{figure}
 
+\newpage 
+
 Abbildung \ref{fertig} zeigt den *Eulenfunk* Prototypen, welcher im Zeitraum von
 drei Wochen im Rahmen des Hardwaresysteme Kür--Projekts entstanden ist. Auf
-Vimeo[^VIMEO] ist auch ein Video des aktuellen Prototyps zu sehen.
+Vimeo[^VIMEO] ist ein Video des aktuellen Prototypen zu sehen.
 
 
 ## Verwendete Software
 
 Für die Entwicklung und Dokumentation wurden folgende *GNU/Linux* Tools
-verwendet *Pandoc/LaTeX* (Dokumentation), *Vim* (Softwareentwicklung), *Fritzing* (Schaltpläne).
+verwendet:
+
+* *Pandoc/LaTeX* (Dokumentation) 
+* *Vim* (Softwareentwicklung) 
+* *Fritzing* (Schaltpläne).
 
 
-[^VIMEO]: Eulenfunk Prototyp: \url{https://vimeo.com/170011672}
+[^VIMEO]: Eulenfunk Prototyp: \url{https://vimeo.com/171646691}
 [^EULE]: Lebensweise der Eule: \url{https://de.wikipedia.org/wiki/Eulen\#Lebensweise}
 [^GPIO]: General-purpose input/output Schnittstelle: \url{https://en.wikipedia.org/wiki/General-purpose_input/output}
 
@@ -76,41 +88,43 @@ verwendet *Pandoc/LaTeX* (Dokumentation), *Vim* (Softwareentwicklung), *Fritzing
 
 Die Autoren dieses Projekts leben in einer Wohngemeinschaft zusammen. Die Küche
 ist der Ort an welchem gemeinsam gekocht und gespeist wird. Für eine angenehme
-Atmosphäre und als Nachrichten--Quelle sorgte in der Küche sorgte früher ein
+Atmosphäre und als Nachrichten--Quelle sorgte in der Küche früher ein
 Analog--Radio der Firma *AEG*, welches aufgrund der schlechten Empfangsqualität
 durch eine Kombination aus »alter Stereoanlage«, »altem Raspberry Pi« und
 einem »alten Thinkpad x61t« ersetzt wurde. In dieser Kombination fungierte
 die Stereoanlage als Soundausgabe--Komponente, auf dem *Raspberry Pi* lief der
 Linux--basierte Player Volumio[^VOL], welcher mit dem Touchscreen des *Thinkpad
 x61t* über eine Weboberfläche gesteuert wurde. Diese Kombination hat zwar
-funktioniert, jedoch war sie alles andere als Benutzerfreundlich, da zuerst die
-Stereoanlage und Laptop  eingeschaltet werden mussten und eine WLAN--Verbindung
-zum *Raspberry Pi*--Player hergestellt werden musste. 
+funktioniert, jedoch war sie alles andere als benutzerfreundlich, da zuerst die
+Stereoanlage und der Laptop  eingeschaltet werden mussten und eine WLAN--Verbindung
+zum *Raspberry Pi*--Player hergestellt werden musste. Diese Situation weckte den
+Wunsch nach einer komfortableren Lösung, beispielsweise ein Internetradio auf
+Basis des *Raspberry Pi*.
 
-[^VOL]: Volumio: https://volumio.org/
+[^VOL]: Volumio: \url{https://volumio.org/}
 
 
 ## Kommerzielle Produkte
 
-Kommerzielle Anbieter von Internet--Radios gibt es wie Sand am Meer. Die
-Preisspanne liegt hier zwischen \EUR{30} und mehreren hundert Euro. Die
-Funktionsumfang sowie Wiedergabequalität ist hier von Hersteller zu Hersteller
-und zwischen den verschiedenen Preisklassen auch sehr unterschiedlich. Einen
+Kommerzielle Anbieter von Internetradios gibt es wie Sand am Meer. Die
+Preisspanne liegt hier zwischen \EUR{30} und mehreren hundert Euro. Der
+Funktionsumfang sowie die Wiedergabequalität ist hier von Hersteller zu Hersteller
+und zwischen den verschiedenen Preisklassen sehr unterschiedlich. Einen
 aktuellen Überblick aus dem Jahr 2016 über getestete Modelle gibt es
 beispielsweise online unter *bestendrei.de*[^TEST].
 
 Das *Problem* bei den kommerziellen Anbietern ist, dass man hier jeweils an die
 vorgegebenen Funktionalitäten des Herstellers gebunden ist. Bei einem
-Do--it--yourself--Projekt auf Basis Freier Software beziehungsweise eines freien
+Do--It--Yourself--Projekt auf Basis Freier Software beziehungsweise eines freien
 Hardwaredesigns, hat man die Möglichkeit alle gewünschten Funktionalitäten ---
 auch Features die von keinem kommerziellen Anbieter unterstützt werden --- zu
 integrieren. Beispiele für Funktionalitäten, welche bei kommerziellen Produkten
-nur schwer bzw. vereinzelt zu finden sind:
+nur schwer beziehungsweise vereinzelt zu finden sind:
 
 * Unterstützung bestimmter WLAN--Authentifizierungsstandards
 * Einhängen von benutzerdefinierten Dateifreigaben wie *Samba*, *NFS*, *SSHFS*
 * Unterstützung verschiedener *lossy* und *lossless* Formate *OGG VORBIS*, *FLAC*, u.a.
-* Integration verschiedener Dienste wie beispielsweise *Spotify* möglich
+* Integration verschiedener Dienste wie beispielsweise *Spotify* 
 * Benutzerdefinierte Anzeigemöglichkeiten (Uhrzeit, Wetter, et. cetera.)
 
 
@@ -118,12 +132,6 @@ nur schwer bzw. vereinzelt zu finden sind:
 [^TEST]:Test von Internetradios: \url{http://www.bestendrei.de/elektronik/internetradio/}
 
 
-## Projektziel
-
-Das grundlegende Projektziel ist aus vorhandenen alten Hardware--Komponenten
-ein möglichst optisch und klanglich ansprechendes Internetradio zu entwickeln.
-Als Basis für das Projekt dient ein defektes Analog--Radio und ein Raspberry Pi
-aus dem Jahr 2012.
 
 # Projektspezifikation
 
@@ -133,8 +141,8 @@ Das Radio soll dem Benutzer folgende Hardwarekonfigurationsmöglichkeiten bieten
 
 * Anschluss passive Lautsprecher/Kopfhörer möglich 
 * Lautstärkeregelung über Hardware möglich
-* Verwendung des Internen Lautsprechers des alten Radios
-* Statusinformationen über aktuelles Lied beispielsweise über LCD
+* Verwendung des internen Lautsprechers des alten Radios
+* Statusinformationen zum aktuellen Lied beispielsweise über ein LCD
 * LEDs als Statusanzeige und/oder als Visualisierungsvariante von Musik[^MOODBAR]
 * USB--Anschlussmöglichkeit für externe Datenträger
 
@@ -145,24 +153,22 @@ Das Radio soll dem Benutzer folgende Hardwarekonfigurationsmöglichkeiten bieten
 Die Software soll generisch gehalten werden um eine möglichst einfache
 Erweiterbarkeit zu  gewährleisten. 
 
-Hier was zu Menü--Steuerung schrieben und Umfang?
+TODO Eule: Hier was zu Menü--Steuerung schrieben und Umfang?
 
 ## Optik-- und Usability--Anforderungen
 
 Die Eingabe--Peripherie soll möglichst einfach gehalten werden, um eine *schöne*
-Produkt--Optik zu gewährleisten. Folgende 
+Produkt--Optik zu gewährleisten, dabei sollen folgende Anforderungen erfüllt
+werden:
 
-* Minimale Bedienelemente
-* Keine *hässlichen* Knöpfe
+* Minimale sowie ansprechende Bedienelemente
+* Funktionales, zweckgebundenes *Design*
 * *Retro--Look*-Aussehen wünschenswert
 
-Design soll im Grunde *minimalistisch*  gehalten werden, das heißt, es sollen
-nur so wenige »Bedienelemente« wie nötig angebracht werden.
+Das *Design* soll im Grunde *minimalistisch*  gehalten werden, das heißt, es
+sollen aufgrund der Übersichtlichkeit nur so wenige »Bedienelemente« wie nötig
+angebracht werden.
 
-## Kosten/Nutzen--Verhältnis
-
-Für die Erstellung des Projekts sollte bereits vorhandene Komponenten und
-Bauelemente wiederverwendet werden um den Kostenaufwand minimal zu halten.
 
 # Hardware
 
@@ -171,17 +177,26 @@ Bauelemente wiederverwendet werden um den Kostenaufwand minimal zu halten.
 Folgende Hardwarekomponenten oder Bauteile sind bereits vorhanden oder müssen
 noch erworben werden:
 
-* Altes Gehäuse AEG 4104 Küchenradio[^AEG] (vorhanden)
-* *Raspberry Pi* aus dem Jahr 2012 (vorhanden)
-* LCD--Anzeige (Altbestände u. Arduino--Kit vorhanden)
-* Kleinbauteile wie LEDs, Widerstände (vorhanden, Arduino--Kit)
-* USB--Hub für Anschluss von beispielsweise ext. Festplatte (vorhanden)
-* USB--Soundkarte (vorhanden)
-* Wi--Fi--Adapter (vorhanden)
-* Netzteil (vorhanden, div. 5V)
-* Audioverstärker (muss erworben werden)
-* Drehimpulsregler (muss erworben werden)
-* Farbe (Lack), Kunststoffabdeckung und Drehknöpfe für das Gehäuse (muss erworben werden)
+**Vorhanden:**
+
+* Altes Gehäuse AEG 4104 Küchenradio[^AEG] 
+* *Raspberry Pi* aus dem Jahr 2012 
+* LCD--Anzeige (Altbestände u. Arduino--Kit)
+* Kleinbauteile wie LEDs, Widerstände
+* USB--Hub für Anschluss von beispielsweise ext. Festplatte 
+* USB--Soundkarte 
+* Wi--Fi--Adapter
+* Netzteil (diverse 5V, 2mA)
+
+**Muss noch erworben werden:**
+
+* Audioverstärker 
+* Drehimpulsregler 
+* Kunststoffabdeckung für Front
+* Farbe (Lack)
+* Drehknöpfe für das Gehäuse 
+
+TODO Katze: Beschreibung an Diagrammpfeile
 
 \begin{figure}[h!]
   \centering
@@ -200,7 +215,7 @@ der einzelnen Komponenten.
 
 ## Raspberry Pi
 
-Der vorhandene Raspberry ist aus dem Jahr 2012. Die genaue Hardware--Revision kann
+Der vorhandene *Raspberry Pi* ist aus dem Jahr 2012. Die genaue Hardware--Revision kann
 auf Linux unter ``proc`` ausgelesen werden, siehe auch [@gay2014raspberry], Seite 46:
 
 ```bash
@@ -381,7 +396,13 @@ Da eine Soundkarte in der Regel zu wenig Leistung hat um einem Lautsprecher
 »vernünftig« anzusteuern wird ein Audioverstärker benötigt. Da neben dem
 Anschluss von externen Lautsprechern auch eine Lautstärkeregelung über ein Poti
 erfolgen soll, ist die Entscheidung einfachheitshalber auf ein
-Audioverstärker--Modul auf Basis vom PAM8403[^POW] Stereo-Verstärker mit Potentiometer gefallen.
+Audioverstärker--Modul auf Basis vom PAM8403[^POW] Stereo-Verstärker mit
+Potentiometer gefallen. Eine Do--It--Yourself--Alternative wäre ein
+Transistor--basierter Audio--Verstärker, hier gibt es online diverse
+Bauanleitungen[^amp2].
+
+[^amp2]: Transistor--Verstärker:
+\url{http://www.newsdownload.co.uk/pages/RPiTransistorAudioAmp.html}
 
 Das Audioverstärker--Module hat folgende Anschlusspins:
 
@@ -397,7 +418,7 @@ Aus diesem Grund kommt ein ein 4--poliger
 internen Lautsprecher (Mono--Betrieb) und den externen Stereo
 Lautsprecher--Anschlüssen sauber per Hardware hin und her geschaltet werden.
 
-Damit beim Mono--Betrieb nicht nur ein Kanal verwendet wird, ermöglicht
+Damit im Mono--Betrieb nicht nur ein Kanal verwendet wird, ermöglicht
 *Eulenfunk* das umschalten zwischen Mono-- und Stereo--Betrieb in Software.
 
 [^MONO]: PAM8403 Mono--Betrieb: http://electronics.stackexchange.com/questions/95743/can-you-bridge-or-parallel-the-outputs-of-the-pam8403-amplifier
