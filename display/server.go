@@ -11,68 +11,11 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"unicode/utf8"
 
 	"github.com/studentkittens/eulenfunk/util"
 
 	"golang.org/x/net/context"
 )
-
-// NOTE: Custom chars are repeated in 8-15;
-//       use 8 instead of 0 (=> nul-byte) therefore.
-const (
-	GlyphHBar   = 8
-	GlyphPlay   = 1
-	GlyphPause  = 2
-	GlyphHeart  = 3
-	GlyphCross  = 4
-	GlyphCheck  = 5
-	GlyphStop   = 6
-	GlyphCactus = 7
-)
-
-var unicodeToLCDCustom = map[rune]rune{
-	// Real custom characters:
-	'━': GlyphHBar,
-	'▶': GlyphPlay,
-	'⏸': GlyphPause,
-	'❤': GlyphHeart,
-	'×': GlyphCross,
-	'✓': GlyphCheck,
-	'⏹': GlyphStop,
-	// Existing characters on the LCD:
-	'ψ': GlyphCactus,
-	'ä': 132,
-	'Ä': 142,
-	'ü': 129,
-	'Ü': 152,
-	'ö': 148,
-	'Ö': 153,
-	'ß': 224,
-	'π': 237,
-	'৹': 178,
-}
-
-func encode(s string) []rune {
-	// Iterate by rune:
-	encoded := []rune{}
-
-	for _, rn := range s {
-		b, ok := unicodeToLCDCustom[rn]
-		if !ok {
-			if rn > 255 {
-				// Multibyte chars would be messed up anyways:
-				b = '?'
-			} else {
-				b = rn
-			}
-		}
-
-		encoded = append(encoded, b)
-	}
-
-	return encoded
-}
 
 // Config gives the user to adjust some settings of displayd.
 type Config struct {

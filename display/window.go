@@ -1,4 +1,4 @@
-package window
+package display
 
 import (
 	"fmt"
