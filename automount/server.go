@@ -189,11 +189,6 @@ func (srv *server) mount(device, label string) error {
 }
 
 func (srv *server) unmount(device, label string) error {
-	log.Printf("Unmounting`%s`\n", device)
-	if err := runBinary("umount", "-l", device); err != nil {
-		return err
-	}
-
 	addr := fmt.Sprintf("%s:%d", srv.Config.MPDHost, srv.Config.MPDPort)
 	client, err := mpd.Dial("tcp", addr)
 	if err != nil {
@@ -203,6 +198,11 @@ func (srv *server) unmount(device, label string) error {
 	defer util.Closer(client)
 
 	if err := client.PlaylistRemove(label); err != nil {
+		return err
+	}
+
+	log.Printf("Unmounting`%s`\n", device)
+	if err := runBinary("umount", "-l", device); err != nil {
 		return err
 	}
 

@@ -690,10 +690,6 @@ func Run(cfg *Config, ctx context.Context) error {
 		enabled: true,
 	}
 
-	if err := createNetworkListener(server); err != nil {
-		return err
-	}
-
 	// Make sure the mpd connection survives long timeouts:
 	go keepAlivePinger(MPD, ctx)
 
@@ -707,6 +703,9 @@ func Run(cfg *Config, ctx context.Context) error {
 	}
 
 	log.Printf("Starting up...")
+	if err := createNetworkListener(server); err != nil {
+		return err
+	}
 
 	// Monitor MPD events and sync moodbar appropriately.
 	return Watcher(server)
