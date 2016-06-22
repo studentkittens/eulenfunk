@@ -33,14 +33,14 @@
 // displayd is controlled by a simple line based text protocol and supports
 // currently the following commands:
 //
-// switch <win>               -- Switch to <win>, creating it if needed.
-// line <win> <pos> <text>    -- Write <text> in, possibly new, line <pos> of <win>.
-// move <win> <off>           -- Move <win> down by <off> (may be negative)
-// truncate <win> <max>       -- Truncates <win> to <max> lines.
-// render                     -- Outputs the current active window to the socket.
-// close                      -- Terminates the connection.
-// quit                       -- Terminates displayd.
-// scroll <win> <pos> <delay> -- Make line <pos> of <win> scrolled with speed <delay>
-//                               (default: 0 -> disabled)
+//    switch <win>               -- Switch to <win>, creating it if needed.
+//    line <win> <pos> <text>    -- Write <text> in, possibly new, line <pos> of <win>.
+//    move <win> <off>           -- Move <win> down by <off> (may be negative)
+//    truncate <win> <max>       -- Truncates <win> to <max> lines.
+//    render                     -- Outputs the current active window to the socket.
+//    close                      -- Terminates the connection.
+//    quit                       -- Terminates displayd.
+//    scroll <win> <pos> <delay> -- Make line <pos> of <win> scrolled with speed <delay>
+//                                  (default: 0 -> disabled)
 //
 package display

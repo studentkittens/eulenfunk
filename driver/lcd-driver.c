@@ -211,16 +211,35 @@ int usage(const char *name) {
     return EXIT_FAILURE;
 }
 
-int print_charset(int handle) {
-    int c = 0;
+int print_charset(int handle, int argc, char **argv) {
+    int lo = 0, hi = 256;
+    if(argc > 2) {
+        lo = strtol(argv[2], NULL, 10);
+    }
+
+    if(argc > 3) {
+        hi = strtol(argv[3], NULL, 10);
+    }
+
+    if(hi < 0) {
+        hi = 256;
+    }
+
+    int c = lo;
 
     for(;;) {
-        fprintf(stderr, "Printing bytes %d-%d\n", c, c + LCD_WIDTH * LCD_HEIGHT);
+        int max = c + LCD_WIDTH * LCD_HEIGHT;
+        if(max > hi) {
+            max = hi;
+        }
+
+        fprintf(stderr, "Printing bytes %d-%d\n", c, max);
+
         for(int y = 0; y < LCD_HEIGHT; y++) {
             for(int x = 0; x < LCD_WIDTH; x++) {
                 lcdPosition(handle, x, y);
                 lcdPutchar(handle, c++);
-                if(c == 256) {
+                if(c == hi) {
                     goto done;
                 }
             }
@@ -261,7 +280,7 @@ int main(int argc, char **argv) {
 
     if(argc >= 2) {
         if(!strcmp("print-charset", argv[1])) {
-            return print_charset(handle);
+            return print_charset(handle, argc, argv);
         } else {
             return usage(argv[0]);
         }
