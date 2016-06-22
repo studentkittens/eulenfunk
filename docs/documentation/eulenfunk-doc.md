@@ -125,7 +125,7 @@ nur schwer beziehungsweise vereinzelt zu finden sind:
 * Einhängen von benutzerdefinierten Dateifreigaben wie *Samba*, *NFS*, *SSHFS*
 * Unterstützung verschiedener *lossy* und *lossless* Formate *OGG VORBIS*, *FLAC*, u.a.
 * Integration verschiedener Dienste wie beispielsweise *Spotify* 
-* Benutzerdefinierte Anzeigemöglichkeiten (Uhrzeit, Wetter, et. cetera.)
+* Benutzerdefinierte Anzeigemöglichkeiten (Uhrzeit, Wetter, et cetera.)
 
 
 
@@ -261,25 +261,25 @@ Abbildung \ref{gpio}[^SRC] zeigt die GPIO--Header des *Raspberry Pi* Modell B Re
 #### GPIO--Pinbelegung und Funktionalität
 
 Die GPIO--Pins des *Raspberry Pi* haben eine Logikspannung von 3.3V und sind pro
-GPIO--Pin mit max. 16mA belastbar. Der der gesamte GPIO--Header sollte mit nicht
+GPIO--Pin mit max. 16mA belastbar. Der gesamte GPIO--Header sollte mit nicht
 mehr als 50mA belastet werden, da es darüber hinaus zu Hardwareschäden kommen
-kann (vgl. [@gay2014raspberry], Seite 20 ff.).
+kann (vgl. [@gay2014raspberry], Seite 121 ff.).
 
 Die *Logik--Pegel* der GPIO--Pins sind beim
-*Raspberry Pi* wie folgt definiert [vgl. @gay2014raspberry], Seite 23 ff.:
+*Raspberry Pi* wie folgt definiert [vgl. @gay2014raspberry], Seite 129 ff.:
 
-* <= 0,8V, input low
-* >= 1,3V, input high
+* $\le$ 0,8V, input low
+* $\ge$ 1,3V, input high
 
 
-Die Ansteuerung Ansteuerung von LED über GPIO erfolgt binär. Das heißt, dass
-die LED entweder aus (GPIO low) oder an sein kann (GPIO high).
+Die Ansteuerung von LEDs über GPIO erfolgt binär. Das heißt, dass
+die LED entweder aus (low) oder an (high) sein kann.
 
-TODO: ELCH? In der »analogen« Welt ist es jedoch möglich eine LED über das
-Senken der Spannung zu dimmen. Um ein Dimmen in der digitalen Welt zu erreichen
-wird ein Modulationsverfahren angewandt, welches Pulsweitenmodulation heißt.
-Hierbei wird...TODO: ELCH? Unter [@richardson2014make], Seite 121 ff. und
-[@gay2014mastering], Seite 421 ff. finden sich weitere Integration.
+In der »analogen« Welt ist es jedoch möglich eine LED über das Senken der
+Spannung zu dimmen. Um ein Dimmen in der digitalen Welt zu erreichen wird ein
+Modulationsverfahren angewandt, welches Pulsweitenmodulation (PWM) heißt. Hierbei
+wird...(Ref auf Software TODO: ELCH?) Unter [@richardson2014make], Seite 121 ff. und
+[@gay2014mastering], Seite 421 ff. finden sich weitere Informationen.
 
 Software PWM unter [@gay2014experimenting], Seite 183 ff. zeigt beispielsweise
 eine 6% CPU--Last pro GPIO--Pin bei einer PWM--Softwareimplementierung. TODO:
@@ -287,9 +287,9 @@ ELCH?
 
 ## LCD--Anzeige
 
-Um dem Benutzer Informationen beispielsweise über das aktuell gespielte Lied
-anzeigen zu können, soll eine LCD--Anzeige verbaut werden. In den privaten
-Altbeständen finden sich folgende drei Hitachi hd44780--kompatible Modelle:
+Um dem Benutzer --- beispielsweise Informationen über das aktuell gespielte Lied
+--- anzeigen zu können, soll eine LCD--Anzeige verbaut werden. In den privaten
+Altbeständen finden sich folgende drei Hitachi--hd44780--kompatible Modelle:
 
 * Blaues Display, 4x20 Zeichen, Bolymin BC2004A
 * Blaues Display, 2x16 Zeichen, Bolymin BC1602A
@@ -300,7 +300,7 @@ Anzeigefläche und Farbe --- gewählt.
 
 ### Anschlussmöglichkeiten
 
-Ein LCD Display kann an den Raspberry PI über auf verschiedene Art und Weise
+Eine LCD--Anzeige kann an den *Raspberry Pi* auf verschiedene Art und Weise
 angeschlossen werden. Anschlussmöglichkeiten für eine LCD--Anzeige wären
 beispielsweise: 
 
@@ -308,7 +308,7 @@ beispielsweise:
 * I2C--Bus (seriell)
 * SPI--Bus (seriell)
 
-Die serielle Anschlussmöglichkeit bietet den Vorteil dass weniger Datenleitungen
+Die serielle Anschlussmöglichkeit bietet den Vorteil, dass weniger Datenleitungen
 (GPIO--Pins) verwendet werden. Für den parallelen Betrieb des Displays werden
 mindestens sechs GPIO--Pins benötigt, für den seriellen Anschluss über I2C
 lediglich nur zwei. 
@@ -321,58 +321,58 @@ bevorzugt. Weitere Informationen zum seriellen Betrieb über I2C sind unter
 \begin{figure}[h!]
   \centering
 \includegraphics[width=0.7\textwidth]{images/lcdraspi.png}
-  \caption{Verdrahtung von LCD und Raspberry Pi.}
+  \caption{Verdrahtung von LCD im 4--Bit Modus und Raspberry Pi, alle hierzu benötigten
+  Informationen sind im Datenblatt zu finden.}
   \label{lcd}
 \end{figure}
 
-Das Display arbeitet mit einer Logik--Spannung von 3.3V - 5V. Da die GPIO--Pins jedoch
-eine High--Logik von 3,3V aufweisen, würde man hier in der Regel einen
-Pegelwandler bei bidirektionaler Kommunikation und 5V benötigen. Da wir aber nur auf
-das Display zugreifen und die GPIO--Pins nicht schreibend zugegriffen wird kann
+Das Display arbeitet mit einer Logik--Spannung von 3.3V - 5V. Da die GPIO--Pins
+jedoch eine High--Logik von 3,3V aufweisen, würde man hier in der Regel einen
+Pegelwandler bei bidirektionaler Kommunikation und 5V benötigen. Da aber auf das
+Display nur zugegriffen und die GPIO--Pins nicht schreibend benutzt werden, kann
 ein Betrieb des Displays auch mit 5V erfolgen. Beim 3.3V Betrieb welcher laut
-Datenblatt auch möglich sein soll, hat das Display leider nur eine sehr
-schwachen beziehungsweise unzureichenden Darstellungskontrast gehabt, weswegen
-der 5V Betrieb gewählt wurde. 
+Datenblatt[^LCD] auch möglich sein soll, hatte das Display leider nur eine sehr
+schwachen beziehungsweise unzureichenden Darstellungskontrast, weswegen der 5V
+Betrieb gewählt wurde. Zudem wurde an *Pin3* (LCD) ein 100$\Omega$ Potentiometer
+hinzugefügt. Dies ermöglicht den Kontrast variabel einzustellen.
 
 Die Hintergrundbeleuchtung des Displays wurde direkt über ein Potentiometer mit
-10K$\Omega$ an die 5V Spannungsversorgung angeschlossen. Es wurde hier direkt
-die Speisung vom Netzteil gewählt um den GPIO--Header nicht unnötig zu belasten.
+2K$\Omega$ an die 5V Spannungsversorgung angeschlossen. Es wurde hier die
+direkte Speisung vom Netzteil gewählt, um den GPIO--Header nicht unnötig zu belasten.
 
-Laut Datenblatt[^LCD] kann die Hintergrundbeleuchtung entweder mit 3.4V ohne
+Laut Datenblatt kann die Hintergrundbeleuchtung entweder mit 3.4V ohne
 Vorwiderstand oder mit 5V bei einem 27$\Omega$ Widerstand betrieben werden. Damit das
 Display beim herunter geregeltem Potentiometer keinen Schaden nimmt, wurden
 zusätzlich zwei Widerstände mit 100$\Omega$ (parallel geschaltet = 50$\Omega$) zwischen Display
 und Potentiometer gehängt.
 
-[^LCD]: Datenblatt Bolymin BC2004A: \url{http://www.dema.net/pdf/bolymin/BC2004A-series_VER04.pdf}
-
-Das der resultierende Gesamtwiderstand ohne Potentiometer beträgt in diesem Fall
+Der resultierende Gesamtwiderstand ohne Potentiometer beträgt in diesem Fall
 $\approx$ 50 $\Omega$:
 
 $$  R_{ges} = \frac{R_1 \times R_2}{R_1 + R_2} = \frac{100\Omega \times 100\Omega}{100\Omega + 100\Omega} = 50\Omega $$
 
-## Rotary--Switch
+## Drehimpulsgeber
 
-Für eine minimale Anzahl an Bedienelementen zu erhalten, wird bei *Eulenfunk*
-ein Drehimpulsgeber mit Schalter gewählt. Für erste Testzwecke wurde vom Herrn
+Um eine minimale Anzahl an Bedienelementen zu erhalten, wird bei *Eulenfunk*
+ein Drehimpulsgeber mit Schalter gewählt. Für erste Testzwecke wurde von Herrn
 Schäferling ein *ALPS STEC12E08* bereitgestellt. Dieser wurde im Laufe der
 Entwicklung durch einen *ALPS STEC11B09*[^ALPS] ersetzt, da dieser mittels Mutter und
 Schraube am Gehäuse besser befestigt werden kann. 
 
 Der verwendete Drehimpulsgeber hat insgesamt fünf Anschlüsse. Zwei
-Signalleitungen (A und B), zwei mal *GND* (für Drehgeber und Schalter jeweils
-eine) und einen Anschluss für den Schalter. Beim drehen eines Drehimpulsgebers
-wird ein Rechtecksignal generiert. Je nach Muster der beiden Datensignale A oder
-B, kann entschieden werden ob es sich um eine Rechts-- oder Linksdrehung
-handelt. Siehe [@2014projekte], Seite 361 ff. für weitere Hintergrundinformationen zu Drehimpulsgeber.
+Signalleitungen (A und B), zwei mal *GND* (jeweils für Drehgeber und Schalter)
+und einen Anschluss für den Schalter. Beim Drehen eines Drehimpulsgebers wird
+ein Rechtecksignal generiert. Je nach Muster der beiden Datensignale A oder B,
+kann entschieden werden ob es sich um eine Rechts-- oder Linksdrehung handelt.
+Siehe [@2014projekte], Seite 361 ff. für weitere Hintergrundinformationen zu
+Drehimpulsgeber.
 
 Abbildung \ref{alps} zeigt den Anschluss des Drehimpulsgebers am *Raspberry Pi*. 
 
-[^ALPS]: Drehimpulsgeber ALPS STEC11B09: \url{https://www.reichelt.de/Drehimpulsgeber/STEC11B09/3/index.html?ACTION=3&GROUPID=3714&ARTICLE=73915}
 
 \begin{figure}[h!]
   \centering
-\includegraphics[width=0.6\textwidth]{images/rotary.png}
+\includegraphics[width=0.8\textwidth]{images/rotary.png}
   \caption{Drehimpulsgeber--Anschluss an den Raspberry Pi, Abbildung zeigt
   Kombination aus Potentiometer und Schalter.}
   \label{alps}
@@ -385,17 +385,19 @@ Pulsweitenmodulation realisiert. Die einfache Schaltung soll hier laut
 Internetquellen[^AQ]eine sehr niedrige Audioqualität bieten.
 
 Aus diesem Grund wird bei *Eulenfunk* auf das USB--Audio--Interface *BEHRINGER
-U-PHONO UFO202*[^DAC] gesetzt. 
+U-PHONO UFO202*[^DAC] (USB--Soundkarte) gesetzt. 
 
+[^LCD]: Datenblatt Bolymin BC2004A: \url{http://www.dema.net/pdf/bolymin/BC2004A-series_VER04.pdf}
+[^ALPS]: Drehimpulsgeber ALPS STEC11B09: \url{https://www.reichelt.de/Drehimpulsgeber/STEC11B09/3/index.html?ACTION=3&GROUPID=3714&ARTICLE=73915}
 [^DAC]:BEHRINGER U-PHONO UFO202 Audio Interface: \url{http://www.produktinfo.conrad.com/datenblaetter/1300000-1399999/001370864-an-01-de-BEHRINGER_UFO_202_AUDIOINTERFACE.pdf}
 [^AQ]: Raspberry Pi onboard Sound: \url{http://www.crazy-audio.com/2013/11/quality-of-the-raspberry-pi-onboard-sound/}
 
 ## Audioverstärkermodul
 
-Da eine Soundkarte in der Regel zu wenig Leistung hat um einem Lautsprecher
-»vernünftig« anzusteuern wird ein Audioverstärker benötigt. Da neben dem
-Anschluss von externen Lautsprechern auch eine Lautstärkeregelung über ein Poti
-erfolgen soll, ist die Entscheidung einfachheitshalber auf ein
+Da eine Soundkarte in der Regel zu wenig Leistung hat, um einem Lautsprecher
+»vernünftig« anzusteuern, wird ein Audioverstärker benötigt. Da neben dem
+Anschluss von externen Lautsprechern auch eine Lautstärkeregelung über ein
+Potentiometer erfolgen soll, ist die Entscheidung einfachheitshalber auf ein
 Audioverstärker--Modul auf Basis vom PAM8403[^POW] Stereo-Verstärker mit
 Potentiometer gefallen. Eine Do--It--Yourself--Alternative wäre ein
 Transistor--basierter Audio--Verstärker, hier gibt es online diverse
@@ -404,7 +406,7 @@ Bauanleitungen[^amp2].
 [^amp2]: Transistor--Verstärker:
 \url{http://www.newsdownload.co.uk/pages/RPiTransistorAudioAmp.html}
 
-Das Audioverstärker--Module hat folgende Anschlusspins:
+Das Audioverstärker--Modul hat folgende Anschlusspins:
 
 * Left--In, Right--In, GND
 * 5V+ und GND (Betriebsspannung)
@@ -413,15 +415,16 @@ Das Audioverstärker--Module hat folgende Anschlusspins:
 
 Laut diverser Onlinequellen[^MONO], dürfen die Ausgänge für einen Mono--Betrieb
 eines auf dem PAM8403--basierten Verstärkers nicht parallel geschaltet werden.
-Aus diesem Grund kommt ein ein 4--poliger
+Aus diesem Grund kommt ein 4--poliger
 *EIN--EIN--Kippschalter*[^KIPPSCHALTER] zum Einsatz. So kann zwischen dem
 internen Lautsprecher (Mono--Betrieb) und den externen Stereo
 Lautsprecher--Anschlüssen sauber per Hardware hin und her geschaltet werden.
 
 Damit im Mono--Betrieb nicht nur ein Kanal verwendet wird, ermöglicht
-*Eulenfunk* das umschalten zwischen Mono-- und Stereo--Betrieb in Software.
+*Eulenfunk* das Umschalten zwischen Mono-- und Stereo--Betrieb in Software.
 
-[^MONO]: PAM8403 Mono--Betrieb: http://electronics.stackexchange.com/questions/95743/can-you-bridge-or-parallel-the-outputs-of-the-pam8403-amplifier
+[^MONO]: PAM8403 Mono--Betrieb:
+\url{http://electronics.stackexchange.com/questions/95743/can-you-bridge-or-parallel-the-outputs-of-the-pam8403-amplifier}
 
 [^KIPPSCHALTER]: Kippschalter 4--polig EIN--EIN: \url{http://www.reichelt.de/Kippschalter/MS-500P/3/index.html?&ACTION=3&LA=2&ARTICLE=13172&GROUPID=3275&artnr=MS+500P}
 [^POW]: Verstärkermodul: \url{https://www.amazon.de/5V-Audioverstärker-Digitalendstufenmodul-Zweikanalige-Stereo-Verstärker-Potentiometer/dp/B01ELT81A6}
@@ -443,7 +446,7 @@ $$R_{LED} = \frac{U_{GPIO}-U_{LED}}{I_{LED}} = \frac{3.3V - 2V}{20mA}   \approx 
 
 [^LEDS]: Datenblatt mit verschiedenen LED--Typen: \url{https://www.led-tech.de/de/5mm-LEDs_DB-4.pdf}
 
-**Hinweis:** Da ein GPIO--Pin aber mit nur max. 16mA belastet werden sollten,
+**Hinweis:** Da ein GPIO--Pin aber mit nur max. 16mA belastet werden sollte,
 sollte in unserem Beispiel durch 16mA anstatt 20mA geteilt werden um den max.
 Stromfluss auf 16mA zu begrenzen. In diesem Fall würden wir auf $\approx$ 82$\Omega$ kommen.
 
@@ -458,7 +461,7 @@ können online beispielsweise unter *led-treiber.de*[^LED] eingesehen werden.
 \begin{figure}[h!]
   \centering
 \includegraphics[width=0.5\textwidth]{images/led.png}
-  \caption{Anschluss eine roten LED mit Vorwiderstand am Raspberry Pi GPIO--Pin}
+  \caption{Anschluss einer roten LED mit Vorwiderstand am Raspberry Pi GPIO--Pin}
   \label{led}
 \end{figure}
 
@@ -467,32 +470,33 @@ unserem Beispiel. Die in \ref{led} abgebildete LED kann vom GPIO--Pin nur einen
 max. Strom von 16 mA beziehen
 
 In *Eulenfunk* sollen mehrere intensiv leuchtende LEDs verbaut werden. Da die
-GPIO--Pins in ihrer Leistung sehr begrenzt ist, würde es sich anbieten eine
+GPIO--Pins in ihrer Leistung sehr begrenzt sind, würde es sich anbieten eine
 externe Stromquelle zu verwenden. Um die Speisung über eine externe Stromquelle
-zu ermöglichen kann eine Transistorschaltung verwendet werden (vgl. [@exploring],
-Seite 217 ff.). 
+zu ermöglichen, kann eine Transistorschaltung verwendet werden (vgl. [@exploring],
+Seite 219 ff.). 
 
-Für die Transistorschaltung wurden vom Herrn Schäferling NPN (BC547C) und PNP
-(BC557C) bereitgestellt. Für den ersten Testaufbau wurde der PNP--Transistor und
-eine RGB--LED[^RGBGM] mit gemeinsamen Minuspol verwendet. Beim Test--Aufbau mit einem
-PNP--Transistor ist aufgefallen, dass die LED ständig geleuchtet hat. Eine kurze
-Recherche hat ergeben, dass der Transistor permanent durchgeschaltet war, weil die
-Spannung an der Basis (GPIO--Pin, 3,3V) geringer war die die Betriebsspannung
+Für die Transistorschaltung wurden von Herrn Schäferling NPN-- (BC547C) und
+PNP--Transistoren (BC557C) bereitgestellt. Für den ersten Testaufbau wurde der
+PNP--Transistor und eine RGB--LED[^RGBGM] mit gemeinsamen Minuspol verwendet.
+Dabei ist aufgefallen, dass die LED ständig geleuchtet hat. Eine kurze Recherche
+hat ergeben, dass der Transistor permanent durchgeschaltet war, weil die
+Spannung an der Basis (GPIO--Pin, 3,3V) geringer war als die Betriebsspannung
 für die LED (5V). 
 
-Der zweite Anlauf mit dem NPN--Transistor BC547C und einer RGB--LED[^RGBGP] mit
+Der zweite Testaufbau mit dem NPN--Transistor BC547C und einer RGB--LED[^RGBGP] mit
 gemeinsamen Pluspol hat das gewünschte Ergebnis geliefert.
 
 Da der Hersteller für die von der Hochschule bereitgestellten Transistoren
 unbekannt ist, wurden typische Durchschnittswerte für die Dimensionierung der
-Restlichen Bauteile verwendet.
+restlichen Bauteile verwendet.
 
-Wie es aussieht sind die meisten BC547C Transistor Typen für einen max. Strom
-$I_{CE}$=100 mA konstruiert. Für die Berechnung des Basis--Vorwiderstandes ist der
-Stromverstärkungsfaktor $h_{FE}$[^HFE] benötigt. Je nach Hersteller variieren die
-Werten zwischen 200[^SEM] und 400[^FARI]. Da der maximale Laststrom $I_{CE}$ pro Transistor
-beträgt 80 mA (3 LEDs je max. 20mA), sieht die Berechnung des Basisstroms wie
-folgt aus:
+Wie es aussieht sind die meisten BC547C Transistor--Typen für einen max. Strom
+$I_{CE}$=100 mA konstruiert. Für die Berechnung des Basis--Vorwiderstandes wird
+der Stromverstärkungsfaktor $h_{FE}$[^HFE] benötigt. Je nach Hersteller
+variieren die Werte zwischen 200[^FARI] und 400[^SEM]. Da der maximale Laststrom
+$I_{CE}$ pro Transistor 60 mA (3 LEDs je max. 20mA) beträgt, sieht die
+Berechnung des Basisstroms --- bei einem durchschnittlichem $h_{FE}$ = 300 --- wie folgt
+aus:
 
 [^LED]: Beispiele zur Ansteuerung von LEDs: \url{http://www.led-treiber.de/html/vorwiderstand.html}
 [^HFE]:Stromverstärkungsfaktor: \url{http://www.learningaboutelectronics.com/Articles/What-is-hfe-of-a-transistor}
@@ -500,13 +504,13 @@ folgt aus:
 [^RGBGP]: RGB-LED Common Anode: \url{http://download.impolux.de/datasheet/LEDs/LED 09258 RGB 5mm klar 10000mcd_GP.pdf}
 
 
- $$I_{Basis} = \frac{I_{CE}}{h_{FE}} = \frac{0.08A}{300} \approx 270\mu A$$
+ $$I_{Basis} = \frac{I_{CE}}{h_{FE}} = \frac{0.06A}{300} \approx 200\mu A$$
 
 Der BC547C Transistor benötigt eine durchschnittliche  $U_{BE}$ = 0,7V zum
-durchschalten. Die GPIO-Pins des *Raspberry Pi* haben einen Spannungspegel von
+Durchschalten. Die GPIO-Pins des *Raspberry Pi* haben einen Spannungspegel von
 3.3V. Daraus ergibt sich folgende Berechnung des Basis--Vorwiderstandes:
 
-$$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{270\mu A} = 9629 \Omega \approx 10k \Omega $$
+$$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{200\mu A} = 13k\Omega $$
 
 [^SEM]: SEMTECH: \url{http://pdf1.alldatasheet.com/datasheet-pdf/view/42386/SEMTECH/BC547.html}
 [^FARI]: Farichild Semiconductor: \url{https://www.fairchildsemi.com/datasheets/BC/BC547.pdf}
@@ -518,10 +522,12 @@ $$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{270\mu
   \label{transled}
 \end{figure}
 
-Die in Abbildung \ref{transled} gelisteten LED--Vorwiderstände ergeben sich
-aufgrund der verschiedenen Spannungen der unterschiedlichen Farben[^RGBGP]. Die
-Berechnung für den Vorwiderstand pro LED schaut am Beispiel der Farbe blau
-($U_{LED} = 3,15V, I_{LED} = 20mA$) wie folgt aus:
+Damit der Transistor jedoch *sicher* durchschaltet, werden Wiederstände mit $10k
+\Omega$ verwendet. Die in Abbildung \ref{transled} gelisteten
+LED--Vorwiderstände ergeben sich aufgrund der verschiedenen Spannungen der
+unterschiedlichen Farben[^RGBGP]. Die Berechnung für den Vorwiderstand pro LED
+schaut am Beispiel der Farbe blau ($U_{LED} = 3,15V, I_{LED} = 20mA$) wie folgt
+aus:
 
 $$R_{LED} = \frac{U_{Betriebsspannung} - U_{LED}}{I_{LED}} = \frac{5V - 3,15V}{20mA} =92.5 \approx 100\Omega$$
 
@@ -531,28 +537,30 @@ $$R_{LED} = \frac{U_{Betriebsspannung} - U_{LED}}{I_{LED}} = \frac{5V - 3,15V}{2
 Der *Raspberry Pi* hat in unserer Revision nur zwei USB--Schnittstellen, diese
 sind bereits durch die Hardware--Komponenten USB--DAC (Soundkarte) und das
 Wi--Fi--Modul belegt. Um den Anschluss eines externen Datenträgers, auch mit
-größerer Last wie beispielsweise einer Festplatte zu ermöglichen wird ein
+größerer Last wie beispielsweise einer Festplatte zu ermöglichen, wird ein
 aktiver USB--Hub benötigt.
 
 Für diesen Einsatzzweck wird aus den Altbeständen ein *LogiLink 4 Port USB 2.0
-HUB* verwendet. Viele billig-Hubs arbeiten hier entgegen der USB--Spezifikation
-und speisen zusätzlich über die USB--Schnittstellen den *Raspberry Pi*. Dieses
-Verhalten wurde bemerkt, also der *Raspberry Pi* ohne Power--Connector alleine
-mit nur der USB--Verbindung zum Hub bootete.
+HUB*[^HUB] verwendet. Viele billig-Hubs arbeiten hier entgegen der USB--Spezifikation
+und speisen den *Raspberry Pi* zusätzlich über die USB--Schnittstelle. Dieses
+Verhalten wurde bemerkt, als der *Raspberry Pi* ohne Power--Connector alleine
+nur mit der USB--Verbindung zum USB--Hub bootete.
+
+[^HUB]: LogiLink USB--Hub: \url{https://www.amazon.de/LogiLink-4-Port-Hub-Netzteil-schwarz/dp/B003ECC6O4}
 
 Bei der Speisung über die USB--Schnittstelle wird die interne Sicherungsschaltung
 des *Pi* umgangen, deswegen wird in der Regel von einem Betrieb eines USB--Hub
 mit *backfeed* abgeraten (vgl . [@suehle2014hacks], Seite 26 ff.). Für den Prototypen wird
-jedoch der USB--Hub und das dazugehörige Netzteil für den Betrieb von
+jedoch der genannte USB--Hub und das dazugehörige Netzteil für den Betrieb von
 *Eulenfunk* verwendet. Das Netzteil ist für 5V bei max. 2A ausgelegt.
 
-**Nachtrag:** Die Speisung über das 5V, 2A des USB--Hubs ist recht instabil. Bei
-Lastspitzen kommt es anscheinend zu Störeinwirkungen die sich auf die
-GPIO--Peripherie auswirken (LCD--Anzeige rendert inkorekt). Ein weiterer Punkt
+**Nachtrag:** Die Speisung über das Netzteil des USB--Hubs ist recht instabil. Bei
+Lastspitzen kommt es anscheinend zu Störeinwirkungen, die sich auf die
+GPIO--Peripherie auswirken (LCD--Anzeige rendert inkorrekt). Ein weiterer Punkt
 sind Störfrequenzen, welche teilweise in Form von Störgeräuschen die
 Audioausgabe überlagern (Hintergrundgeräusche beim Einschalten aller LEDs).
 Insgesamt wurden drei Netzteile --- jeweils 5V, 2A ---ausprobiert. Von diesen
-war lediglich ein einziges als 'akzeptabel' einzustufen. Die restlichen zwei
+war lediglich ein einziges als »akzeptabel« einzustufen. Die restlichen zwei
 führen bei Lastspitzen zu Problemen (Abstürze, fehlerhaftes Rendering auf
 Display, GPIO--Flips, et cetera). Das *backfeed* des USB--Hubs scheint die
 genannten Probleme teilweise zu verstärken (vgl . [@suehle2014hacks], Seite 27).
@@ -562,8 +570,8 @@ genannten Probleme teilweise zu verstärken (vgl . [@suehle2014hacks], Seite 27)
 ### Vorderseite
 
 Abbildung \ref{ral} zeigt ein Muster der Gehäusefront--Farbe hellelfenbeinweiß RAL
-1015. Dieser Farbton wird für die Front verwendet um *Eulenfunk* einen dezenten
-»Retro«--Look verpassen.
+1015. Dieser Farbton wird für die Front verwendet, um *Eulenfunk* einen dezenten
+»Retro«--Look zu verpassen.
 
 \begin{figure}[h!]
   \centering
@@ -573,7 +581,7 @@ Abbildung \ref{ral} zeigt ein Muster der Gehäusefront--Farbe hellelfenbeinweiß
 \end{figure}
 
 Das Plexiglas für die Front wurde von der Firma *ira-Kunststoffe* in
-Schwarzenbach/Saale zugeschnitten. In der Plexiglasfront wurden mit Hilfe vom
+Schwarzenbach/Saale zugeschnitten. In der Plexiglasfront wurden mit Hilfe von
 Herrn Schäferling zwei 5mm Löcher (Drehimpulsgeber, Lautstärkeregler--Poti)
 gebohrt. Anschließend wurde die Plexiglas--Front von der Innenseite
 lackiert[^LACK], hierbei wurden die Flächen für LCD und die drei LEDs abgelebt.
@@ -582,9 +590,9 @@ Lautstärkeregler und den Drehimpulsgeber verwendet.
 
 ### Hinterseite
 
-Für die Hinterseite wird die alte Abdeckung verwendet. Diese musste Teilweise
-leicht modifiziert werden. An dieser befinden sich zwei Potis für
-Kontrastregelung und Hintergrundbeleuchtung des LCD, eine
+Für die Hinterseite wird die alte Abdeckung des AEG--Radios verwendet. Diese
+musste teilweise leicht modifiziert werden. An dieser befinden sich zwei Potis
+für Kontrastregelung und Hintergrundbeleuchtung des LCD, eine
 USB--Female--Kabelpeitsche, zwei Cinch Stecker für externe Lautsprecher und ein
 Kippschalter zum Umschalten zwischen internen und externen Lautsprechern.
 
@@ -595,20 +603,19 @@ Kippschalter zum Umschalten zwischen internen und externen Lautsprechern.
 
 Mittlerweile gibt es für den *Raspberry Pi* viele offiziell zugeschnittene
 Betriebssysteme (vgl. [@pietraszak2014buch], Seite 29 ff., [@warner2013hacking],
-Seite 47 ff.). Bei den den Linux
-Distributionen ist *Raspbian* eine der bekanntesten Distribution -- welche auf
+Seite 47 ff.). Bei den Linux--Distributionen ist *Raspbian* eine der bekanntesten Distribution -- welche auf
 *Debian* basiert. *Raspbian* bringt ein komplettes Linux--basiertes System mit
 grafischer Benutzeroberfläche mit sich. 
 
 Neben den unter [@pietraszak2014buch], Seite 29 ff. genannten Distributionen
 gibt es mittlerweile auch Windows 10 IoT (Internet of Things) für den *Raspberry
 Pi*. Dieses speziell für den Embedded Bereich ausgerichtete Windows benötigt
-jedoch eine ARMv7--CPU als Mindestanforderung, was unseren »alten Raspberry«
-ausschließen würde. Außerdem wäre für uns eine proprietäre Lösung ein
+jedoch eine ARMv7--CPU als Mindestanforderung[^WINIOT], was den »alten Raspberry«
+ausschließt. Außerdem wäre für uns eine proprietäre Lösung ein
 K.O.--Kriterium, da diese alle Vorteile von Freier Software zunichte machen
 würde.
 
-[^WINIOT]: ARMv7 für Win 10 IoT:  \url{http://raspberrypi.stackexchange.com/questions/39715/can-you-put-windows-10-iot-core-on-raspberry-pi-zero}
+[^WINIOT]: Systemanforderungen:\url{http://raspberrypi.stackexchange.com/questions/39715/can-you-put-windows-10-iot-core-on-raspberry-pi-zero}
 
 ### Wahl des Betriebssystem
 
@@ -616,7 +623,7 @@ würde.
 Linux--Distribution welche im Gegensatz zu *Raspbian* ohne Desktop--Umgebung
 geliefert wird (vgl. [@schmidt2014raspberry], Seite 13 ff.) Darüber hinaus ist
 *Arch Linux* ein bekannter Vertreter von Rolling--Release--Distributionen. Ein
-weiterer Vorteil für unseren Einsatzzweck hier ist bei *Arch Linux* das *AUR*
+weiterer Vorteil für unseren Einsatzzweck ist bei *Arch Linux* das *AUR*
 (Arch User Repository)[^AUR], dieses erlaubt es eigene Software auf eine
 schnelle und unkomplizierte Weise der Allgemeinheit zur Verfügung zu stellen.
 
@@ -624,7 +631,7 @@ schnelle und unkomplizierte Weise der Allgemeinheit zur Verfügung zu stellen.
 
 Nach der Installation[^INSTALL] und dem ersten Booten des Grundsystems muss die
 Netzwerk--Schnittstelle konfiguriert werden. Arch Linux ARM bietet mit *netctl*
-ein Profil--basierte Konfigurationsmöglichkeit. Ein Profil kann über das
+eine Profil--basierte Konfigurationsmöglichkeit. Ein Profil kann über das
 *ncurses*--basierte Tool `wifi-menu` erstellt werden. In unserem Fall wurde das
 Profil `wlan0-Phobos` erstellt. Anschließend kann das erstellte Profil mit
 *netctl* verwendet werden. 
@@ -632,7 +639,7 @@ Profil `wlan0-Phobos` erstellt. Anschließend kann das erstellte Profil mit
 **Auflistung der bekannten Profile**
 
 ```bash
-    [wald@eulenfunk ~]$ netctl list
+    [root@eulenfunk ~]$ netctl list
       eth0-static
       wlan0-Phobos
 ```
@@ -641,14 +648,13 @@ Profil `wlan0-Phobos` erstellt. Anschließend kann das erstellte Profil mit
 
 ```bash
     # Starten des gewünschten Profils
-    [wald@eulenfunk ~]$ netctl start wlan0-Phobos
-
-    [wald@eulenfunk ~]$ netctl list
+    [root@eulenfunk ~]$ netctl start wlan0-Phobos
+    [root@eulenfunk ~]$ netctl list
       eth0-static
     * wlan0-Phobos
 
     # Profil über System-Reboot hinweg aktivieren 
-    [wald@eulenfunk ~]$ netctl enable wlan0-Phobos
+    [root@eulenfunk ~]$ netctl enable wlan0-Phobos
 
 ```
 
@@ -689,7 +695,7 @@ oder *mplayer* [@exploring] Seite 638 ff. zu.
 
 Von Elchen entwickelt.
 
-### Rotary--Treiber
+### Drehimpulsgeber--Treiber
 
 Von Elchen kopiert.
 
@@ -710,9 +716,9 @@ werden.
 
 ### Allgemein
 
-Der aktuelle Prototyp hat lediglich nur ein Poti um die Hintergrundbeleuchtung
+Der aktuelle Prototyp hat lediglich nur ein Potentiometer um die Hintergrundbeleuchtung
 des LCD zu regeln. Ein anderer Ansatz wäre der Einsatz eines Relais, welches es
-ermöglichen würde die LCD--Hintergrundbeleuchtung Software--seitig ein und auszuschalten.
+ermöglichen würde die LCD--Hintergrundbeleuchtung Software--seitig ein-- und auszuschalten.
 
 ### Audio--Visualisierung
 
@@ -721,8 +727,8 @@ begrenzten Zeit und Hardwareressourcen des *Raspberry Pi *über eine
 vorberechnete Moodbar--Datei realisiert. Dieser Ansatz funktioniert bei nicht
 live gestreamter Musik gut. Bei live gestreamter Musik könnte für die
 Visualisierung eine Fast--Fourier--Transformation in Echtzeit durchgeführt
-werden. Da jedoch die Ressourcen des *Raspberry Pi* sehr begrenzt sollte hier
-auf die Verwendung einer GPU--beschleunigte--FFT[^FFT] zurückgegriffen werden
+werden. Da jedoch die Ressourcen des *Raspberry Pi* sehr begrenzt sind, sollte hier
+auf die Verwendung einer GPU--beschleunigten--FFT zurückgegriffen werden
 (vgl. [@Sabarinath2015], Seite 657 ff.).
 
 Ein alternativer Ansatz wäre auch die Realisierung einer Musik--Visualisierung
@@ -730,20 +736,20 @@ mittels Hardwarekomponenten. Ein möglicher Ansatz aus Hardware--basierten
 Hochpass-- und Tiefpassfiltern in Form einer Disco--Beleuchtung wird unter
 [@2014projekte], Seite 261 ff. beschrieben.
 
-### Echtzeit--Uhr
+### Echtzeituhr
 
-Der *Raspberry Pi* besitzt keine Hardware--Uhr. Aufgrund der Tatsache dass es
-sich bei *Eulenfunk* um eine Internet--Radio handelt wurde auf eine Echtzeituhr
-(real time clock, RTC) verzichtet, da sich die Uhr *Eulenfunk* aufgrund der
+Der *Raspberry Pi* besitzt keine Hardware--Uhr. Aufgrund der Tatsache, dass es
+sich bei *Eulenfunk* um ein Internetradio handelt wurde auf eine Echtzeituhr
+(real time clock, RTC) verzichtet, da sich die Uhr von *Eulenfunk* aufgrund der
 permanenten Internetverbindung mittels NTP[^NTP] über das Internet
 synchronisieren kann. Eine Erweiterung um eine Echtzeituhr wird in
-[@horan2013practical], Seite 145 ff. und [@gay2014experimenting], Seite 77 ff. ausführlich beschreiben.
+[@horan2013practical], Seite 145 ff. und [@gay2014experimenting], Seite 77 ff. ausführlich beschrieben.
 
 
 ### Fernbedienung
 
 Eine weitere Erweiterung wäre die Integration einer Fernbedienung. Diese ließe
-sich relativ einfach mittels eine Infrarot--Sensors und beispielsweise der
+sich relativ einfach mittels eines Infrarot--Sensors und beispielsweise der
 *lirc*--Bibliothek umsetzen. Siehe auch [@warner2013hacking], Seite 190 ff. für
 weitere Informationen.
 
@@ -751,24 +757,22 @@ weitere Informationen.
 ### Batteriebetrieb
 
 Da die Strom-- beziehungsweise Spannungsversorgung beim *Raspberry Pi*
-problematisch ist, wäre auch ein Batterie beziehungsweise Akkubetrieb möglich.
+problematisch ist, wäre auch ein Batterie-- beziehungsweise Akkubetrieb möglich.
 Eine einfache Schaltung für einen Batteriebetrieb würde sich beispielsweise mit
 einem *LM7805*--Spannungsregler oder einem Abwärtswandler realisieren lassen
 ([vgl. @gay2014mastering], Seite 24 ff.). 
 
 [^NTP]: Network Time Protocol:
 \url{https://de.wikipedia.org/wiki/Network_Time_Protocol}
-[^FFT]: GPU--beschleunigte FFT auf dem Raspberry Pi:
-\url{http://www.aholme.co.uk/GPU_FFT/Main.htm}
 
-## Mögliche Verbesserungen?
+## Mögliche Verbesserungen
 
 ### Alpine Linux 
 
-Die relativ junge Linux--Distribution *Alpine Linux*[^APL] wäre eine Mögliche
-Verbesserung für den Einsatz des Internetradios. Diese Distribution hat ihren
+Die relativ junge Linux--Distribution *Alpine Linux*[^APL] wäre eine mögliche
+Verbesserung für den Einsatzzweck Internetradio. Diese Distribution hat ihren
 Fokus auf Ressourceneffizienz und Systemsicherheit. Ein weiterer Vorteil wäre
-der `diskless mode`, welcher das Komplette Betriebssystem in den Arbeitsspeicher
+der `diskless mode`, welcher das komplette Betriebssystem in den Arbeitsspeicher
 lädt. In diesem Modus müssen Änderungen mit einem *Alpine Local Backup
 (lbu)*--Tool explizit auf die Festplatte geschrieben werden. Das hätte den
 Vorteil, dass man die Abnutzung des Flash--Speichers, durch unnötige
