@@ -286,6 +286,14 @@ func Run(cfg *Config, ctx context.Context) error {
 	defer util.Closer(lsn)
 	log.Println("Listening on " + addr)
 
+	// Manually trigger a udevadm run after a few seconds:
+	go func() {
+		time.Sleep(2 * time.Second)
+		if err := exec.Command("udevadm", "trigger", "-c", "add").Run(); err != nil {
+			log.Printf("Failed to trigger udev: %v", err)
+		}
+	}()
+
 	for !cancelled(ctx) {
 		if tcpLsn, ok := lsn.(*net.TCPListener); ok {
 			if err := tcpLsn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {

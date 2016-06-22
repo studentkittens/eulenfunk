@@ -276,7 +276,7 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 	mainMenu := []Entry{
 		&Separator{"MODES"},
 		&ClickEntry{
-			Text:       "Current song",
+			Text:       "Now Playing",
 			ActionFunc: switcher(mgr, "mpd"),
 		},
 		&ClickEntry{
@@ -322,7 +322,10 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 		&ClickEntry{
 			Text: "About",
 			ActionFunc: func() error {
-				schuhuAction()
+				if err := schuhuAction(); err != nil {
+					log.Printf("No schuhu: %v", err)
+				}
+
 				return mgr.SwitchTo("about")
 			},
 		},
