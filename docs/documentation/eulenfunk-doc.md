@@ -174,6 +174,16 @@ angebracht werden.
 
 ## Komponenten und Bauteile
 
+Abbildung \ref{uebersicht} zeigt eine konzeptuelle Übersichts des Zusammenspiels
+der einzelnen Komponenten.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.7\textwidth]{images/uebersicht.png}
+  \caption{Grobe Übersicht der verwendeten Komponenten im Zusammenspiel}
+  \label{uebersicht}
+\end{figure}
+
 Folgende Hardwarekomponenten oder Bauteile sind bereits vorhanden oder müssen
 noch erworben werden:
 
@@ -188,6 +198,8 @@ noch erworben werden:
 * Wi--Fi--Adapter
 * Netzteil (diverse 5V, 2mA)
 
+\newpage 
+
 **Muss noch erworben werden:**
 
 * Audioverstärker 
@@ -196,22 +208,7 @@ noch erworben werden:
 * Farbe (Lack)
 * Drehknöpfe für das Gehäuse 
 
-TODO Katze: Beschreibung an Diagrammpfeile
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=0.7\textwidth]{images/uebersicht.png}
-  \caption{Grobe Übersicht der verwendeten Komponenten im Zusammenspiel}
-  \label{uebersicht}
-\end{figure}
-
-Abbildung \ref{uebersicht} zeigt eine konzeptuelle Übersichts des Zusammenspiels
-der einzelnen Komponenten.
-
 [^AEG]: AEG Küchenradio 4104: \url{https://www.amazon.de/AEG-MR-4104-Desgin-Uhrenradio-buche/dp/B000HD19W8}
-
-
-
 
 ## Raspberry Pi
 
@@ -282,8 +279,7 @@ wird...(Ref auf Software TODO: ELCH?) Unter [@richardson2014make], Seite 121 ff.
 [@gay2014mastering], Seite 421 ff. finden sich weitere Informationen.
 
 Software PWM unter [@gay2014experimenting], Seite 183 ff. zeigt beispielsweise
-eine 6% CPU--Last pro GPIO--Pin bei einer PWM--Softwareimplementierung. TODO:
-ELCH?
+eine 6% CPU--Last pro GPIO--Pin bei einer PWM--Softwareimplementierung. TODO: ELCH?
 
 ## LCD--Anzeige
 
@@ -377,6 +373,8 @@ Abbildung \ref{alps} zeigt den Anschluss des Drehimpulsgebers am *Raspberry Pi*.
   Kombination aus Potentiometer und Schalter.}
   \label{alps}
 \end{figure}
+
+\newpage
 
 ## Soundkarte
 
@@ -564,6 +562,8 @@ war lediglich ein einziges als »akzeptabel« einzustufen. Die restlichen zwei
 führen bei Lastspitzen zu Problemen (Abstürze, fehlerhaftes Rendering auf
 Display, GPIO--Flips, et cetera). Das *backfeed* des USB--Hubs scheint die
 genannten Probleme teilweise zu verstärken (vgl . [@suehle2014hacks], Seite 27).
+
+\newpage
 
 ## Gehäuse
 
