@@ -6,4 +6,4 @@ ExecStart=/root/go/bin/eulenfunk lightd --driver radio-led
 Restart=on-failure
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

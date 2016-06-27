@@ -1,8 +1,13 @@
 package display
 
 var (
+	specialAscii = []rune{
+		'±', '≅', '⎲', '/', '⎛', '⎩', '⎞', '⎭', // 16 - 23
+		'⎧', '⎫', '≈', '⌠', '=', '~', '²', '³', // 24 - 31
+	}
+
 	// Non-standard part beyond ASCII (painfully typesetted by looking at the LCD):
-	nonAscii = []rune{
+	nonASCII = []rune{
 		'Δ', 'Ç', 'ü', 'é', 'å', 'ä', 'à', 'ç', 'ė', 'ë', 'è', 'ï', 'ì', 'Ä', 'Å', 'É', // 128 - 143
 		'æ', 'Æ', 'ô', 'ö', 'ò', 'û', 'ù', 'ÿ', 'Ö', 'ü', 'ñ', 'Ñ', 'ā', 'ō', '¿', 'á', // 144 - 159
 		'í', 'ó', 'ú', 'ȼ', '£', '¥', '₽', '¢', 'ĩ', 'Ã', 'ã', 'Õ', 'õ', 'Ø', 'ø', '˙', // 160 - 175
@@ -28,8 +33,12 @@ func init() {
 		utf8ToLCD[rn] = rune(idx)
 	}
 
-	for idx, rn := range nonAscii {
-		utf8ToLCD[rn] = rune(idx + 127)
+	for idx, rn := range specialAscii {
+		utf8ToLCD[rn] = rune(16 + idx)
+	}
+
+	for idx, rn := range nonASCII {
+		utf8ToLCD[rn] = rune(127 + idx)
 	}
 }
 

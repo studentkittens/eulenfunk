@@ -6,4 +6,4 @@ ExecStart=/root/go/bin/eulenfunk display server --driver radio-lcd
 Restart=on-failure
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

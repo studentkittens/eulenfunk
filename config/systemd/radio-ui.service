@@ -9,4 +9,4 @@ ExecStart=/root/go/bin/eulenfunk ui
 Restart=on-failure
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

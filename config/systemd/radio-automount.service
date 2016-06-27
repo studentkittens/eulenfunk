@@ -9,4 +9,4 @@ ExecStart=/root/go/bin/eulenfunk automount --music-dir /root/music
 Restart=on-failure
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

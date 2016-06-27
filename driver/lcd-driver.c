@@ -166,9 +166,11 @@ static int read_from_stdin(int handle) {
                 break;
             case 3:
                 offset = 10 * (line[1] - '0') + (line[2] - '0');  
+                offset_given = true;
                 break;
             case 2:
-                offset = line[2] - '0';  
+                offset = line[1] - '0';  
+                offset_given = true;
                 break;
             default:
                 // Some bad formatting going on...

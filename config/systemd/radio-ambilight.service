@@ -9,4 +9,4 @@ ExecStart=/root/go/bin/eulenfunk ambilight --music-dir /root/music --mood-dir /r
 Restart=on-failure
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

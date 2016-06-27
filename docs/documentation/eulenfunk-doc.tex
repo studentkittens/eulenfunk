@@ -358,7 +358,7 @@ Die Küche ist der Ort an welchem gemeinsam gekocht und gespeist wird.
 Für eine angenehme Atmosphäre und als Nachrichten--Quelle sorgte in der
 Küche früher ein Analog--Radio der Firma \emph{AEG}, welches aufgrund
 der schlechten Empfangsqualität durch eine Kombination aus »alter
-Stereoanlage«, »altem Raspberry Pi« und einem »alten Thinkpad x61t«
+Stereoanlage«, »altem Raspberry Pi« und einem »alten Thinkpad X61t«
 ersetzt wurde. In dieser Kombination fungierte die Stereoanlage als
 Soundausgabe--Komponente, auf dem \emph{Raspberry Pi} lief der
 Linux--basierte Player Volumio\footnote{Volumio:
@@ -1030,31 +1030,765 @@ ff. zu.
 
 \chapter{Software}\label{software}
 
-\section{Vorhandene
-Softwarelibraries}\label{vorhandene-softwarelibraries}
-
-\section{Überblick der einzelnen
-Komponenten}\label{uxfcberblick-der-einzelnen-komponenten}
-
-\section{Softwarearchitektur}\label{softwarearchitektur}
-
-\section{Treiber--Software}\label{treibersoftware}
-
-\subsection{LCD--Treiber}\label{lcdtreiber}
-
-Von Elchen entwickelt.
-
-\subsection{Rotary--Treiber}\label{rotarytreiber}
-
-Von Elchen kopiert.
-
-\subsection{LED--Treiber}\label{ledtreiber}
+\section{Anforderungen}\label{anforderungen}
 
 \begin{itemize}
 \tightlist
 \item
-  Software--PWM
+  Leichte integrierbarkeit mit anderen Anwendungen (lose Kopplung) TODO:
+  Mehr.
 \end{itemize}
+
+\section{Softwarearchitektur}\label{softwarearchitektur}
+
+Die Nachbaubarkeit vieler Bastelprojekte ist häufig durch die Software
+recht eingeschränkt, da diese entweder nicht frei verfügbar ist oder zu
+wenig generisch ist als dass man die Software leicht auf das Projekt
+anpassen könnte. Meist handelt es sich dabei um ein einziges, großes
+C--Programm oder ein eher unübersichtliches Python--Skript (TODO:
+refs?). Aus diesem Grunde soll die Software für \emph{Eulenfunk} derart
+modular aufgebaut sein, dass man einzelne Module problemlos auch auf
+andere Projekte übertragbar sind und später eine leichte Erweiterbarkeit
+gewährleistet ist. Damit auch andere die Software einsetzen können wird
+sie unter die GPL in der Version 3 (TODO: ref) gestellt.
+
+Zu diesem Zwecke ist die Software in zwei Hauptschichten unterteilt. Die
+untere Schicht bilden dabei die \emph{Treiber}, welche die tatsächliche
+Ansteuerung der Hardware erledigt. Dabei gibt es für jeden Teil der
+Hardware einen eigene Treiber, im Falle von \emph{Eulenfunk} also ein
+separates Programm für die LCD-Ansteuerung, das Setzen der LED Farbe und
+dem Auslesen des oberen Rotary Switches.
+
+Die Schicht darüber bilden einzelne Dienste (ingesamt fünf), die über
+eine Netzwerkschnittstelle angesprochen werden und jeweils eine
+Funktionalität des Radios umsetzen. So gibt es beispielsweise einen
+Dienst der die Ansteuerung des LCD--Displays \emph{komfortabel} macht,
+ein Dienst, der die LEDs passend zur Musik schaltet und ein Dienst der
+automatisch eine Playlist aus der Musik auf angesteckten externen
+Speichermedien erstellt. Die jeweiligen Dienste sprechen mit den
+Treibern indem sie Daten auf \texttt{stdin} schreiben, bzw. Daten von
+\texttt{stdout} lesen. Um die Dienste auf neue Projekte zu portieren ist
+also nur eine Anpassung der Treiber notwendig.
+
+Der Vorteil liegt dabei klar auf der Hand: Die lose Kopplung der
+einzelnen Dienste erleichtert die Fehlersuche ungemein und macht eine
+leichte Austauschbarkeit und Übertragbarkeit der Dienste in anderen
+Projekte möglich. Stellt man beispielsweise fest, dass der Prozessor des
+Radios voll ausgelastet ist, so kann man mit Tools wie \texttt{htop}
+sehr einfach herausfinden welcher Dienst dafür verantwortlich ist.
+
+\section{Überblick der einzelnen
+Komponenten}\label{uxfcberblick-der-einzelnen-komponenten}
+
+Ein Überblick über die existierenden Dienste liefert Abbildung
+\ref{eulenfunk-services}.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/eulenfunk-services.png}
+  \caption{Übersicht über die Softwarelandschaft von Eulenfunk. Dienste mit
+  einer Netzwerkschnittstelle sind durch den entsprechenden Port gekennzeichnet.}
+  \label{eulenfunk-services}
+\end{figure}
+
+\subsection{Sprachwahl}\label{sprachwahl}
+
+Die momentane Software ist in den Programmiersprachen \emph{C} und
+\emph{Go} geschrieben. Dazu kommt lediglich ein Bash--Skript zum
+Auslesen von Systeminformationen.
+
+Die Ressourcen auf dem Raspberry Pi sind natürlich sehr limitiert,
+weswegen sehr speicherhungrige Sprachen wie Java oder Ähnliches von
+vornherein ausschieden. Obwohl Python nach Meinung des Autors eine
+schöne Sprache ist und viele gute Bibliotheken für den Pi bietet, schied
+es ebenfalls aus diesem Grund aus.
+
+Ursprünglich war sogar geplant, alles in \emph{Go} zu schreiben. Leider
+gibt es nur wenige Pakete für die GPIO Ansteuerung und auch keine
+Bibliothek für Software--PWM. Zwar hätte man diese notfalls auch selbst
+mittels \texttt{/sys/class/gpio/*} implementieren können, doch bietet
+\emph{Go} leider keine native Möglichkeit mit Interrupts zu arbeiten.
+Wie später beschrieben ist dies allerdings für den Treiber nötig, der
+den Rotary Switch ausliest.
+
+Für \emph{Go} sprechen wir ansonsten folgende Gründe:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Garbage collector:} Erleichtert die Entwicklung lang laufender
+  Dienste.
+\item
+  \textbf{Hohe Grundperformanz:} Zwar erreicht diese nicht die
+  Performanz von C, liegt aber zumindest in der selben Größenordnung
+  (TODO: ref)
+\item
+  \textbf{Weitläufige Standardlibrary:} Kaum externe Bibliotheken
+  notwendig.
+\item
+  \textbf{Schneller Kompiliervorgang:} Selbst große Anwendungen werden
+  in wenigen Sekunden in eine statische Binärdatei ohne Abhängigkeiten
+  übersetzt.
+\item
+  \textbf{Kross--Kompilierung:} Durch Setzen der \texttt{GOARCH}
+  Umgebungsvariable kann problemlos auf einen
+  x86-64--Entwicklungsrechner eine passende ARM--Binärdatei erzeugt
+  werden.
+\item
+  \textbf{Eingebauter Scheduler:} Parallele und nebenläufige Anwendungen
+  wie Netzwerkserver sind sehr einfach zu entwickeln.
+\item
+  Ein Kriterium war natürlich auch dass der Autor gute Erfahrung mit der
+  Sprache hatte und \textbf{neugierig} war, ob sie auch für solche
+  Bastelprojekte gut einsetzbar ist.
+\end{itemize}
+
+\texttt{C} ist hingegen für die Entwicklung der Treiber vor allem aus
+diesen Gründen eine gute Wahl:**
+
+\begin{itemize}
+\tightlist
+\item
+  Programmierung mit \textbf{Interrupts} bequem und nativ möglich.
+\item
+  Höchste Performanz und geringer Speicherverbrauch.
+\item
+  Verfügbarkeit von wiringPi.
+\end{itemize}
+
+\subsection{Vorhandene
+Softwarelibraries}\label{vorhandene-softwarelibraries}
+
+Es folgt eine Liste der benutzten Bibliotheken:
+
+\subsubsection{\texorpdfstring{\texttt{wiringPi}
+(http://wiringpi.com)}{wiringPi (http://wiringpi.com)}}\label{wiringpi-httpwiringpi.com}
+
+\texttt{wiringPi} ist eine Portierung der Arduino--\texttt{Wiring}
+Bibliothek von Gordon Henderson auf den Raspberry Pi. Sie dient wie ihr
+Arduino--Pendant zur leichten Steuerung der verfügbaren Hardware,
+insbesondere der GPIO--Pins über \texttt{/dev/mem}. Daneben wird für den
+LCD--Treiber auch die mitgelieferte LCD--Bibliothek genutzt. Für den
+LED--Treiber wird zudem die softwarebasierte Pulsweitenmodulation
+genutzt, allerdings in einer leicht veränderten Form.
+
+\subsubsection{\texorpdfstring{\texttt{go-mpd}
+(https://github.com/fhs/gompd)}{go-mpd (https://github.com/fhs/gompd)}}\label{go-mpd-httpsgithub.comfhsgompd}
+
+Eine einfache MPD--Bibliothek, die wenig mehr als die meisten Kommandos
+des MPD--Protokolls unterstützt.
+
+TODO: ref (https://www.musicpd.org/doc/protocol/)
+
+\subsubsection{\texorpdfstring{\texttt{go-colorful}
+(github.com/lucasb-eyer/go-colorful)}{go-colorful (github.com/lucasb-eyer/go-colorful)}}\label{go-colorful-github.comlucasb-eyergo-colorful}
+
+Eine Bibliothek um Farben in verschiedene Farbräume zu konvertieren. Der
+Dienst der die LED passend zur Musik setzt nutzt diese Bibliothek um
+RGB--Farbwerte in den HCL--Farbraum zu übersetzen. Dieser eignet sich
+besser um saubere Übergänge zwischen zwei Farben zu berechnen und
+Farbanpassungen vorzunehmen. Die genaue Funktionsweise wird weiter unten
+beleuchtet (TODO: ref).
+
+\subsubsection{cli
+(github.com/urfave/cli)}\label{cli-github.comurfavecli}
+
+Eine komfortable und reichhaltige Bibliothek um Kommandozeilenargumente
+zu parsen. Unterstützt Subkommandos ähnlich wie \texttt{git}, welche
+dann wiederum eigene Optionen oder weitere Subkommandos besitzen können.
+Beide Features wurden extensiv eingesetzt, um alle in \emph{Go}
+geschriebenen Dienste in einer Binärdatei mit konsistentem
+Kommandozeileninterface zu vereinen.
+
+\section{Treiber--Software}\label{treibersoftware}
+
+In Summe gibt es momentan drei unterschiedliche Treiber. Sie finden sich
+im \texttt{driver/} Unterverzeichnis\footnote{Siehe auf GitHub:
+  \url{https://github.com/studentkittens/eulenfunk/tree/master/driver}}
+der Software nebst einem passenden Makefile. Nach dem Kompilieren
+entstehen drei Binärdateien, welche mit dem Präfix \texttt{radio-}
+beginnen:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{radio-led:} Setzt die Farbe des LED--Panels auf verschiedene
+  Weise.
+\item
+  \texttt{radio-lcd:} Liest Befehle von \texttt{stdin} und setzt das
+  Display entsprechend.
+\item
+  \texttt{radio-rotary:} Gibt Änderungen des Rotary Switches auf
+  \texttt{stdout} aus.
+\end{itemize}
+
+Die genaue Funktionsweise dieser drei Programme wird im Folgenden näher
+beleuchtet.
+
+\subsection{\texorpdfstring{LED--Treiber
+(\texttt{driver/led-driver.c})}{LED--Treiber (driver/led-driver.c)}}\label{ledtreiber-driverled-driver.c}
+
+Der LED--Treiber dient zum Setzen eines RGB--Farbwerts. Jeder Kanal hat
+den Wertebereich 0 bis 255. Die Hilfe des Programms zeigt die
+verschiedenen Aufrufmöglichkeiten:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{usage}\NormalTok{:}
+  \KeywordTok{radio-led} \NormalTok{on  ....... turn on LED (white)}
+  \KeywordTok{radio-led} \NormalTok{off ....... turn off LED}
+  \KeywordTok{radio-led} \NormalTok{cat ....... read rgb tuples from stdin}
+  \KeywordTok{radio-led} \NormalTok{rgb  r g b  Set LED color to r,g,b}
+  \KeywordTok{radio-led} \NormalTok{hex }\CommentTok{#RRGGBB Set LED color from hexstring}
+  \KeywordTok{radio-led} \NormalTok{fade ...... Show a fade for debugging}
+\end{Highlighting}
+\end{Shaded}
+
+Erklärung benötigt hierbei nur der \texttt{cat}--Modus, bei dem der
+Treiber zeilenweise RGB--Farbtripel \texttt{stdin} liest und setzt.
+Dieser Modus wird benutzt, um kontinuierlich Farben zu setzen ohne
+ständig das Treiberprogramm neu zu starten.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/eulenfunk-pwm.png}
+  \caption{Grafische Darstellung der Pulsweitenmodulation}
+  \label{eulenfunk-pwm}
+\end{figure}
+
+Da ein GPIO--Pin prinzipiell nur ein oder ausgeschaltet werden kann
+verwenden wir Pulsweitenmodulation. Dabei macht man sich die träge Natur
+des menschlichen Auges zu nutze indem man die LED sehr schnell
+hintereinander ein und ausschaltet. Ist die LED dabei pro Ein- und
+Ausschaltvorgang genauso lang hell wie dunkel so leuchtet die LED mit
+etwa der Hälfte ihrer maximalen Leuchtstärke. Durch
+Verlängerung/Verkürzung des eingeschalteten Zustands können so viele
+verschiedene Helligkeitsstufen abgebildet werden. Siehe dazu auch
+Abbildung \ref{eulenfunk-pwm}.
+
+TODO: Diagramm/Text anpassen.
+
+Da bei niedrigen Helligkeitswerten der ausgeschaltete Zustand besonders
+lange gehalten wird, kann es dazu kommen dass ein flackerhafter Eindruck
+entsteht, da man die ausgeschalteten Phasen als solche wahrnehmen kann.
+Um dies zu verhindern muss eine ausreichende hohe Frequenz gewählt
+werden.
+
+Anders als ursprünglich angenommen, mussten wir feststellen dass die
+GPIO Pins des Raspberry Pi (mit Ausnahme von Pin 18 (TODO: ref)) kein
+hardwareseitiges PWM unterstützen. Aus diesem Grund mussten wir auf
+softwareseitiges PWM zurückgreifen, um Farben mit mindestens 256
+Abstufungen zu erhalten. Nach etwas Ausprobieren befanden wir die
+\texttt{softPwm}--Bibliothek von \texttt{wiringPi} für tauglich (TODO:
+ref).
+
+Diese hat allerdings das Problem, dass eine hartkodierte Pulsweite von
+100µs verwendet wird. Für die meisten Anwendungsfälle und den vom Autor
+empfohlenen 100 Abstufungen ist das auch in Ordnung. Hundert
+unterschiedliche Zustände waren nach kurzem Ausprobieren bei einem
+weichen Farbübergang zu stark abgestuft.
+
+\(T_{Periode} = 100\mu s\times 100= 10000\mu s = 0.01s\)
+
+\(f = \frac{1}{T_{Periode}} = 100Hz\)
+
+Optimal wären hier 256 unterschiedliche Zustände, um die volle 8-Bit
+Farbtiefe auszunutzen. Daher mussten wir die entsprechende C--Datei
+kopieren (GPL3--lizensiert) und manuell anpassen. Dabei haben wir die
+Pulsweite auf 50µs herabgesetzt, was bei einer Spanne von 256 Werten
+eine Frequenz von optisch akzeptablen 78Hz ergibt:
+
+\(T_{Periode} = 50\mu s\times 256 = 12800\mu s = 0.0128s\)
+
+\(f = \frac{1}{T_{Periode}} = 78.125Hz\)
+
+Diese Frequenz scheint optisch ausreichend flackerfrei zu sein und
+scheint die CPU nicht übermäßig stark zu beeinflussen (rund 2-3\% pro
+Kanal).
+
+Es besteht eine Verbindung zu einen früheren Bastelprojekt namens
+\texttt{catlight}\footnote{\url{https://github.com/studentkittens/catlight}}
+--- einer mehrfarbigen, in einem Gehäuse montierten LED die über USB
+angesprochen werden kann. Genutzt wird diese zur Benachrichtigung bei
+neuen E--Mails, Chat--Nachrichten und ähnlichem. Zu diesem Zwecke wurde
+auch bereits damals ein Treiberprogramm entwickelt, welches das selbe
+Bedienungskonzept wie \texttt{radio-led} hat. Dies war während der
+Entwicklung von \emph{Eulenfunk} nützlich, da es die Entwicklung der
+Dienste \texttt{ambilight} und \texttt{lightd} unabhängig von der
+Radio--Hardware macht.
+
+\subsection{\texorpdfstring{LCD--Treiber
+(\texttt{driver/lcd-driver.c})}{LCD--Treiber (driver/lcd-driver.c)}}\label{lcdtreiber-driverlcd-driver.c}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{usage}\NormalTok{:}
+  \KeywordTok{radio-lcd} \NormalTok{[print-charset [start [end]]]}
+\end{Highlighting}
+\end{Shaded}
+
+Der LCD--Treiber setzt Bereiche des LCD--Displays auf einen gegebenen
+Text. Beim Start leert er das Display und liest ähnlich wie
+\texttt{radio-led\ cat} zeilenweise von \texttt{stdin} und entnimmt
+diesen Zeilen die Information welchen Bereich des Displays gesetzt
+werden soll. Das vom Treiber erwartete Zeilenformat ist dabei
+\texttt{LINENO{[},OFFSET{]}\ TEXT...}, wobei \texttt{LINENO} die
+gewünschte Zeilennummer als Dezimalzahl ist und der optionale
+\texttt{OFFSET} der Index an dem geschrieben werden soll. Dahinter folgt
+durch ein Leerzeichen getrennt beliebiger Text. Ist kein \texttt{OFFSET}
+gegeben, so wird die ganze Zeile überschrieben und nötigenfalls mit
+Leerzeichen aufgefüllt. Ist der Text länger als die Zeile wird der Text
+abgeschnitten.
+
+Der Treiber hält eine Matrix mit den aktuell gesetzten Zeichen und kann
+daher ein erneutes Zeichnen einer Zelle im Display verhindern, indem es
+das neue Zeichen mit dem Alten vergleicht. Unnötige Zeichenvorgänge
+waren als störende Schlieren auf dem Display wahrnehmbar.
+
+Zudem bietet der Treiber mit dem \texttt{print-charset} Argument die
+Möglichkeit die auf dem Display verfügbaren Zeichen aufs selbige
+auszugeben. Dazu stellt er jeweils 80 Zeichen da und wartetet einige
+Sekunden bevor die nächsten 80 ausgegeben werden. Hat er alle 256
+Zeichen ausgegeben beendet er sich. Optional kann man auch ein Start-
+und End--Offset mitgeben, an dem er das Zeichnen anfangen soll.
+
+Der Treiber unterstützt eine Reihe hardkodierter Spezialzeichen, welche
+in der Menüführung und der UI zu benutzt werden. Das LCD--Display
+unterstützt dabei 8 verschiedene \emph{Custom Chars}, welche mittels der
+Codepoints 0-7 und 8-15 (wiederholt) setzbar sind. Momentan sind diese
+auf folgende Glyphen gesetzt:
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/symbols.png}
+  \caption{}
+  \label{eulenfunk-symbols}
+\end{figure}
+
+Die eigentliche Ansteuerung der Pins übernimmt dabei wieder die
+\texttt{wiringPi}--Bibliothek, beziehungsweise dessen
+LCD--Unterbibliothek (TODO: ref:
+https://projects.drogon.net/raspberry-pi/wiringpi/lcd-library/). Diese
+ist kompatibel mit dem Hitachi HD44780U und Nachbauten.
+
+TODO:
+
+\begin{itemize}
+\tightlist
+\item
+  GPIO Anschluss?
+\end{itemize}
+
+\subsection{Rotary--Treiber}\label{rotarytreiber}
+
+\begin{itemize}
+\tightlist
+\item
+  Prellung
+\item
+  ISR / kein printf
+\item
+  rotary encoder
+\item
+  http://theatticlight.net/posts/Reading-a-Rotary-Encoder-from-a-Raspberry-Pi/
+\item
+  grey code (buch zitieren)
+\item
+  button entprellen
+\item
+  \enquote{Polling} Mainloop
+\item
+  \enquote{Div by 3 hack}
+\end{itemize}
+
+\section{Service Software}\label{service-software}
+
+\subsection{\texorpdfstring{\texttt{displayd} -- Der
+Displayserver}{displayd -- Der Displayserver}}\label{displayd-der-displayserver}
+
+\subsubsection{Einleitung}\label{einleitung}
+
+Der Displayserver \texttt{displayd} kümmert sich um die Verwaltung der
+Display--Inhalte. Er bietet eine höhere Abstraktionsschicht als der
+vergleichsweise simple LCD--Treiber. Dabei bietet er die Abstraktion von
+\emph{Zeilen}, \emph{Fenstern} und erleichtert dem Programmierer
+Enkodierungsaufgaben indem es ein Subset von Unicode unterstützt. Eine
+Zeile ist dabei eine beliebig langer utf8--enkodiertert Text ohne
+Zeilenumbruch. Die Zeile kann dabei länger als das Display sein. In
+diesem Fall wird die Zeile abgeschnitten oder scrollt je nach
+Konfiguration mit einer bestimmten Geschwindigkeit durch. Ein Fenster
+hingegen ist eine benannte Ansammlung von Zeilen. Auch ein Fenster kann
+mehr Zeilen haben als das Display. Vom Nutzer kann der Fensterinhalt
+dann vertikal verschoben werden. Es können mehrere Fenster verwaltet
+werden, aktiv ist dabei aber nur ein ausgewähltes.
+
+Die Idee diese Funktionalität in einem eigenen Daemon auszulagern, ist
+vom Grafikstack in unixoiden Betriebssystemen inspiriert. Dabei kümmert
+sich ebenfalls ein Displayserver um die Verwaltung der Inhalte (meist
+\texttt{X.org} oder \texttt{Wayland}) indem er auf bestimmte Treiber
+zurückgreift. Der Nutzer kann dann mittels eines festgelegten Protokolls
+mit dem Displayserver sprechen und so unabhängig von der verwendeten
+Rendering--Methode Inhalte darstellen. Da das Protokoll zwischen Client
+und Displayserver meist trotzdem zu komplex ist, haben sich für diese
+Aufgaben simple UI--Bibliotheken wie Xlib oder komplexere GTK+ und Qt
+etabliert. Auch die Fenster--Metapher wurde dabei von den
+Fenstermanagern übernommen.
+
+Das Protokoll von \texttt{displayd} ist ein relativ simpel gehaltenes,
+zeilenbasiertes Textprotokoll. Für den Zugriff auf dasselbige ist daher
+wird auch keine UI--Bibliothek benötigt, lediglich einige Netzwerk und
+Formatierungs--Hilfsfunktionen wurden implementiert (TODO: ref:
+display/client.go). Basierend auf diesen Primitiven wurden aber auf
+Clientseite Funktionalitäten wie Menü--»Widgets« implementiert, welche
+die grafische Darstellung mit der Nutzereingabe verquicken.
+
+Neben diesen Aufgaben löst \texttt{displayd} ein architektonisches
+Problem: Wenn mehrere Anwendung versuchen auf das Display zu schreiben
+käme ohne zentrale Instanz ein eher unleserliches Resultat dabei heraus.
+Durch \texttt{displayd} können Anwendungen auf ein separates Fenster
+schreiben, wovon jeweils nur eines aktiv angezeigt wird.
+
+\subsubsection{Architektur}\label{architektur}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/eulenfunk-displayd.png}
+  \caption{}
+  \label{eulenfunk-displayd}
+\end{figure}
+
+Abbildung \ref{eulenfunk-displayd} zeigt die Architektur in der
+Übersicht.
+
+Nach dem Start kann man auf Port 7777 \texttt{displayd} mittels eines
+simplen, zeilenbasierten Textprotokolls kontrollieren. Dabei werden die
+folgenden Kommandos (mit Leerzeichen--getrennten Argumenten)
+unterstützt:
+
+\begin{verbatim}
+switch <win>               -- Wechsle zum Fenster namens <win>.
+line <win> <pos> <text>... -- Setze die Zeile <pos> im Fenster <win> zu <text>
+scroll <win> <pos> <delay> -- Lässt Zeile <pos> in Fenster <win> mit der Geschwindigkeit <delay> scrollen.
+move <win> <off>           -- Verschiebe Fenster <win> um <off> Zeilen nach unten.
+truncate <win> <max>       -- Schneide Fenster <win> nach <max> Zeilen ab.
+render                     -- Gebe aktuelles Fenster auf Verbindung aus.
+close                      -- Schließt die aktuelle Verbindung.
+quit                       -- Beendet Daemon und schließt Verbindung.
+
+Dabei kann in die <Platzhalter> folgendes eingesetzt werden:
+
+<win>:   Ein valider Fenstername (andernfalls wird ein neues Fenster mit diesen Namen angelegt)
+<pos>:   Eine Zeilennummer, beginnend bei 0 für die erste Zeile.
+<off>:   Ein Offset; 0 steht für keine Änderung; Kann negativ sein.
+<max>:   Maximale Zeilenanzahl nach der das Fenster abgeschnitten wird.
+<delay>: Zeitlicher Abstand zwischen zwei Scroll--Vorgängen.
+         Siehe auch: https://golang.org/pkg/time/#ParseDuration
+         Beispiel: 100ms
+\end{verbatim}
+
+Für die tatsächliche Anzeige nutzt \texttt{displayd} wie oben erwähnt
+das Treiberprogramm \texttt{radio-lcd}. Dabei wird in periodischen
+Abständen (momentan 150ms) das aktuelle Fenster auf den Treiber
+geschrieben. Zukünftige Versionen sollen dabei intelligenter sein und
+nur die aktuell geänderten Zeilen herausschreiben. Allerdings hat sich
+herausgestellt, dass man mit mehreren scrollenden Zeilen bereits mit
+diesen Ereignisbasierten Ansatz auf eine höhere Aktualisierungsrate
+kommt als mit den statischen 150ms. Eine Art »VSync«, welches die
+Aktualisierungsrate intelligent limitiert wäre hier in Zukunft
+wünschenswert.
+
+\subsubsection{Entwicklung}\label{entwicklung}
+
+Da der Raspberry Pi nur bedingt als Entwicklungsplattform tauglich ist
+(langsamer Compile/Run Zyklus), unterstützt \texttt{displayd} auch
+Debugging--Möglichkeiten. Im Folgenden werden einige Möglichkeiten
+gezeigt mit \texttt{displayd} zu interagieren, beziehungsweise Programme
+zu untersuchen die \texttt{displayd} benutzen:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Den display server starten; --no-encoding schaltet spezielles LCD encoding}
+\CommentTok{# ab welches auf normalen Terminals zu Artifakten # führt. }
+\NormalTok{$ }\KeywordTok{eulenfunk} \NormalTok{display server --no-encoding }\KeywordTok{&}
+
+\CommentTok{# Gebe in kurzen Abständen das  "mpd" Fenster aus.}
+\CommentTok{# (In separaten Terminal eingeben!)}
+\NormalTok{$ }\KeywordTok{eulenfunk} \NormalTok{display --dump --update --window mpd}
+
+\CommentTok{# Verbinde zu MPD und stelle aktuellen Status auf "mpd" Fenster dar.}
+\NormalTok{$ }\KeywordTok{eulenfunk} \NormalTok{mpdinfo}
+\CommentTok{# Auch nach Unterbrechung wird der zuletzt gesetzte Text weiterhin angezeigt:}
+\NormalTok{$ }\KeywordTok{<CTRL-C>}
+\CommentTok{# Änderungen sind auch möglich indem man direkt mit dem Daemon über telnet}
+\CommentTok{# oder netcat spricht. Hier wird die erste Zeile überschrieben, das aktuelle}
+\CommentTok{# Fenster angezeigt und dann die Verbindung geschlossen.}
+\NormalTok{$ }\KeywordTok{telnet} \NormalTok{localhost 7777}
+\KeywordTok{line} \NormalTok{mpd 0 Erste Zeile geändert!}
+\KeywordTok{render}                        
+\KeywordTok{close}
+\end{Highlighting}
+\end{Shaded}
+
+\subsubsection{Enkodierung}\label{enkodierung}
+
+Das LCD--Display unterstützt 8 bit pro Zeichen. Dabei sind die ersten
+127 Zeichen weitesgehend deckungsgleich mit dem ASCII Standard.
+Lediglich die Zeichen 0 bis 31 sind durch \emph{Custom Chars} und einige
+zusätzliche Zeichen belegt. Dies ist insofern auch sinnvoll, da in
+diesem Bereich bei ASCII Steuerzeichen definiert sind, die auf dem LCD
+schlicht keinen Effekt hätten.
+
+Die Zeichen 128 bis 255 sind vom Hersteller des Displays mit
+verschiedenen Symbolen belegt worden, die keinem dem Autor bekannten
+Encoding entsprechen. Da auch nach längerer Internetrecherche keine
+passende Encoding--Tabelle gefunden werden konnte, wurde (in mühevoller
+Handarbeit) eine Tabelle erstellt, die passende Unicode--Glyphen auf das
+jeweilige Zeichen des Displays abbildet. Nicht erkannte utf8--Zeichen
+werden als ein »?« gerendert anstatt Zeichen die mehrere Bytes zur
+Enkodierung (wie » \$ \mu \$ «) als mehrere falsche Glyphen
+darzustellen. So wird beispielsweise aus dem scharfen »ß« das Zeichen
+223. Diese Konvertierung wird transparent von \texttt{displayd}
+vorgenommen wodurch es möglich wird auch Musiktitel und ähnliches
+(annäherend) korrekt darzustellen.
+
+Abbildung \ref{eulenfunk-encoding} zeigt das erstellte Mapping zwischen
+Unicode und LCD--Display. Folgende Seiten waren bei der Erstellung der
+Tabelle hilfreich:
+
+\begin{itemize}
+\tightlist
+\item
+  http://www.amp-what.com (Suche mittels Keyword)
+\item
+  http://shapecatcher.com (Suche mittels Skizze)
+\end{itemize}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/encoding.png}
+  \caption{Unicode Version der LCD--Glyphen}
+  \label{eulenfunk-encoding}
+\end{figure}
+
+\subsection{\texorpdfstring{\texttt{lightd} -- Der
+Effektserver}{lightd -- Der Effektserver}}\label{lightd-der-effektserver}
+
+\texttt{lightd} ist ein relativ einfacher Service, dessen Hauptaufgabe
+die Verwaltung auf den Zugriff auf die LED ist. Wollen mehrere Programme
+die LED ansteuern, um beispielsweise einen sanften roten und grünen
+Fade--Effekt zu realisieren so würde ohne Synchronisation zwangsläufig
+ein zittrige Mischung beider Effekte entstehen.
+
+Ursprünglich war \texttt{light} als \texttt{lockd} konzipiert, der den
+Zugriff auf verschiedene Ressourcen verwalten kann. Da aber das Display
+bereits von \texttt{displayd} synchronisiert wird und durchaus mehrere
+Programme den Rotary Switch auslesen dürfen wurde diese etwa generellere
+Idee wieder verworfen.
+
+Die zweite Hauptaufgabe von \texttt{lightd} ist die Darstellung von
+Farbeffekten auf der LED. Ursprünglich waren diese dafür gedacht um
+beispielsweise beim Verlust der WLAN--Verbindung ein rotes Blinken
+anzuzeigen. Momentan wird allerdings nur beim Herunterfahrend bzw.
+Rebooten ein rotes bzw. oranges Blinken angezeigt. Folgende Effekte sind
+also momentan als Möglichkeit zur Erweiterung zu begreifen:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{blend:} Überblendung zwischen zwei Farben.
+\item
+  \texttt{flash:} Kurzes Aufblinken einer bestimmten Farbe.
+\item
+  \texttt{fade:} Lineare Interpolation von schwarz zu einer bestimmten
+  Farbe und zurück.
+\item
+  \texttt{fire:} Kaminfeuerartiges Leuchten.
+\end{itemize}
+
+Wie andere Dienste wird auch \texttt{lightd} mittels einer
+Netzwerkschnittstelle kontrolliert. Die mögliche Kommandoes sind dabei
+wie folgt:
+
+TODO: translate
+
+\begin{verbatim}
+// !lock      -- Try to acquire lock or block until available.
+// !unlock    -- Give back lock.
+// !close     -- Close the connection.
+// <effect>   -- Lines starting without ! are parsed as effect spec.
+//
+// <effect> can be one of the following:
+//
+//   {<r>,<g>,<b>}
+//   blend{<src-color>|<dst-color>|<duration>}
+//   flash{<duration>|<color>|<repeat>}
+//   fire{<duration>|<color>|<repeat>}
+//   fade{<duration>|<color>|<repeat>}
+//
+// where <*-color> can be:
+//
+//   {<r>,<g>,<b>}
+//
+// and where <duration> is something time.ParseDuration() understands.
+// <repeat> is a simple integer.
+//
+// Examples:
+//
+//   {255,0,255}                     -- The world needs more solid pink.
+//   fire{1ms|{255,255,255}|0}       -- Warm fire effect.
+//   blend{{255,0,0}|{0,255,0}|2s}   -- Blend from red to green.
+\end{verbatim}
+
+\subsection{\texorpdfstring{\texttt{ambilightd} -- Optische
+Musikuntermalung}{ambilightd -- Optische Musikuntermalung}}\label{ambilightd-optische-musikuntermalung}
+
+Ein »Gimmick« von \emph{Eulenfunk} ist es, dass die LED entsprechend zur
+momentan spielenden Musik eingefärbt wird. Hier erklärt sich auch der
+Name dieses Dienstes: \emph{Ambilight} (TODO: ref) bezeichnet eigentlich
+eine von Phillips entwickelte Technologie, um an einem Fernseher
+angebrachte LEDs passend zum momentanen Bildinhalt einzufärben. Hierher
+kommt auch die ursprüngliche Idee dies auf Musik umzumünzen.
+
+Um aus den momentan spielenden Audiosamples eine Farbe abzuleiten gibt
+es einige Möglichkeiten. (TODO: hier HW schaltung etc. von oben
+aufgreifen). Eine große Einschränkung bildet hierbei allerdings die sehr
+begrenzte Rechenleistung des Raspberry Pi. Daher haben wir für eine
+Variante entschieden, bei der die Farbwerte vorberechnet werden. Das
+hast den offensichtlichen Nachteil, dass man für Radiostreams kein
+Ambientlicht anzeigen kann. Andererseits möchte man das bei
+Nachrichtensendung und Diskussionsrunden vermutlich auch nicht.
+
+Zur Vorberechnung nutzen wir dabei das \texttt{moodbar} Programm (TODO:
+http://cratoo.de/amarok/ismir-crc.pdf). Diese analysiert mit Hilfe des
+GStreamer--Frameworks (TODO: ref) eine Audiodatei in einem
+gebräuchlichen Format und zerlegt diese in 1000 Einzelteile. Kurz
+erklärt\footnote{Der eigentliche Algorithmus ist komplexer und wird im
+  referenzierten Paper beschrieben.} wird für jedes dieser Teile ein
+Farbwert berechnet, wobei niedrige Frequenzen zu roten Farbtönen werden,
+mittlere Frequenzen zu Grüntönen und hohe Frequenzen zu blauen Tönen
+werden. Die so gesammelten Farbwerte werden dann in einer \texttt{.mood}
+Datei gespeichert, welche aus 1000 RGB--Tripeln à 3 Byte (1 Byte pro
+Farbkanal) bestehen. Ein visualisiertes Beispiel für eine Moodbar kann
+man in Abbildung \ref{queen-moodbar} sehen.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/we-will-rock-you-mood.pdf}
+  \caption{Moodbar--Visualisierung des Liedes »We will rock you« von »Queen«.
+  Das Fußstapfen und Klatschen am Anfang ist gut erkennbar.
+  Die Visualisierung wurde mit einem Python--Skript des Autor erstellt 
+  (\url{https://github.com/sahib/libmunin/blob/master/munin/scripts/moodbar\_visualizer.py})}
+  \label{queen-moodbar}
+\end{figure}
+
+Um nun aber tatsächlich ein zur Musik passendes Licht anzuzeigen muss
+für jedes Lied in der Musikdatenbank eine passende Moodbar in einer
+Datenbank abgespeichert werden. Diese Datenbank ist im Fall von
+\emph{Eulenfunk} ein simples Verzeichnis in dem für jedes Lied die
+entsprechende Moodbar mit dem Pfad relativ zum
+Musikverzeichnis\footnote{Wobei »/« durch »\textbar{}« ersetzt werden.}
+als Dateinamen abgespeichert wird.
+
+Das Diagramm in Abbildung \ref{eulenfunk-ambilight} gibt eine Übersicht
+über die beteiligten Komponenten.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/eulenfunk-ambilight.png}
+  \caption{}
+  \label{eulenfunk-ambilight}
+\end{figure}
+
+\begin{itemize}
+\tightlist
+\item
+  Synchronisation zur Musik via MPD-Client.
+\item
+  Datenhaltung in \enquote{mood} directory/update funktion.
+\end{itemize}
+
+\subsection{mpdinfo}\label{mpdinfo}
+
+\subsection{ui}\label{ui}
+
+\begin{itemize}
+\tightlist
+\item
+  Windows (mehr dazu im Designteil)
+\end{itemize}
+
+\subsection{automount}\label{automount}
+
+\begin{itemize}
+\tightlist
+\item
+  udev regel erklären
+\item
+  Root und systemd problem
+\end{itemize}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/eulenfunk-automount.png}
+  \caption{}
+  \label{eulenfunk-automount}
+\end{figure}
+
+\section{Einrichtung}\label{einrichtung}
+
+\subsection{mpd und ympd}\label{mpd-und-ympd}
+
+TODO: eigentliche mpd einrichrung.
+
+\texttt{mpd} und \texttt{ympd} sind die einzigen Dienste die von außen
+(ohne Authentifizierung) zugreifbar sind. Auch wenn \emph{Eulenfunk}
+normal in einem abgesicherten WLAN hängt, wurde für die beiden Dienste
+jeweils ein eigener Nutzer mit eingeschränkten Rechten und
+\texttt{/bin/false} als Login--Shell angelegt.
+
+\subsection{systemd}\label{systemd}
+
+In Abbildung \ref{eulenfunk-systemd} ist schematisch der
+Abhängigkeitsgraph der einzelnen Dienste gezeigt.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/eulenfunk-systemd.png}
+  \caption{Abhängigkeits Graph beim Start der einzelnen Dienste}
+  \label{eulenfunk-systemd}
+\end{figure}
+
+TODO: restart / restart-on-failure
+
+\subsection{udev}\label{udev}
+
+\subsection{sonstiges}\label{sonstiges}
+
+Makefile
+
+pstree
+
+zeroconf
+
+memory usage, cpu usage
+
+godoc:
+
+systemd boot plot
+
+https://godoc.org/github.com/studentkittens/eulenfunk/display
+
+\section{Wartung}\label{wartung}
+
+ssh zugang
+
+systemctl status/journalctl zum logging
+
+\section{Fazit}\label{fazit}
+
+cloc statistiken
+
+probleme: re-mount, mpd brokenness.
 
 \chapter{Zusammenfassung}\label{zusammenfassung}
 
