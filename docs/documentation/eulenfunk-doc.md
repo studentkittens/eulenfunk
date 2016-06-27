@@ -1107,7 +1107,7 @@ auch nach längerer Internetrecherche keine passende Encoding--Tabelle gefunden
 werden konnte, wurde (in mühevoller Handarbeit) eine Tabelle erstellt, die
 passende Unicode--Glyphen auf das jeweilige Zeichen des Displays abbildet.
 Nicht erkannte utf8--Zeichen werden als ein »?« gerendert anstatt Zeichen die
-mehrere Bytes zur Enkodierung (wie » $ \mu $  «) als mehrere falsche Glyphen
+mehrere Bytes zur Enkodierung (wie » $\mu$  «) als mehrere falsche Glyphen
 darzustellen. So wird beispielsweise aus dem scharfen »ß« das Zeichen 223.
 Diese Konvertierung wird transparent von ``displayd`` vorgenommen wodurch es
 möglich wird auch Musiktitel und ähnliches (annäherend) korrekt darzustellen.
