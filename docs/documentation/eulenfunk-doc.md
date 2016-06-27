@@ -1361,6 +1361,32 @@ cloc statistiken
 
 probleme: re-mount, mpd brokenness due to powerhub.
 
+
+# Bedienkonzept/Menüsteuerung
+
+Bei der Bedienung von *Eulenfunk* bestand die Herausforderung,
+trotz minimaler Anzahl an Steuerelementen eine gute 
+Bedienbarkeit zu erreichen.
+
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/front_usage.png}
+  \caption{Frontansicht von *Eulenfunk*}
+  \label{front_usage}
+\end{figure}
+
+
+
+
+Zur Verfügung stehen primär ein Lautstärkeregler und ein Drehimpulsgeber.
+Auf der Rückseite des Radios ermöglichen zwei Potentiometer die Regelung
+der Beleuchtung und des Kontrasts vom Display. Mit einem Kippschalter kann
+die Audioausgabe zwischen internem und externen Lautsprechern umgeleitet werden.
+
+
+
+
 # Zusammenfassung
 
 ## Ziel erreicht?
