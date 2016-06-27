@@ -302,10 +302,6 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 			ActionFunc: switcher(mgr, "clock"),
 		},
 		&ClickEntry{
-			Text:       "System info",
-			ActionFunc: switcher(mgr, "sysinfo"),
-		},
-		&ClickEntry{
 			Text:       "Statistics",
 			ActionFunc: switcher(mgr, "stats"),
 		},
@@ -318,6 +314,10 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 		&ClickEntry{
 			Text:       "Powermenu",
 			ActionFunc: switcher(mgr, "menu-power"),
+		},
+		&ClickEntry{
+			Text:       "System info",
+			ActionFunc: switcher(mgr, "sysinfo"),
 		},
 		&ClickEntry{
 			Text: "About",

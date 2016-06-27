@@ -184,7 +184,7 @@ der einzelnen Komponenten.
   \label{uebersicht}
 \end{figure}
 
-Folgende Hardwarekomponenten oder Bauteile waren bereits vorhanden oder mussten 
+Folgende Hardwarekomponenten oder Bauteile sind bereits vorhanden oder müssen
 noch erworben werden:
 
 **Vorhanden:**
@@ -196,11 +196,11 @@ noch erworben werden:
 * USB--Hub für Anschluss von beispielsweise ext. Festplatte 
 * USB--Soundkarte 
 * Wi--Fi--Adapter
-* Netzteil (diverse 5V, 2A)
+* Netzteil (diverse 5V, 2mA)
 
 \newpage 
 
-**Mussten noch erworben werden:**
+**Muss noch erworben werden:**
 
 * Audioverstärker 
 * Drehimpulsregler 
@@ -212,9 +212,8 @@ noch erworben werden:
 
 ## Raspberry Pi
 
-Der vorhandene *Raspberry Pi* ist aus dem Jahr 2012. Die genaue CPU-- und
-Board--Revision kann auf Linux unter ``proc`` ausgelesen werden, siehe auch
-[@gay2014raspberry], Seite 46:
+Der vorhandene *Raspberry Pi* ist aus dem Jahr 2012. Die genaue Hardware--Revision kann
+auf Linux unter ``proc`` ausgelesen werden, siehe auch [@gay2014raspberry], Seite 46:
 
 ```bash
 
@@ -234,8 +233,8 @@ Board--Revision kann auf Linux unter ``proc`` ausgelesen werden, siehe auch
     Serial          : 00000000b8b9a4c2
 ```
 
-Laut Tabelle unter [@gay2014raspberry], Seite 45 handelt es sich hierbei
-(Revision 0003) um das Modell B Revision 1+ mit 256MB RAM.
+Laut Tabelle unter [@gay2014raspberry], Seite 45 handelt es sich hierbei um das
+Modell B Revision 1+ mit 256MB RAM.
 
 Je nach Raspberry Revision sind die Pins teilweise unterschiedlich belegt. Seit
 Modell B, Revision 2.0 ist noch zusätzlich der P5 Header dazu gekommen.
@@ -351,8 +350,8 @@ $$  R_{ges} = \frac{R_1 \times R_2}{R_1 + R_2} = \frac{100\Omega \times 100\Omeg
 ## Drehimpulsgeber
 
 Um eine minimale Anzahl an Bedienelementen zu erhalten, wird bei *Eulenfunk*
-ein Drehimpulsgeber mit Schalter gewählt. Für erste Testzwecke wurde von der 
-Hochschule ein *ALPS STEC12E08* bereitgestellt. Dieser wurde im Laufe der
+ein Drehimpulsgeber mit Schalter gewählt. Für erste Testzwecke wurde von Herrn
+Schäferling ein *ALPS STEC12E08* bereitgestellt. Dieser wurde im Laufe der
 Entwicklung durch einen *ALPS STEC11B09*[^ALPS] ersetzt, da dieser mittels Mutter und
 Schraube am Gehäuse besser befestigt werden kann. 
 
@@ -474,7 +473,7 @@ externe Stromquelle zu verwenden. Um die Speisung über eine externe Stromquelle
 zu ermöglichen, kann eine Transistorschaltung verwendet werden (vgl. [@exploring],
 Seite 219 ff.). 
 
-Für die Transistorschaltung wurden von Seite der Hochschule Augsburg NPN-- (BC547C) und
+Für die Transistorschaltung wurden von Herrn Schäferling NPN-- (BC547C) und
 PNP--Transistoren (BC557C) bereitgestellt. Für den ersten Testaufbau wurde der
 PNP--Transistor und eine RGB--LED[^RGBGM] mit gemeinsamen Minuspol verwendet.
 Dabei ist aufgefallen, dass die LED ständig geleuchtet hat. Eine kurze Recherche
@@ -1365,9 +1364,11 @@ probleme: re-mount, mpd brokenness due to powerhub.
 
 # Bedienkonzept/Menüsteuerung
 
-Bei der Bedienung von *Eulenfunk* bestand die Herausforderung,
-trotz minimaler Anzahl an Steuerelementen eine gute 
-Bedienbarkeit zu erreichen.
+## Bedienelemente
+
+Bei der Bedienung von *Eulenfunk* bestand die Herausforderung darin,
+trotz minimaler Anzahl an Bedienelementen eine gute 
+Bedienbarkeit(Usability) zu erreichen.
 
 
 \begin{figure}[h!]
@@ -1380,10 +1381,128 @@ Bedienbarkeit zu erreichen.
 
 
 
-Zur Verfügung stehen primär ein Lautstärkeregler und ein Drehimpulsgeber.
-Auf der Rückseite des Radios ermöglichen zwei Potentiometer die Regelung
+Zur Verfügung stehen primär ein Lautstärkeregler und ein Drehimpulsgeber[^front_usage].
+Auf der Rückseite des Radios ermöglichen zusätzlich zwei Potentiometer die Regelung
 der Beleuchtung und des Kontrasts vom Display. Mit einem Kippschalter kann
-die Audioausgabe zwischen internem und externen Lautsprechern umgeleitet werden.
+die Audioausgabe zwischen internen und externen Lautsprechern umgeleitet werden.
+
+Wie allgemein üblich, erhöht ein Rechtsdreh des Lautstärkereglers 
+die Lautstärke und ein Linksdreh verringert die Lautstärke.
+
+Der Drehimpulsgeber(Master-Regler) ist für die gesamte Navigation im Menü und das Ausführen von
+Aktionen zuständig. Drehen bewirkt grundsätzlich  ein *Vor* oder *Zurück*.
+Drücken bewirkt das kontextbezogene Ausführen einer Aktion. Näheres wird bei 
+den jeweiligen Menüansichten beschrieben.
+
+
+## Menüinhalt
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/hauptmenue.png}
+  \caption{Ansicht des Hauptmenüs}
+  \label{hauptmenue}
+\end{figure}
+
+Das Hauptmenü enthält drei Kategorien: Modes, Options und System (siehe Abb. \ref{hauptmenue}).
+Ein Drehen des Master-Regler navigiert zwischen den einzelnen Einträgen.
+Ein Drücken des Master-Regler öffnet den gewählten Eintrag als neue Ansicht
+(Modes, System) oder setzt direkt andere Werte (Options).
+
+### Current Song
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/currentsong.png}
+  \caption{Ansicht des Menüpunkts Current Song für Musikstücke und Radiosender}
+  \label{currentsong}
+  \end{figure}
+
+Der Menüpunkt *Current Song* zeigt Informationen des aktuell gespielten
+Mediums an. Es gibt eine geringfügig abweichende Ansicht für Musikstücke
+und für Radiosender. Wie in Abbildung \ref{currentsong} zu sehen ist, wird bei einem
+Musistück der Interpret, der Titel und das Album angezeigt. Sollte die Breite
+des Displays für die Länge dieser Werte nicht ausreichend sein, läuft die Anzeige
+der Zeichen durch. Die letzte Displayzeile zeigt an, ob Musik spielt, oder pausiert
+wird. Außerdem wird die Bitrate und die Spieldauer angezeigt. Die Ansicht für Radiosender
+enthält den Interpreten und den Titel in Zeile eins, gefolgt vom Radiosender in Zeile zwei.
+
+In beiden Ansichten führt ein Drücken des Master-Reglers zum Pausieren bzw. Abspielen
+der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Drehen des Reglers möglich.
+
+
+
+
+### Playlists
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/playlists.png}
+  \caption{Ansicht des Menüpunkts Playlists}
+  \label{playlists}
+  \end{figure}
+
+### Clock
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/clock.png}
+  \caption{Ansicht des Menüpunkts Clock}
+  \label{clock}
+  \end{figure}
+
+
+### Systeminfo
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/systeminfo.png}
+  \caption{Ansicht des Menüpunkts Systeminfo}
+  \label{systeminfo}
+  \end{figure}
+
+### Statistics
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/statistics.png}
+  \caption{Ansicht des Menüpunkts Statistics}
+  \label{statistic}
+  \end{figure}
+
+### Options
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/options.png}
+  \caption{Ansicht der Kategorie Options}
+  \label{options}
+  \end{figure}
+
+### Powermenu
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/powermenu.png}
+  \caption{Ansicht des Menüpunkts Powermenu}
+  \label{powermenu}
+  \end{figure}
+
+### About
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/about.png}
+  \caption{Ansicht des Menüpunkts About}
+  \label{about}
+  \end{figure}
+
+
+
+
+
+
+
 
 
 
