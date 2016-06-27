@@ -1364,9 +1364,11 @@ probleme: re-mount, mpd brokenness due to powerhub.
 
 # Bedienkonzept/Menüsteuerung
 
-Bei der Bedienung von *Eulenfunk* bestand die Herausforderung,
-trotz minimaler Anzahl an Steuerelementen eine gute 
-Bedienbarkeit zu erreichen.
+## Bedienelemente
+
+Bei der Bedienung von *Eulenfunk* bestand die Herausforderung darin,
+trotz minimaler Anzahl an Bedienelementen eine gute 
+Bedienbarkeit(Usability) zu erreichen.
 
 
 \begin{figure}[h!]
@@ -1379,10 +1381,116 @@ Bedienbarkeit zu erreichen.
 
 
 
-Zur Verfügung stehen primär ein Lautstärkeregler und ein Drehimpulsgeber.
-Auf der Rückseite des Radios ermöglichen zwei Potentiometer die Regelung
+Zur Verfügung stehen primär ein Lautstärkeregler und ein Drehimpulsgeber[^front_usage].
+Auf der Rückseite des Radios ermöglichen zusätzlich zwei Potentiometer die Regelung
 der Beleuchtung und des Kontrasts vom Display. Mit einem Kippschalter kann
-die Audioausgabe zwischen internem und externen Lautsprechern umgeleitet werden.
+die Audioausgabe zwischen internen und externen Lautsprechern umgeleitet werden.
+
+Wie allgemein üblich, erhöht ein Rechtsdreh des Lautstärkereglers 
+die Lautstärke und ein Linksdreh verringert die Lautstärke.
+
+Der Drehimpulsgeber(Master-Regler) ist für die gesamte Navigation im Menü und das Ausführen von
+Aktionen zuständig. Drehen bewirkt grundsätzlich ein ein *Vor* oder *Zurück*.
+Drücken bewirkt das kontextbezogene Ausführen einer Aktion. Näheres wird bei 
+den jeweiligen Menüansichten beschrieben.
+
+
+## Menüinhalt
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\textwidth]{images/hauptmenue.png}
+  \caption{Ansicht des Hauptmenüs}
+  \label{hauptmenue}
+\end{figure}
+
+Das Hauptmenü enthält drei Kategorien: Modes, Options und System (siehe Abb. \ref{hauptmenue}).
+Ein Drehen des Master-Regler navigiert zwischen den einzelnen Einträgen.
+Ein Drücken des Master-Regler öffnet den gewählten Eintrag als neue Ansicht
+(Modes, System) oder setzt direkt andere Werte (Options).
+
+### Current Song
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/currentsong.png}
+  \caption{Ansicht des Menüpunkts Current Song für Musikstücke und Radiosender}
+  \label{currentsong}
+  \end{figure}
+
+
+
+
+### Playlists
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/playlists.png}
+  \caption{Ansicht des Menüpunkts Playlists}
+  \label{playlists}
+  \end{figure}
+
+### Clock
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/clock.png}
+  \caption{Ansicht des Menüpunkts Clock}
+  \label{clock}
+  \end{figure}
+
+
+### Systeminfo
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/systeminfo.png}
+  \caption{Ansicht des Menüpunkts Systeminfo}
+  \label{systeminfo}
+  \end{figure}
+
+### Statistics
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/statistics.png}
+  \caption{Ansicht des Menüpunkts Statistics}
+  \label{statistic}
+  \end{figure}
+
+### Options
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/options.png}
+  \caption{Ansicht der Kategorie Options}
+  \label{options}
+  \end{figure}
+
+### Powermenu
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/powermenu.png}
+  \caption{Ansicht des Menüpunkts Powermenu}
+  \label{powermenu}
+  \end{figure}
+
+### About
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/about.png}
+  \caption{Ansicht des Menüpunkts About}
+  \label{about}
+  \end{figure}
+
+
+
+
+
+
+
 
 
 
