@@ -23,3 +23,6 @@ install: build
 	cp driver/radio-led $(BIN)
 	cp driver/radio-lcd $(BIN)
 	cp driver/radio-rotary $(BIN)
+
+doc:
+	cd docs/documentation && $(MAKE) --no-print-directory
