@@ -184,7 +184,7 @@ der einzelnen Komponenten.
   \label{uebersicht}
 \end{figure}
 
-Folgende Hardwarekomponenten oder Bauteile sind bereits vorhanden oder müssen
+Folgende Hardwarekomponenten oder Bauteile waren bereits vorhanden oder mussten 
 noch erworben werden:
 
 **Vorhanden:**
@@ -196,11 +196,11 @@ noch erworben werden:
 * USB--Hub für Anschluss von beispielsweise ext. Festplatte 
 * USB--Soundkarte 
 * Wi--Fi--Adapter
-* Netzteil (diverse 5V, 2mA)
+* Netzteil (diverse 5V, 2A)
 
 \newpage 
 
-**Muss noch erworben werden:**
+**Mussten noch erworben werden:**
 
 * Audioverstärker 
 * Drehimpulsregler 
@@ -212,8 +212,9 @@ noch erworben werden:
 
 ## Raspberry Pi
 
-Der vorhandene *Raspberry Pi* ist aus dem Jahr 2012. Die genaue Hardware--Revision kann
-auf Linux unter ``proc`` ausgelesen werden, siehe auch [@gay2014raspberry], Seite 46:
+Der vorhandene *Raspberry Pi* ist aus dem Jahr 2012. Die genaue CPU-- und
+Board--Revision kann auf Linux unter ``proc`` ausgelesen werden, siehe auch
+[@gay2014raspberry], Seite 46:
 
 ```bash
 
@@ -233,8 +234,8 @@ auf Linux unter ``proc`` ausgelesen werden, siehe auch [@gay2014raspberry], Seit
     Serial          : 00000000b8b9a4c2
 ```
 
-Laut Tabelle unter [@gay2014raspberry], Seite 45 handelt es sich hierbei um das
-Modell B Revision 1+ mit 256MB RAM.
+Laut Tabelle unter [@gay2014raspberry], Seite 45 handelt es sich hierbei
+(Revision 0003) um das Modell B Revision 1+ mit 256MB RAM.
 
 Je nach Raspberry Revision sind die Pins teilweise unterschiedlich belegt. Seit
 Modell B, Revision 2.0 ist noch zusätzlich der P5 Header dazu gekommen.
@@ -350,8 +351,8 @@ $$  R_{ges} = \frac{R_1 \times R_2}{R_1 + R_2} = \frac{100\Omega \times 100\Omeg
 ## Drehimpulsgeber
 
 Um eine minimale Anzahl an Bedienelementen zu erhalten, wird bei *Eulenfunk*
-ein Drehimpulsgeber mit Schalter gewählt. Für erste Testzwecke wurde von Herrn
-Schäferling ein *ALPS STEC12E08* bereitgestellt. Dieser wurde im Laufe der
+ein Drehimpulsgeber mit Schalter gewählt. Für erste Testzwecke wurde von der 
+Hochschule ein *ALPS STEC12E08* bereitgestellt. Dieser wurde im Laufe der
 Entwicklung durch einen *ALPS STEC11B09*[^ALPS] ersetzt, da dieser mittels Mutter und
 Schraube am Gehäuse besser befestigt werden kann. 
 
@@ -473,7 +474,7 @@ externe Stromquelle zu verwenden. Um die Speisung über eine externe Stromquelle
 zu ermöglichen, kann eine Transistorschaltung verwendet werden (vgl. [@exploring],
 Seite 219 ff.). 
 
-Für die Transistorschaltung wurden von Herrn Schäferling NPN-- (BC547C) und
+Für die Transistorschaltung wurden von Seite der Hochschule Augsburg NPN-- (BC547C) und
 PNP--Transistoren (BC557C) bereitgestellt. Für den ersten Testaufbau wurde der
 PNP--Transistor und eine RGB--LED[^RGBGM] mit gemeinsamen Minuspol verwendet.
 Dabei ist aufgefallen, dass die LED ständig geleuchtet hat. Eine kurze Recherche
