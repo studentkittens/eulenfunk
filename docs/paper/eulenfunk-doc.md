@@ -659,7 +659,7 @@ festgelegt:
 
 1. Leichte Bedienbarkeit, obwohl es nur einen Knopf gibt, der nur die
    Aktionen »links drehen«, »rechts drehen« und Drücken zulässt.
-2. Die Software sollte vernünftig mit den Hardwareressourcen des Rasperry Pi's
+2. Die Software sollte vernünftig mit den Hardwareressourcen des *Raspberry Pi*
    umgehen. Dabei sollte die Hardware nicht die ganze Zeit auf volle Last laufen,
    um eine Überhitzung im beengten Gehäuse zu vermeiden.
 3. Die Software sollte möglichst ausfallsicher sein. Fällt beispielsweise ein
@@ -676,12 +676,11 @@ Inwieweit und wodurch diese Anforderungen erfüllt worden sind, wird im Fazit er
 
 ## Abspielsoftware
 
-Für den Betrieb des Internetradios soll der MPD (Music--Player--Daemon) verwendet
-werden, da *Eulenfunk* auf einem eigens entwickeltem MPD--Client basieren soll
-(mehr zur Eulenkfunk Software siehe Kapitel Software). Andere Projekte greifen
-oft auf Abspielsoftware wie den *MOC* [vgl. @pietraszak2014buch], Seite 189 ff.
-oder *mplayer* [@exploring] Seite 638 ff. zu. 
-
+Für den Betrieb des Internetradios soll der MPD (Music--Player--Daemon)
+verwendet werden, da *Eulenfunk* auf einem eigens entwickeltem MPD--Client
+basieren soll. Andere Projekte greifen oft auf Abspielsoftware wie den *MOC*
+[vgl. @pietraszak2014buch], Seite 189 ff. oder *mplayer* [@exploring] Seite 638
+ff. zu. 
 
 Der MPD ist ein unter Unix gern genutzte Daemon zum Verwalten und Abspielen von
 Musik und Radiostreams. Er unterstützt dabei eine große Anzahl von Formaten und
@@ -723,7 +722,7 @@ Ansteuerung der Hardware erledigt. Dabei gibt es für jeden Teil der Hardware
 einen eigene Treiber, im Falle von *Eulenfunk* also ein separates Programm für
 die LCD-Ansteuerung, das Setzen der LED Farbe und dem Auslesen des oberen Drehknopfs.
 
-Die Schicht darüber bilden ingesamt fünf einzelne Dienste, die über eine
+Die Schicht darüber bilden insgesamt fünf einzelne Dienste, die über eine
 Netzwerkschnittstelle angesprochen werden und jeweils eine Funktionalität des
 Radios umsetzen. So gibt es beispielsweise einen Dienst, der die Ansteuerung des
 LCD--Displays *komfortabel* macht, ein Dienst, der die LEDs passend zur Musik
