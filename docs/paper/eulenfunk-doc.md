@@ -56,7 +56,7 @@ werden.
 \begin{figure}[h!]
   \centering
 \includegraphics[width=0.7\textwidth]{images/eulenfunk.png}
-  \caption{Aktueller Prototyp}
+  \caption{Foto vom aktuellen Prototypen}
   \label{fertig}
 \end{figure}
 
