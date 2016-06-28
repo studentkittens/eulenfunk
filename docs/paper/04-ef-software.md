@@ -1053,3 +1053,6 @@ funktioniert, gibt es natürlich noch Verbesserungspotenzial:
 
 [^BOOT-PLOT]: \url{https://github.com/studentkittens/eulenfunk/blob/master/docs/paper/images/boot-plot.svg}
 
+
+ELCH TODO: Überschriften nochmal anschauen...bspw. bei displayd die
+unterüberschrieften wie Einleitung... Entwicklung sind seltsam.
