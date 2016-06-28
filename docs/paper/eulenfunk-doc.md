@@ -1726,10 +1726,6 @@ funktioniert, gibt es natürlich noch Verbesserungspotenzial:
 
 ## Bedienelemente
 
-Bei der Bedienung von *Eulenfunk* bestand die Herausforderung darin,
-trotz minimaler Anzahl an Bedienelementen eine gute 
-Bedienbarkeit(Usability) zu erreichen.
-
 
 \begin{figure}[h!]
   \centering
@@ -1738,10 +1734,11 @@ Bedienbarkeit(Usability) zu erreichen.
   \label{front_usage}
 \end{figure}
 
+Bei der Bedienung von *Eulenfunk* bestand die Herausforderung vorallem darin,
+trotz minimaler Anzahl an Bedienelementen eine gute 
+Bedienbarkeit(Usability) zu erreichen.
 
-
-
-Zur Verfügung stehen primär ein Lautstärkeregler und ein Drehimpulsgeber[^front_usage].
+Zur Verfügung stehen primär ein Lautstärkeregler und ein Drehimpulsgeber (Abb. \ref{front_usage}).
 Auf der Rückseite des Radios ermöglichen zusätzlich zwei Potentiometer die Regelung
 der Beleuchtung und des Kontrasts vom Display. Mit einem Kippschalter kann
 die Audioausgabe zwischen internen und externen Lautsprechern umgeleitet werden.
@@ -1749,7 +1746,7 @@ die Audioausgabe zwischen internen und externen Lautsprechern umgeleitet werden.
 Wie allgemein üblich, erhöht ein Rechtsdreh des Lautstärkereglers 
 die Lautstärke und ein Linksdreh verringert die Lautstärke.
 
-Der Drehimpulsgeber(Master-Regler) ist für die gesamte Navigation im Menü und das Ausführen von
+Der Drehimpulsgeber(Master-Regler) ist für die gesamte Navigation innerhalb des Menüs und das Ausführen von
 Aktionen zuständig. Drehen bewirkt grundsätzlich  ein *Vor* oder *Zurück*.
 Drücken bewirkt das kontextbezogene Ausführen einer Aktion. Näheres wird bei 
 den jeweiligen Menüansichten beschrieben.
@@ -1783,7 +1780,7 @@ Ein Drücken des Master-Regler öffnet den gewählten Eintrag als neue Ansicht
 Der Menüpunkt *Current Song* zeigt Informationen des aktuell gespielten
 Mediums an. Es gibt eine geringfügig abweichende Ansicht für Musikstücke
 und für Radiosender. Wie in Abbildung \ref{currentsong} zu sehen ist, wird bei einem
-Musistück der Interpret, der Titel und das Album angezeigt. Sollte die Breite
+Musikstück der Interpret, der Titel und das Album angezeigt. Sollte die Breite
 des Displays für die Länge dieser Werte nicht ausreichend sein, läuft die Anzeige
 der Zeichen durch. Die letzte Displayzeile zeigt an, ob Musik spielt, oder pausiert
 wird. Außerdem wird die Bitrate und die Spieldauer angezeigt. Die Ansicht für Radiosender
@@ -1826,8 +1823,7 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
   \end{figure}
 
   Der Menüpunkt *Clock* zeigt die aktuelle Uhrzeit, sowie das Datum an. 
-  Ein Drücken des Master-Reglers führt zurück zum Hauptmenue. ??????
-  Kann in diesem Modus zwischen Liedern umgeschaltet werden ??????
+  Ein Drücken des Master-Reglers führt zurück zum Hauptmenue. 
 
 
 ### Systeminfo
@@ -1843,7 +1839,7 @@ Der Menüpunkt *Systeminfo* zeigt folgende Informationen zum System an:
 CPU-Auslastung, Speicher-Auslastung, IP-Adresse, Systemlaufzeit,
 WLAN-Empfangsstärke und CPU-Temperatur.
 
-Ein Drücken des Master-Reglers führt zurück zum Hauptmenü ??????
+Ein Drücken des Master-Reglers führt zurück zum Hauptmenü.
 
 
 ### Statistics
@@ -1860,7 +1856,7 @@ Songs aktuell in den Playlisten insgesamt zu finden sind. Zusätzlich
 wird die Gesamtspieldauer aller Playlisten angezeigt.
 
 
-Ein Drücken des Master-Reglers führt zurück zum Hauptmenü ??????
+Ein Drücken des Master-Reglers führt zurück zum Hauptmenü.
 
 ### Options
 
@@ -1872,13 +1868,16 @@ Ein Drücken des Master-Reglers führt zurück zum Hauptmenü ??????
   \end{figure}
 
 *Options* ist eine Kategorie, die keine Unteransichten hat.
-Opionen werden direkt durch ein Drücken des Master-Reglers geändert.
+Optionen werden direkt durch ein Drücken des Master-Reglers geändert.
 
-- Party!: Aus/An
+- Party!: Aus/Ein
+  		LEDs können aktiviert oder deaktiviert werden.
 - Output: stereo, mono
+		Umschalten zwischen stereo- und mono-Ausgabe.
 - Playback: Play, Pause, Stop
-- Random: Aus/An
-
+	Wechsel zwischen Abspiel-, Pause-, und Stopmodus.
+- Random: Aus/Ein
+    Zufällige Wahl eines Musikstücks aus der aktuell gewählten Playlist.
 
 
 ### Powermenu
@@ -1910,8 +1909,29 @@ Opionen werden direkt durch ein Drücken des Master-Reglers geändert.
 
 ## Shortcuts
 
-Das Power Menu ist in jeder Anzeigesituation durch Drücken des
-Master-Reglers von 3 Sekunden aufrufbar. Das 
+Ein Direktzugriff auf das Power Menu [(siehe 6.2.7)](#powermenu) ist durch
+Drücken des Master-Reglers von 3 Sekunden möglich --- in allen Anzeigemodi.
+Das führt zu mehr Komfortabilität in der Bedienung. Es kann direkt ins Power Menu 
+gewechselt werden, ohne die aktuelle Anzeige verlassen zu müssen, um manuell
+zum Power Menu zu navigieren.
+
+In der Ansicht *Current Song* führt ein 600ms-Drücken des Master-Reglers 
+ins Hauptmenü. Eine Abweichung zu der Funktionsweise in den anderen Ansichten
+war notwendig, weil auch der Wechsel zwischen Pause/Play möglich sein sollte.
+Für eine möglichst intuitive Bedienung bot es sich an, dies durch ein einfaches
+Drücken des Master-Reglers zu realisieren. Für den Wechsel ins Hauptmenü 
+wurde deshalb ein längerer Halte-Zeitraum gewählt.
+
+
+## Fazit
+
+Die Möglichkeiten für die Darstellung der Inhalte waren aufgrund des 4x20 Displays
+verständlicherweise begrenzt. Auch die Bedienung des Menüs über einen einzigen
+Drehimpulsgeber setzt klare Grenzen für die Steuerung.
+
+Trotz dieser minimalistischen Umstände, ist es gelungen, eine weitgehend konsistente
+Menüführung umzusetzen. Nach einer kurzen Eingewöhnungsphase sollte das Bedienkonzept
+gut funktionieren.
 
 
 
