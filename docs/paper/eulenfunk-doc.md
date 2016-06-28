@@ -1594,6 +1594,8 @@ Drücken bewirkt das kontextbezogene Ausführen einer Aktion. Näheres wird bei
 den jeweiligen Menüansichten beschrieben.
 
 
+\newpage
+
 ## Menüinhalt
 
 \begin{figure}[h!]
@@ -1697,7 +1699,7 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
   \end{figure}
 
 
-
+## Shortcuts
 
 
 
