@@ -18,6 +18,10 @@ import (
 	"golang.org/x/net/context"
 )
 
+const (
+	mountSubDir = "mounts"
+)
+
 // Config gives the user of automount some adjustment screws.
 // See the fields for the available options.
 type Config struct {
@@ -68,9 +72,11 @@ func (srv *server) playlistFromDir(client *mpd.Client, label string) error {
 
 	cmdlist := client.BeginCommandList()
 
+	playlistName := playlistNameFromLabel(label)
+
 	for _, uri := range uris {
 		log.Printf("Adding `%s`", uri)
-		cmdlist.PlaylistAdd(label, uri)
+		cmdlist.PlaylistAdd(playlistName, uri)
 	}
 
 	return cmdlist.End()
@@ -138,6 +144,10 @@ func (srv *server) updateDatabase(client *mpd.Client, label string) error {
 	return nil
 }
 
+func playlistNameFromLabel(label string) string {
+	return "stick-" + label
+}
+
 func (srv *server) mountToPlaylist(destPath, label string) error {
 	addr := fmt.Sprintf("%s:%d", srv.Config.MPDHost, srv.Config.MPDPort)
 	client, err := mpd.Dial("tcp", addr)
@@ -147,7 +157,9 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 
 	defer util.Closer(client)
 
-	if dbErr := srv.updateDatabase(client, label); dbErr != nil {
+	playlistName := playlistNameFromLabel(label)
+
+	if dbErr := srv.updateDatabase(client, filepath.Join(mountSubDir, label)); dbErr != nil {
 		log.Printf("Updating MPD failed: %v", dbErr)
 		return dbErr
 	}
@@ -158,8 +170,8 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 	}
 
 	for _, playlist := range playlists {
-		if playlist["playlist"] == label {
-			if err := client.PlaylistClear(label); err != nil {
+		if playlist["playlist"] == playlistName {
+			if err := client.PlaylistClear(playlistName); err != nil {
 				return err
 			}
 
@@ -171,7 +183,7 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 }
 
 func (srv *server) mount(device, label string) error {
-	destPath := filepath.Join(srv.Config.MusicDir, label)
+	destPath := filepath.Join(srv.Config.MusicDir, mountSubDir, label)
 	if err := os.MkdirAll(destPath, 0777); err != nil {
 		return err
 	}
@@ -181,7 +193,7 @@ func (srv *server) mount(device, label string) error {
 		return err
 	}
 
-	if err := srv.mountToPlaylist(destPath, label); err != nil {
+	if err := srv.mountToPlaylist(destPath, playlistNameFromLabel(label)); err != nil {
 		return err
 	}
 
@@ -197,7 +209,7 @@ func (srv *server) unmount(device, label string) error {
 
 	defer util.Closer(client)
 
-	if err := client.PlaylistRemove(label); err != nil {
+	if err := client.PlaylistRemove(playlistNameFromLabel(label)); err != nil {
 		return err
 	}
 
@@ -206,6 +218,7 @@ func (srv *server) unmount(device, label string) error {
 		return err
 	}
 
+	// Do not remove recursively. That might go very bad if umount did not work:
 	destPath := filepath.Join(srv.Config.MusicDir, label)
 	if err := os.Remove(destPath); err != nil {
 		log.Printf("Failed to remove mount dir: %v", err)
