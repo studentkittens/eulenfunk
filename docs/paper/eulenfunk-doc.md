@@ -133,7 +133,7 @@ nur schwer beziehungsweise vereinzelt zu finden sind:
 
 
 
-# Projektspezifikation
+# Hardware
 
 ## Hardwareanforderungen
 
@@ -148,29 +148,7 @@ Das Radio soll dem Benutzer folgende Hardwarekonfigurationsmöglichkeiten bieten
 
 [^MOODBAR]: Moodbar: \url{https://en.wikipedia.org/wiki/Moodbar}
 
-## Softwareanforderungen
 
-Die Software soll generisch gehalten werden um eine möglichst einfache
-Erweiterbarkeit zu  gewährleisten. 
-
-TODO Eule: Hier was zu Menü--Steuerung schrieben und Umfang?
-
-## Optik-- und Usability--Anforderungen
-
-Die Eingabe--Peripherie soll möglichst einfach gehalten werden, um eine *schöne*
-Produkt--Optik zu gewährleisten, dabei sollen folgende Anforderungen erfüllt
-werden:
-
-* Minimale sowie ansprechende Bedienelemente
-* Funktionales, zweckgebundenes *Design*
-* *Retro--Look*-Aussehen wünschenswert
-
-Das *Design* soll im Grunde *minimalistisch*  gehalten werden, das heißt, es
-sollen aufgrund der Übersichtlichkeit nur so wenige »Bedienelemente« wie nötig
-angebracht werden.
-
-
-# Hardware
 
 ## Komponenten und Bauteile
 
@@ -1679,6 +1657,21 @@ funktioniert, gibt es natürlich noch Verbesserungspotenzial:
   Die aktuelle Übersicht findet sich unter (TODO: ref).
 
 # Bedienkonzept/Menüsteuerung
+
+## Optik-- und Usability--Anforderungen
+
+Die Eingabe--Peripherie soll möglichst einfach gehalten werden, um eine *schöne*
+Produkt--Optik zu gewährleisten, dabei sollen folgende Anforderungen erfüllt
+werden:
+
+* Minimale sowie ansprechende Bedienelemente
+* Funktionales, zweckgebundenes *Design*
+* *Retro--Look*-Aussehen wünschenswert
+
+Das *Design* soll im Grunde *minimalistisch*  gehalten werden, das heißt, es
+sollen aufgrund der Übersichtlichkeit nur so wenige »Bedienelemente« wie nötig
+angebracht werden.
+
 
 ## Bedienelemente
 
