@@ -1,7 +1,7 @@
 package display
 
 var (
-	specialAscii = []rune{
+	specialASCII = []rune{
 		'±', '≅', '⎲', '/', '⎛', '⎩', '⎞', '⎭', // 16 - 23
 		'⎧', '⎫', '≈', '⌠', '=', '~', '²', '³', // 24 - 31
 	}
@@ -33,7 +33,7 @@ func init() {
 		utf8ToLCD[rn] = rune(idx)
 	}
 
-	for idx, rn := range specialAscii {
+	for idx, rn := range specialASCII {
 		utf8ToLCD[rn] = rune(16 + idx)
 	}
 

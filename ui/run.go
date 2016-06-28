@@ -228,6 +228,11 @@ func shutdown(cfg *Config, lw *display.LineWriter, mode, effect string) error {
 	}
 
 	switchToStatic(lw, "shutdown")
+
+	if err := ambilightChangeState(cfg, false); err != nil {
+		log.Printf("NOTE: Failed to disable ambilight: %v", err)
+	}
+
 	if err := lightd.Send(lightdCfg, effect); err != nil {
 		log.Printf("NOTE: Failed to send flash effect to lightd: %v", err)
 	}
@@ -470,6 +475,7 @@ func Run(cfg *Config, ctx context.Context) error {
 	}
 
 	mgr.AddTimedAction(600*time.Millisecond, switcher(mgr, "menu-main"))
+	mgr.AddTimedAction(2*time.Second, switcher(mgr, "menu-playlists"))
 	mgr.AddTimedAction(3*time.Second, switcher(mgr, "menu-power"))
 	mgr.AddTimedAction(8*time.Second, schuhuAction)
 
