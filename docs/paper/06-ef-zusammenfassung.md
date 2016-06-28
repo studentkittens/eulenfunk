@@ -42,14 +42,12 @@ permanenten Internetverbindung mittels NTP[^NTP] über das Internet
 synchronisieren kann. Eine Erweiterung um eine Echtzeituhr wird in
 [@horan2013practical], Seite 145 ff. und [@gay2014experimenting], Seite 77 ff. ausführlich beschrieben.
 
-
 ### Fernbedienung
 
 Eine weitere Erweiterung wäre die Integration einer Fernbedienung. Diese ließe
 sich relativ einfach mittels eines Infrarot--Sensors und beispielsweise der
 *lirc*--Bibliothek umsetzen. Siehe auch [@warner2013hacking], Seite 190 ff. für
 weitere Informationen.
-
 
 ### Batteriebetrieb
 
@@ -77,5 +75,8 @@ Schreib/Lese--Vorgänge, minimieren würde. Momentan unterstützt diese
 Distribution allerdings noch nicht das von uns favorisierte ``systemd``.
 
 [^APL]: Alpine Linux für Raspberry Pi: \url{https://wiki.alpinelinux.org/wiki/Raspberry_Pi}
+
+ELCH: Noch grob Kosten zusammenrechnen irgendwo?
+ELCH: Hier noch irgendwo Wettervorhersage als Verbesserung adden.
 
 # Literaturverzeichnis

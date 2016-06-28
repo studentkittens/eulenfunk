@@ -20,9 +20,7 @@ date: \today
 
 # Vorwort 
 
-TODO: thanks: rf-electronic, Herr Schäferling
-
-## Haftungsausschluss 
+## Hinweis zu den Vorkenntnissen
 
 Das vorliegende Projekt ist im Rahmen einer Studienarbeit im Fach
 Hardwaresysteme an der Hochschule Augsburg entstanden. Da die Autoren nicht aus
@@ -38,6 +36,10 @@ klassifiziert wird. Analog dazu ist ein *Do--It--Yourself*--Internetradio ---
 welches je nach Konfiguration, im Vergleich zu einem *Closed--Source*--Produkt,
 günstiger und mit mehr Funktionalität ausgestattet werden kann ---
 möglicherweise ein Dorn im Auge kommerzieller Internet--Radio--Anbieter.
+
+ELCH: Wieso sollte das ein Dorn im Auge von Anbietern sein? Der Absatz ist arg
+      an den Haaren herbei gezogen... kann man da eine alternative erklärung
+      finden? Und ja ich weiß, dass es witzig sein soll.
 
 ## Zielsetzung 
 
@@ -56,7 +58,7 @@ werden.
 \begin{figure}[h!]
   \centering
 \includegraphics[width=0.7\textwidth]{images/eulenfunk.png}
-  \caption{Foto vom aktuellen Prototypen}
+  \caption{Foto vom aktuellen Prototypen.}
   \label{fertig}
 \end{figure}
 

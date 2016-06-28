@@ -8,10 +8,9 @@ Das Radio soll dem Benutzer folgende Hardwarekonfigurationsmöglichkeiten bieten
 * Lautstärkeregelung über Hardware möglich
 * Verwendung des internen Lautsprechers des alten Radios
 * Statusinformationen zum aktuellen Lied beispielsweise über ein LCD
-* LEDs als Statusanzeige und/oder als Visualisierungsvariante von Musik[^MOODBAR]
+* LEDs als Statusanzeige und/oder als Visualisierungsvariante von Musik (vgl.
+  [@wood2005techniques])
 * USB--Anschlussmöglichkeit für externe Datenträger
-
-[^MOODBAR]: Moodbar: \url{https://en.wikipedia.org/wiki/Moodbar}
 
 ## Komponenten und Bauteile
 
@@ -39,15 +38,17 @@ noch erworben werden:
 * Wi--Fi--Adapter
 * Netzteil (diverse 5V, 2A)
 
-\newpage 
-
 **Mussten noch erworben werden:**
 
-* Audioverstärker 
-* Drehimpulsregler 
-* Kunststoffabdeckung für Front
-* Farbe (Lack)
-* Drehknöpfe für das Gehäuse 
+* Audioverstärker (6 Euro)
+* Drehimpulsregler (3 Euro)
+* Kunststoffabdeckung für Front (0)
+* Farbe (Lack) (5 Euro)
+* Drehknöpfe für das Gehäuse (2 Euro)
+* Schrumpfschläuche (1 Euro)
+* Kippschalter (6 Euro)
+
+Insgesamt wurden für das Projekt ca. 23 Euro ausgegeben.
 
 [^AEG]: AEG Küchenradio 4104: \url{https://www.amazon.de/AEG-MR-4104-Desgin-Uhrenradio-buche/dp/B000HD19W8}
 
@@ -59,7 +60,6 @@ Hardware--Revision kann auf die *Raspberry Pi*--Revision geschlossen werden,
 siehe hierzu auch [@gay2014raspberry], Seite 46:
 
 ```bash
-
     $ cat /proc/cpuinfo 
     processor       : 0
     model name      : ARMv6-compatible processor rev 7 (v6l)
@@ -122,7 +122,7 @@ Unter [@richardson2014make], Seite 121 ff. und [@gay2014mastering], Seite 421
 ff. finden sich weitere Informationen. Software PWM unter
 [@gay2014experimenting], Seite 183 ff. zeigt beispielsweise eine 6% CPU--Last
 pro GPIO--Pin bei einer PWM--Softwareimplementierung. Wie PWM in *Eulenfunk*
-eingesetzt wird im Software Kapitel im Punkt \ref{internal-led-treiber}
+eingesetzt wird im Software--Kapitel unter dem Punkt \ref{internal-led-treiber}
 beleuchtet.
 
 ## LCD--Anzeige
@@ -166,7 +166,7 @@ bevorzugt. Weitere Informationen zum seriellen Betrieb über I2C sind unter
   \label{lcd}
 \end{figure}
 
-Das Display arbeitet mit einer Logik--Spannung von 3.3V - 5V. Da die GPIO--Pins
+Das Display arbeitet mit einer Logik--Spannung von 3.3V -- 5V. Da die GPIO--Pins
 jedoch eine High--Logik von 3,3V aufweisen, würde man hier in der Regel einen
 Pegelwandler bei bidirektionaler Kommunikation und 5V benötigen. Da aber auf das
 Display nur zugegriffen und die GPIO--Pins nicht schreibend benutzt werden, kann
@@ -175,6 +175,8 @@ Datenblatt[^LCD] auch möglich sein soll, hatte das Display leider nur eine sehr
 schwachen beziehungsweise unzureichenden Darstellungskontrast, weswegen der 5V
 Betrieb gewählt wurde. Zudem wurde an *Pin3* (LCD) ein 100$\Omega$ Potentiometer
 hinzugefügt. Dies ermöglicht den Kontrast variabel einzustellen.
+
+ELCH: Was heißt "Die GPIO--Pins werden nicht schreibend benutzt"?
 
 Die Hintergrundbeleuchtung des Displays wurde direkt über ein Potentiometer mit
 2K$\Omega$ an die 5V Spannungsversorgung angeschlossen. Es wurde hier die
@@ -193,18 +195,18 @@ $$  R_{ges} = \frac{R_1 \times R_2}{R_1 + R_2} = \frac{100\Omega \times 100\Omeg
 
 ## Drehimpulsgeber
 
-Um eine minimale Anzahl an Bedienelementen zu erhalten, wird bei *Eulenfunk*
+Um eine minimale Anzahl an Bedienelementen zu gewährleisten, wird bei *Eulenfunk*
 ein Drehimpulsgeber mit Schalter gewählt. Für erste Testzwecke wurde von der
 Hochschule ein *ALPS STEC12E08* bereitgestellt. Dieser wurde im Laufe der
 Entwicklung durch einen *ALPS STEC11B09*[^ALPS] ersetzt, da dieser mittels Mutter und
-Schraube am Gehäuse besser befestigt werden kann. 
+Schraube am Gehäuse stabiler befestigt werden kann. 
 
 Der verwendete Drehimpulsgeber hat insgesamt fünf Anschlüsse. Zwei
 Signalleitungen (A und B), zwei mal *GND* (jeweils für Drehgeber und Schalter)
 und einen Anschluss für den Schalter. Beim Drehen eines Drehimpulsgebers wird
 ein Rechtecksignal generiert. Je nach Muster der beiden Datensignale A oder B,
 kann entschieden werden ob es sich um eine Rechts-- oder Linksdrehung handelt.
-Siehe [@2014projekte], Seite 361 ff. für weitere Hintergrundinformationen zu
+Siehe [@2014projekte], Seite 361 ff. für weitere Hintergrundinformationen zum
 Drehimpulsgeber.
 
 Abbildung \ref{alps} zeigt den Anschluss des Drehimpulsgebers am *Raspberry Pi*. 
@@ -222,7 +224,7 @@ Abbildung \ref{alps} zeigt den Anschluss des Drehimpulsgebers am *Raspberry Pi*.
 
 ## Soundkarte
 
-Die interne Soundkarte des *Raspberry Pi* ist über eine triviale
+Die interne Soundkarte des *Raspberry Pi* ist über eine simple 
 Pulsweitenmodulation realisiert. Die einfache Schaltung soll hier laut
 Internetquellen[^AQ]eine sehr niedrige Audioqualität bieten.
 
@@ -278,7 +280,7 @@ mehrere LEDs angesteuert werden, so wird in der Regel pro LED ein GPIO--Pin
 benötigt. LEDs sollten nie ohne Vorwiderstand an den *Raspberry Pi*
 angeschlossen werden, da durch den hohen Stromfluss die LED beschädigt werden
 könnte. Weiterhin muss bei LEDs auch auf die Polung geachtet werden, die
-abgeflachte Seite --- meist mit dem kürzerem Beinchen -- ist in der Regel die
+abgeflachte Seite --- meist mit dem kürzerem Beinchen --- ist in der Regel die
 Kathode (Minuspol). Abbildung \ref{led} zeigt exemplarisch den Anschluss einer
 *classic LED rot*[^LEDS], mit einer Flussspannung von $U_{LED}$ $\approx$ 2V, die mit
 einem Strom von $I_{LED}$ = 20 mA gespeist werden soll. Die Berechnung des
@@ -364,15 +366,19 @@ $$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{200\mu
   \label{transled}
 \end{figure}
 
-Damit der Transistor jedoch *sicher* durchschaltet, werden Wiederstände mit $10k
+Damit der Transistor jedoch *sicher*[^SICHER] durchschaltet, werden Wiederstände mit $10k
 \Omega$ verwendet. Die in Abbildung \ref{transled} gelisteten
 LED--Vorwiderstände ergeben sich aufgrund der verschiedenen Spannungen der
 unterschiedlichen Farben[^RGBGP]. Die Berechnung für den Vorwiderstand pro LED
 schaut am Beispiel der Farbe blau ($U_{LED} = 3,15V, I_{LED} = 20mA$) wie folgt
 aus:
 
-$$R_{LED} = \frac{U_{Betriebsspannung} - U_{LED}}{I_{LED}} = \frac{5V - 3,15V}{20mA} =92.5 \approx 100\Omega$$
+$$R_{LED} = \frac{U_{Betriebsspannung} - U_{LED}}{I_{LED}} = \frac{5V - 3,15V}{20mA} =92.5\Omega \approx 100\Omega$$
 
+Analog errechnet sich für die Farbe rot ein Vorwiderstand von $145\Omega$ und für grün
+ein Vorwiderstand von $87\Omega$.
+
+[^SICHER]: In diesem Kontext: Volle und nicht nur teilweise Durchschaltung.
 
 ## USB--Hub und Netzteil
 
@@ -383,7 +389,7 @@ größerer Last wie beispielsweise einer Festplatte zu ermöglichen, wird ein
 aktiver USB--Hub benötigt.
 
 Für diesen Einsatzzweck wird aus den Altbeständen ein *LogiLink 4 Port USB 2.0
-HUB*[^HUB] verwendet. Viele billig-Hubs arbeiten hier entgegen der USB--Spezifikation
+HUB*[^HUB] verwendet. Viele billige Hubs arbeiten hier entgegen der USB--Spezifikation
 und speisen den *Raspberry Pi* zusätzlich über die USB--Schnittstelle. Dieses
 Verhalten wurde bemerkt, als der *Raspberry Pi* ohne Power--Connector alleine
 nur mit der USB--Verbindung zum USB--Hub bootete.
