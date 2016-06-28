@@ -3,7 +3,8 @@
 *.fls
 *.log
 *.out
-*.pdf
 *.toc
 *.lof
 *.lot
+eulenfunk-doc.tex
+eulenfunk-doc.pdf

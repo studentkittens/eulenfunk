@@ -25,4 +25,4 @@ install: build
 	cp driver/radio-rotary $(BIN)
 
 doc:
-	cd docs/documentation && $(MAKE) --no-print-directory
+	cd docs/paper && $(MAKE) --no-print-directory
