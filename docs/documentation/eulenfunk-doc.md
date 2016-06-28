@@ -1444,6 +1444,18 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
   \label{playlists}
   \end{figure}
 
+  Der Menüpunkt *Playlists* zeigt eine Übersicht der aktuell verfügbaren
+  Medien. Mögliche Listen sind Radiosender und Musikstücke. Wird ein USB-Gerät 
+  an das Radio angeschlossen, erscheint er hier als Playlist.
+
+  Ein Drücken des Master-Reglers führt zur Auswahl einer Playlist. Anschließend
+  wechselt die Anzeige auf den Modus *Current Song*, d.h. die Informationen 
+  zum aktuell aus der Playlist abgespielten Mediums werden angezeigt. Ein Drehen
+  des Master-Reglers navigiert innerhalb der Playlisten. In der Ansicht *Playlist* 
+  gibt es zusätzlich die Funktion *(Exit)*, die zum Hauptmenu führt.
+
+
+
 ### Clock
 
 \begin{figure}[h!]
@@ -1452,6 +1464,10 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
   \caption{Ansicht des Menüpunkts Clock}
   \label{clock}
   \end{figure}
+
+  Der Menüpunkt *Clock* zeigt die aktuelle Uhrzeit, sowie das Datum an. 
+  Ein Drücken des Master-Reglers führt zurück zum Hauptmenue. ??????
+  Kann in diesem Modus zwischen Liedern umgeschaltet werden ??????
 
 
 ### Systeminfo
@@ -1463,6 +1479,13 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
   \label{systeminfo}
   \end{figure}
 
+Der Menüpunkt *Systeminfo* zeigt folgende Informationen zum System an:
+CPU-Auslastung, Speicher-Auslastung, IP-Adresse, Systemlaufzeit,
+WLAN-Empfangsstärke und CPU-Temperatur.
+
+Ein Drücken des Master-Reglers führt zurück zum Hauptmenü ??????
+
+
 ### Statistics
 
 \begin{figure}[h!]
@@ -1471,6 +1494,13 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
   \caption{Ansicht des Menüpunkts Statistics}
   \label{statistic}
   \end{figure}
+
+Der Menüpunkt *Statistics* zeigt an, wieviel Interpreten, Alben und
+Songs aktuell in den Playlisten insgesamt zu finden sind. Zusätzlich
+wird die Gesamtspieldauer aller Playlisten angezeigt.
+
+
+Ein Drücken des Master-Reglers führt zurück zum Hauptmenü ??????
 
 ### Options
 
@@ -1481,6 +1511,16 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
   \label{options}
   \end{figure}
 
+*Options* ist eine Kategorie, die keine Unteransichten hat.
+Opionen werden direkt durch ein Drücken des Master-Reglers geändert.
+
+- Party!: Aus/An
+- Output: stereo, mono
+- Playback: Play, Pause, Stop
+- Random: Aus/An
+
+
+
 ### Powermenu
 
 \begin{figure}[h!]
@@ -1489,6 +1529,11 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
   \caption{Ansicht des Menüpunkts Powermenu}
   \label{powermenu}
   \end{figure}
+
+  Der Menüpunkt *Powermenu* enthält die Funktionen Poweroff für
+  das Herunterfahren des Systems und Reboot für einen Neustart des
+  Systems. Mit *(Exit)* gelangt man zurück ins Hauptmenü.
+
 
 ### About
 
@@ -1499,10 +1544,14 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
   \label{about}
   \end{figure}
 
+  Der Menüpunkt *About* zeigt Informationen zu den Entwicklern des
+  Internetradios an.
+
 
 ## Shortcuts
 
-
+Das Power Menu ist in jeder Anzeigesituation durch Drücken des
+Master-Reglers von 3 Sekunden aufrufbar. Das 
 
 
 
