@@ -1,0 +1,74 @@
+@font-face {
+    font-family: "Vollkorn";
+    src: url("fonts/Vollkorn-Regular.ttf"),
+    url("fonts/Vollkorn-BoldItalic.ttf"),
+    url("fonts/Vollkorn-Bold.ttf"),
+    url("fonts/Vollkorn-Italic.ttf"),
+    url("fonts/Vollkorn-MediumItalic.ttf"),
+    url("fonts/Vollkorn-Medium.ttf"),
+    url("fonts/Vollkorn-Regular.ttf"),
+    url("fonts/Vollkorn-SemiboldItalic.ttf"),
+    url("fonts/Vollkorn-Semibold.ttf");
+}
+
+@font-face {
+    font-family: 'Sketch';
+    src: url('fonts/sketch_block-webfont.eot');
+    src: url('fonts/sketch_block-webfont.eot?#iefix') format('embedded-opentype'),
+         url('fonts/sketch_block-webfont.woff2') format('woff2'),
+         url('fonts/sketch_block-webfont.woff') format('woff'),
+         url('fonts/sketch_block-webfont.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+@font-face {
+    font-family: 'Satisfy';
+    font-style: normal;
+    font-weight: 400;
+    src: url('fonts/Satisfy-Regular.woff2'); format('woff2')
+}
+
+body {
+    background-color: #fdf6e3;
+    font-size: 150%;
+    font-family: Vollkorn, Verdana, Helvetica, Arial, sans-serif;
+}
+
+div.heading h1 {
+    font-family: Sketch, Verdana, Helvetica, Arial, sans-serif;
+    font-size: 220%;
+    font-style: normal;
+    margin-top: -42px;
+}
+
+
+div#first {
+    font-family: Sketch, Verdana, Helvetica, Arial, sans-serif;
+    font-size: 300%;
+    font-style: normal;
+}
+
+div#first p {
+    float: right;
+}
+
+div#fin {
+    text-align: center;
+}
+
+.blocky {
+    font-family: Sketch, Verdana, Helvetica, Arial, sans-serif;
+    font-size: 320%;
+    font-style: normal;
+}
+
+strong {
+    font-family: Satisfy;
+    font-size: 110%;
+}
+
+.underline {
+    text-decoration: underline;
+}
