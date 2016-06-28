@@ -10,7 +10,7 @@ fontsize: 11pt
 sections: yes
 toc: yes
 lof: yes
-lot: no
+lot: yes
 date: \today
 ---
 
@@ -1801,7 +1801,7 @@ Ein Drücken des Master-Reglers führt zur Auswahl einer Playlist. Anschließend
 wechselt die Anzeige auf den Modus *Current Song*, d.h. die Informationen zum
 aktuell aus der Playlist abgespielten Mediums werden angezeigt. Ein Drehen des
 Master-Reglers navigiert innerhalb des Playlist--Ansicht. In der Ansicht
-*Playlists* gibt es zusätzlich die Funktion *(Exit)*, die zum Hauptmenu führt.
+*Playlists* gibt es zusätzlich die Funktion *(Exit)*, die zum Hauptmenü führt.
 
 
 
@@ -1815,7 +1815,7 @@ Master-Reglers navigiert innerhalb des Playlist--Ansicht. In der Ansicht
   \end{figure}
 
   Der Menüpunkt *Clock* (siehe Abb. \ref{clock}) zeigt die aktuelle Uhrzeit, sowie das Datum an. 
-  Ein Drücken des Master-Reglers führt zurück zum Hauptmenue. 
+  Ein Drücken des Master-Reglers führt zurück zum Hauptmenü. 
 
 
 ### Systeminfo
