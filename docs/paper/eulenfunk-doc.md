@@ -1737,7 +1737,7 @@ die Audioausgabe zwischen internen und externen Lautsprechern umgeleitet werden.
 Wie allgemein üblich, erhöht ein Rechtsdreh des Lautstärkereglers 
 die Lautstärke und ein Linksdreh verringert die Lautstärke.
 
-Der Drehimpulsgeber(Master-Regler) ist für die gesamte Navigation innerhalb des Menüs und das Ausführen von
+Der Drehimpulsgeber (im Weiteren Master-Regler genannt) ist für die gesamte Navigation innerhalb des Menüs und das Ausführen von
 Aktionen zuständig. Drehen bewirkt grundsätzlich  ein *Vor* oder *Zurück*.
 Drücken bewirkt das kontextbezogene Ausführen einer Aktion. Näheres wird bei 
 den jeweiligen Menüansichten beschrieben.
@@ -1792,7 +1792,7 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
   \label{playlists}
   \end{figure}
 
-  Der Menüpunkt *Playlists* zeigt eine Übersicht der aktuell verfügbaren
+  Der Menüpunkt *Playlists* (siehe Abb. \ref{playlists}) zeigt eine Übersicht der aktuell verfügbaren
   Medien. Mögliche Listen sind Radiosender und Musikstücke. Wird ein USB-Gerät 
   an das Radio angeschlossen, erscheint er hier als Playlist.
 
@@ -1813,7 +1813,7 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
   \label{clock}
   \end{figure}
 
-  Der Menüpunkt *Clock* zeigt die aktuelle Uhrzeit, sowie das Datum an. 
+  Der Menüpunkt *Clock* (siehe Abb. \ref{clock}) zeigt die aktuelle Uhrzeit, sowie das Datum an. 
   Ein Drücken des Master-Reglers führt zurück zum Hauptmenue. 
 
 
@@ -1826,7 +1826,7 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
   \label{systeminfo}
   \end{figure}
 
-Der Menüpunkt *Systeminfo* zeigt folgende Informationen zum System an:
+  Der Menüpunkt *Systeminfo* (siehe Abb. \ref{systeminfo}) zeigt folgende Informationen zum System an:
 CPU-Auslastung, Speicher-Auslastung, IP-Adresse, Systemlaufzeit,
 WLAN-Empfangsstärke und CPU-Temperatur.
 
@@ -1842,7 +1842,7 @@ Ein Drücken des Master-Reglers führt zurück zum Hauptmenü.
   \label{statistic}
   \end{figure}
 
-Der Menüpunkt *Statistics* zeigt an, wieviel Interpreten, Alben und
+  Der Menüpunkt *Statistics* (siehe Abb. \ref{statistic}) zeigt an, wieviel Interpreten, Alben und
 Songs aktuell in den Playlisten insgesamt zu finden sind. Zusätzlich
 wird die Gesamtspieldauer aller Playlisten angezeigt.
 
@@ -1858,7 +1858,7 @@ Ein Drücken des Master-Reglers führt zurück zum Hauptmenü.
   \label{options}
   \end{figure}
 
-*Options* ist eine Kategorie, die keine Unteransichten hat.
+  *Options* ist eine Kategorie, die keine Unteransichten hat (siehe Abb. \ref{options}).
 Optionen werden direkt durch ein Drücken des Master-Reglers geändert.
 
 - Party!: Aus/Ein
@@ -1880,7 +1880,7 @@ Optionen werden direkt durch ein Drücken des Master-Reglers geändert.
   \label{powermenu}
   \end{figure}
 
-  Der Menüpunkt *Powermenu* enthält die Funktionen Poweroff für
+  Der Menüpunkt *Powermenu* (siehe Abb. \ref{powermenu}) enthält die Funktionen Poweroff für
   das Herunterfahren des Systems und Reboot für einen Neustart des
   Systems. Mit *(Exit)* gelangt man zurück ins Hauptmenü.
 
@@ -1894,7 +1894,7 @@ Optionen werden direkt durch ein Drücken des Master-Reglers geändert.
   \label{about}
   \end{figure}
 
-  Der Menüpunkt *About* zeigt Informationen zu den Entwicklern des
+  Der Menüpunkt *About* (siehe Abb. \ref{about}) zeigt Informationen zu den Entwicklern des
   Internetradios an.
 
 
