@@ -675,16 +675,18 @@ oft auf Abspielsoftware wie den *MOC* [vgl. @pietraszak2014buch], Seite 189 ff.
 oder *mplayer* [@exploring] Seite 638 ff. zu. 
 
 
-```bash
-    # Installation des MPD
-    [root@eulenfunk ~]$ pacman -Sy mpd mpc ncmpc
-```
-
 # Software
 
 ## Anforderungen
 
 TODO: Mpd erklären!
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/mpd-overview.png}
+  \caption{(Quelle: \url{http://mpd.wikia.com/wiki/What_MPD_Is_and_Is_Not})}
+  \label{mpd-overview}
+\end{figure}
 
 - Leichte integrierbarkeit mit anderen Anwendungen (lose Kopplung)
 TODO: Mehr.
@@ -916,11 +918,6 @@ Bedienungskonzept wie ``radio-led`` hat. Dies war während der Entwicklung von
 
 ### LCD--Treiber (``driver/lcd-driver.c``)
 
-```bash
-usage:
-  radio-lcd [print-charset [start [end]]]
-```
-
 Der LCD--Treiber setzt Bereiche des LCD--Displays auf einen gegebenen Text.
 Beim Start leert er das Display und liest ähnlich wie ``radio-led cat``
 zeilenweise von ``stdin`` und entnimmt diesen Zeilen die Information welchen
@@ -936,6 +933,10 @@ Der Treiber hält eine Matrix mit den aktuell gesetzten Zeichen und kann daher e
 Zeichnen einer Zelle im Display verhindern, indem es das neue Zeichen mit dem Alten vergleicht.
 Unnötige Zeichenvorgänge waren als störende Schlieren auf dem Display wahrnehmbar.
 
+```bash
+usage:
+  radio-lcd [print-charset [start [end]]]
+```
 
 Zudem bietet der Treiber mit dem ``print-charset`` Argument die Möglichkeit die
 auf dem Display verfügbaren Zeichen aufs selbige auszugeben. Dazu stellt er
@@ -1243,7 +1244,11 @@ Die eigentliche Aufgabe von ``ambilightd`` ist es nun den Status von MPD zu
 holen, die passende ``.mood``--Datei zu laden und anhand der Liedlänge und der
 bereits vergangenen Zeit den aktuellen passenden Sample aus den 1000
 vorhandenen anzuzeigen. Damit der Übergang zwischen den Samples flüssig ist
-wird linear zwischen den einzelnen Farbwerten überblendet.
+wird linear zwischen den einzelnen Farbwerten überblendet. 
+
+Auch ``ambilight`` ist über Netzwerk über ein zeilenbasiertes Textprotokoll auf
+Port 4444 ansprechbar. Es werden die Kommandos ``off`` (Halte ``ambilight`` Ausgabe an),
+``on`` (Führe ``ambilight`` Ausgabe fort) und ``state`` (Zeige aktuellen Status) unterstützt.
 
 TODO: Farbkorrektur, referenz?
 TODO: radio-led driver in Grafik?
@@ -1276,13 +1281,25 @@ zwischen den Farben mehr genutzt wird sondern beispielsweise quadratische. (TODO
 
 Der ``autmount``--Daemon  sorgt dafür, dass angesteckte USB--Sticks automatisch auf gemounted werden,
 Musikdateien darauf indiziert werden und in einer Playlist mit dem »Label« des Sticks landen.
-Die Architektur von ``automount`` ist konzeptuell in Abbildung
-\ref{eulenfunk-automount} dargestellt. Unter Linux kümmert sich ``udev``, um
-die Verwaltung  des ``/dev``--Verzeichnis. Wird ein neues Gerät angesteckt, so 
 
-TODO
+Unter Linux kümmert sich ``udev``, um die Verwaltung  des
+``/dev``--Verzeichnis. Zur Steuerung und Konfiguration erlaubt ``udev`` das
+Anlegen von Regeln. Wird ein neues Gerät angesteckt, so geht ``udev`` alle
+bekannten und auf das Gerät passende Regeln durch und wendet die darin
+definierten Aktionen an.
 
-  udev regel erklären
+Bei *Eulenfunk* wird die Regel ``config/udev/11-music-usb-mount.rules`` in das
+Verzeichnis ``/etc/udev/rules.d`` kopiert. Die ``11`` im Namen sorgt dafur,
+dass die Regel alphabetisch vor den Standardregeln abgearbeitet wird (beginnen
+mit ``50``).  Abbildung \ref{eulenfunk-automount} zeigt danach den Ablauf beim
+Anstecken eines USB--Sticks mit dem Label »usb-music«. Es wird ein von der
+Regel aus ein Befehl über Netzwerk an ``automount`` gesendet, welcher dann das
+Mount und Unmount samt Erstellen der Playlist übernimmt.
+Die genaue Erklärung der Einzelheiten wird hier aus Platzgründen ausgelassen.
+Es sei hier aber auf die folgenden Resourcen verwiesen:
+
+- http://www.reactivated.net/writing_udev_rules.html
+- https://wiki.archlinux.de/title/Udev#Unter_.2Fmedia_einbinden.3B_Partitions_Label_verwenden_falls_vorhanden
 
 Eine berechtigte Frage ist warum ``automount`` das Mounten/Unmounten des Sticks
 übernimmt, wenn diese Aktionen prinzipiell auch direkt von der ``udev``--Regel
@@ -1294,33 +1311,140 @@ im *Namespace* von ``udev`` erstellt und taucht daher nicht im normalen
 Dateisystem auf.  Sendet man hingegen einen Befehl an ``automount``, so agiert dieser
 außerhalb einer Sandbox und kann den Stick ganz normal als ``root``--Nutzer mounten.
 
-- unmount/quit
-- Protokoll
+Beim Entfernen des USB--Sticks wird die inverse Operation ausgeführt: Die Playlist wird 
+gelöscht (da MPD die Lieder nicht mehr abspielen könnte) und der Mount wird wieder entfertn.
 
-### mpdinfo
+Ähnlich wie die vorigen Dienste unterstützt ``automount`` einige wenige Befehle
+die es über einen Netzwerk--Socket auf Port 5555 erhält:
 
-TODO: mit ui mergen?
+```
+mount <device> <label>   -- Mounte <device> (z.B. /dev/sda1) zu <music_dir>/mounts/<label>
+                         -- und erstelle eine Playlist names <label> aus den Liedern.
+unmount <device> <label> -- Entferne Playlist und Mountpoint wieder.
+close                    -- Trenne die Verbindung.
+quit                     -- Trenne die Verbindung und beende den daemon.
+```
 
 ### ui
 
-- Windows (mehr dazu im Designteil)
+Die ``ui`` ist der einzige Dienst ohne Netzwerkschnittstelle. Er kümmert sich um das Anlegen
+und Befüllen aller Fenster. Die genaue Beschaffenheit der Oberfläche wird im nächsten Kapitel
+im Stile eines Benutzerhandbuches beleuchtet. Daher wird hier nur ein kurzer Überblick über die
+Technik dahinter gegeben.
 
+Im momentan Zustand existieren folgende Fenster:
+
+- ``mpd:`` Zeigt Infos über das das momentan laufende Lied oder den aktuellen Radiostream.
+- ``clock:`` Zeigt das aktuelle Datum und Uhrzeit.
+- ``stats:`` Zeigt Statistiken über die MPD--Datenbank an.
+- ``sysinfo:`` Zeigt die Ausgabe des Skripts ``config/scripts/radio-sysinfo.sh`` an.
+- ``about:`` Zeigt die Credits an.
+- ``menu-main`` Hauptmenü von dem alle Funktionen erreichbar sind.
+- ``menu-playlists:`` Zeigt alle verfügbaren Playlists.
+- ``menu-power:`` Einträge zum Herunterfahren und Rebooten.
+
+Fenster die ``menu-`` beginnen, können durch Benutzung des Rotary--Switches erkundet werden.
+Eine Drehung nach rechts verschiebt das Menü nach unten, eine Drehung nach links nach oben.
+
+Wie oben bereits erwähnt wurde ein kleines Client--Seitiges »Toolkit« implementiert, welches die
+leichte Erstellung von Menüs und die Verknüpfung mit dem Rotary--Switch mittels Aktionen möglich macht.
+Der prinzipielle Aufbau dieses Toolkits ist in Abbildung \ref{eulenfunk-ui} gezeigt.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/eulenfunk-ui.png}
+  \caption{TODO}
+  \label{eulenfunk-ui}
+\end{figure}
+
+Der Programmierer muss dabei dem ``MenuManager`` nach dessen Anlegen lediglich eine Liste von Einträgen
+mitgeben, die dieser verwalten soll. Es gibt momentan drei verschiedene Arten von Einträgen:
+
+- ``SeparatorEntry:`` Zeigt einen vordefinierten Text. Wird zum Abtrennen verschiedener Sektionen
+  innerhalb eines Menüs benutzt, daher der Name.
+- ``ClickEntry:`` Zeigt einen Text und ist mit einer Aktion verknüpft. Drückt der Nutzer den Rotary--Switch
+  während der Fokus auf dem Eintrag ist, so wird die Aktion ausgeführt,.
+- ``ToggleEntry:`` Wie ``ClickEntry`` hat aber mehrere Zustände die in eckigen Klammern hinter dem Text
+  angezeigt werden. Ein Knopfdruck führt zum Weiterschalten zum nächsten Zustand. Dabei ist jeder Zustand
+  mit einer Aktion verknüpft, die beim Umschalten ausgeführt wird.
+
+Auf Basis dieses minimalen Toolkits wurde dann eine leicht erweiterbare Menüführung entwickelt.
+	Eine genauere API--Beschreibung kann unter ``godoc.org`` eingesehen werden (TODO: https://godoc.org/github.com/studentkittens/eulenfunk/ui).
+
+#### ``mpdinfo`` -- Anzeige des ``mpd``--Status
+
+``mpdinfo`` ist der Teil der UI, welcher den Inhalt des ``mpd`` Fensters pflegt
+und darstellt. Im Hintergrund steht dabei ein vollfunktionsfähger MPD--Client,
+welcher auch auf Zustandsänderungen von außen reagiert. Das heißt: Ändert man
+das aktuelle Lied mittels eines anderen MPD--Clients (von einem Handy als
+Fernbedienung etwa), so wird die Änderung umgehend an die UI propagiert.
+
+``mpdinfo`` kann aus Gründen der Fehlersuche auch separat von der UI gestartet werden:
+
+```bash
+$ eulenfunk mpdinfo
+```
+
+### ``ympd`` -- MPD im Webbrowser
+
+``ympd`` ist ein relativ populärer, in C geschriebener MPD--Client, der als
+Webserver fungiert und eine Bedienung von MPD im Browser via Websocket möglich
+macht. Auf *Eulenfunk* läuft er auf Port 8080 und kann von außen zugegriffen
+werden. Abbildung \ref{ympd-screen} zeigt die Weboberfläche.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/ympd.png}
+  \caption{TODO}
+  \label{ympd-screen}
+\end{figure}
+
+(TODO: ref: https://github.com/notandy/ympd)
+TODO: screenshot?
+
+TODO: snobaer?
 
 ## Einrichtung
 
-### mpd und ympd
+In diesem Teilkapitel soll die Einrichtung aller relevanten Komponenten dokumentiert werden.
+Dies soll hauptsächlich zur Referenz dienen, um das Radio notfalls wieder nachbauen zu können.
 
-TODO: eigentliche mpd einrichrung.
+### ``mpd`` und ``ympd``
+
+Installation aus den offiziellen Quellen (``mpd``) und aus dem AUR (``ympd``):
+
+```bash
+$ pacman -S mpd mpc
+$ yaourt -S ympd
+$ mkdir -p /var/mpd/playlists
+$ touch /var/mpd/mpd.{db,state,log}
+$ cp eulenfunk/config/mpd.conf /var/mpd
+$ mpd /var/mpd/mpd.conf
+$ mpc update -w
+```
 
 ``mpd`` und ``ympd`` sind die einzigen Dienste die von außen (ohne
 Authentifizierung) zugreifbar sind. Auch wenn *Eulenfunk* normal in einem
 abgesicherten WLAN hängt, wurde für die beiden Dienste jeweils ein eigener
 Nutzer mit eingeschränkten Rechten und ``/bin/false`` als Login--Shell angelegt.
 
-### systemd
 
-In Abbildung \ref{eulenfunk-systemd} ist schematisch der
-Abhängigkeitsgraph der einzelnen Dienste gezeigt.
+### ``systemd`` -- Start und Status von Diensten
+
+``systemd`` ist ein sehr mächtiges Init--System welches zum Starten und Überwachen aller Dienste
+in *Eulenfunk* eingesetzt wird. Im Gegensatz zu anderen Init--Systemen werden keine Shell--Skripte
+zum Starten genutzt, sondern sogenannte Unit--Files. Diese regeln welche Binaries gestartet werden,
+von was diese abhängen und was bei einem Crash passieren soll. Diese Dateien kopiert man in ein 
+von ``systemd`` überwachtes Verzeichnis (beispielsweise ``/usr/lib/systemd/system``). Dort kann man
+nach einem ``systemctl daemon-reload`` den Dienst starten und für den nächsten Bootvorgang vormerken:
+
+```bash
+$ systemctl start my-unit-file    # Jetzt den Dienst starten.
+$ systemctl enable my-unit-file   # Beim nächsten Boot starten.
+```
+
+In Abbildung \ref{eulenfunk-systemd} ist schematisch der Abhängigkeitsgraph der
+einzelnen Dienste von *Eulenfunk* gezeigt. Jeder relevante Dienst hat dabei ein eigenes ``.unit``--File.
 
 \begin{figure}[h!]
   \centering
@@ -1329,37 +1453,112 @@ Abhängigkeitsgraph der einzelnen Dienste gezeigt.
   \label{eulenfunk-systemd}
 \end{figure}
 
-TODO: restart / restart-on-failure
+TODO: Link zu unit files?
 
-### udev
+Sollte ein Dienst abstürzen, weil beispielsweise die Software doch noch Fehler hat, dann wird der 
+Service von ``systemd`` automatisch neu gestartet, da die Option ``Restart=on-failure`` in den 
+``.unit``--Files von *Eulenfunk* gesetzt ist.
 
-### sonstiges
+Besonders zur Fehlersuche war ``systemd`` bereits sehr hilfreich, da es möglich ist die Ausgabe des Dienstes
+im Nachhinein zu Betrachten:
 
-Makefile
+```bash
+$ systemctl status radio-ui.service
+\textbullet radio-ui.service - MPD client that show the current state on the LCD
+  Active: active (running) since Mon 2016-06-27 23:45:55 CEST; 2h 0min ago
+[...]
+Jun 28 01:19:24 eulenfunk eulenfunk[410]: 2016/06/28 01:19:24 Pressed for 1s
+[...]
+# Alternativ falls mehr Log--Details benötigt werden:
+$ journalctl -u radio-ui.service --since today
+```
 
-pstree
+### ``eulenfunk`` Software
 
-zeroconf
+Die Software kann ohne große Abhängigkeiten direkt von *GitHub* installiert werden:
 
-memory usage, cpu usage
+```bash
+$ pacman -S wiringpi go git
+$ git clone https://github.com/studentkittens/eulenfunk && cd eulenfunk
+$ mkdir -p /root/go
+$ export GOPATH=/root/go
+$ export GOBIN=/root/go/bin
+$ go get .
+$ make install
+```
 
-godoc: 
+Das mitgelieferte Makefile installiert alle ``.unit``--Files, Skripte Treiber--Binärdaten und die
+``eulenfunk``--Binärdatei selbst. Die Software sollte dabei auch auf normalen Desktop--Rechnern
+kompilierbar
+
+### Sonstiges
+
+```bash
+systemd-+-2*[agetty]
+        |-avahi-daemon---avahi-daemon
+        |-dbus-daemon
+        |-dhcpcd
+        |-eulenfunk display-+-radio-lcd
+        |-eulenfunk lightd-+-radio-led---3*[{radio-led}]
+        |-eulenfunk ambilight-+-2*[radio-led---3*[{radio-led}]]
+        |-eulenfunk automount---6*[{eulenfunk}]
+        |-eulenfunk ui-+-radio-rotary
+        |           |-radio-sysinfo.sh
+        |-gssproxy---5*[{gssproxy}]
+        |-haveged
+        |-mpd
+        |-sshd---sshd---sshd---bash---pstree
+        |-systemd---(sd-pam)
+        |-systemd-journal
+        |-systemd-logind
+        |-systemd-network
+        |-systemd-resolve
+        |-systemd-timesyn---{sd-resolve) S 1 
+        |-systemd-udevd
+        |-wpa_supplicant
+        `-ympd
+```
+
+
+#### zeroconf
+
+Alle MPD--Server samt IP und Port anzeigen:
+
+```bash
+$ avahi-browse _mpd._tcp -v -r
+```
+
+Die CPU--Last bewegt sich meist zwischen 40-60% bei ``mp3``--enkodierten
+Liedern. Bei ``.flac``--Dateien liegt die Last etwa 20 Prozentpunkte höher. Die
+Speicherauslastung ist auch nach mehren Stunden Benutzung bei konstanten 50MB.
+
+godoc:  https://godoc.org/github.com/studentkittens/eulenfunk
 
 systemd boot plot
-
-https://godoc.org/github.com/studentkittens/eulenfunk/display
 
 ## Wartung
 
 ssh zugang
 
-systemctl status/journalctl zum logging
-
 ## Fazit
 
-cloc statistiken
+Toll!
 
-probleme: re-mount, mpd brokenness due to powerhub.
+
+| Language                   | files     |    blank     |  comment     |     code |
+|----------------------------|-----------|--------------|--------------|----------|
+| Go                         |    32     |      991     |      550     |     4080 |
+| C                          |     3     |       99     |       15     |      493 |
+| make                       |     3     |       13     |        1     |       31 |
+| Bourne Shell               |     1     |        2     |        1     |       12 |
+| SUM:                       |    39     |     1105     |      567     |     4616 |
+
+Probleme:
+
+- re-mount
+- Fehlerhafter Cursor
+- Displayd-eventbased
+
 
 # Zusammenfassung
 

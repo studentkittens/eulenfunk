@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/disorganizer/brig/util"
+	"github.com/studentkittens/eulenfunk/util"
 )
 
 // Client is a convinience helper to access the automount text protocol
