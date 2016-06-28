@@ -10,7 +10,7 @@ fontsize: 11pt
 sections: yes
 toc: yes
 lof: yes
-lot: yes
+lot: no
 date: \today
 ---
 
@@ -75,6 +75,7 @@ verwendet:
 * *Pandoc/LaTeX* (Dokumentation) 
 * *Vim* (Softwareentwicklung) 
 * *Fritzing* (Schaltpläne).
+* *Imagemagick* (Bildbearbeitung) 
 
 
 [^VIMEO]: Eulenfunk Prototyp: \url{https://vimeo.com/171646691}
