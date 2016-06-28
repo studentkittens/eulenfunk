@@ -119,8 +119,6 @@ int main(void) {
     double hold_time = 0;
 
     while (1) {
-        //updateEncoders();
-
         // Divide by three since it counts 
         // about 3 value increments per "tick" which is too much.
         long curr = lround(encoder->value);
@@ -157,7 +155,7 @@ int main(void) {
         // Sleep for a short amount to save cpu-time:
         struct timespec delay = {
             .tv_sec = 0,
-            .tv_nsec = 1000 * 1000 * 100,
+            .tv_nsec = 1000 * 1000 * 50,
         };
 
         nanosleep(&delay, NULL);

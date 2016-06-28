@@ -677,9 +677,19 @@ oder *mplayer* [@exploring] Seite 638 ff. zu.
 
 # Software
 
-## Anforderungen
+## Abspielsoftware
 
-TODO: Mpd erklären!
+Der MPD ist ein unter Unix gern genutzte Daemon zum Verwalten und Abspielen von
+Musik und Radiostreams. Er unterstützt dabei eine große Anzahl von Formaten und
+kann diese an mehrere Backends wie ALSA, Pulseaudio oder als HTTP--Stream
+ausgeben (siehe auch Abbildung \ref{mpd-overview}). Für unseren Einsatzzweck ist
+er dabei aus zwei Gründen besonders geeignet: Auch bei sehr großen Sammlungen
+mit einer 5-stelligen Anzahl von Liedern läuft er problemlos und mit einem
+vergleichsweise niedrigen Speicherverbrauch. Der zweite Grund ist die lose
+Kopplung zwischen Abspielsoftware und User--Interface: MPD selbst ist nur ein
+Daemon, der mittels eines zeilenbasierten Textprotokolls (dem MPD--Protokoll,
+TODO: ref) steuerbar ist. Um die Bedienoberfläche kümmert sich dann ein
+separates MPD--Client, welcher als »Fernbedienung« für den Daemon fungiert.
 
 \begin{figure}[h!]
   \centering
@@ -688,8 +698,27 @@ TODO: Mpd erklären!
   \label{mpd-overview}
 \end{figure}
 
-- Leichte integrierbarkeit mit anderen Anwendungen (lose Kopplung)
-TODO: Mehr.
+## Anforderungen
+
+Zu Beginn der Entwicklung wurden einige Anforderungen an die Software
+festgelegt:
+
+1. Leichte Bedienbarkeit, obwohl es nur einen Knopf gibt, der nur die
+   Aktionen »links drehen«, »rechts drehen« und drücken zulässt.
+2. Die Software sollte vernünftig mit den Hardwareressourcen des Rasperry Pi's
+   umgehen. Dabei sollte die Hardware nicht die ganze Zeit auf volle Last laufen
+   um eine Überhitzung im beengten Gehäuse zu vermeiden.
+3. Die Software sollte möglichst ausfallsicher sein. Fällt beispielsweise ein
+   Feature durch einen Absturz der Software aus, so sollten andere Teile des Radios
+   nach Möglichkeit nicht betroffen sein. Auch sollte der abgestürzte Teil sich
+   falls möglich ist neu starten können und entsprechende Log--Nachrichten
+   hinterlassen. Dienste die von dem abgestürzten Dienst abhängen, sollten
+   sich bei Neustart dessen wieder neu verbinden.
+4. Leichte Wartbarkeit und Fehlersuche durch Schreiben von Logs.
+5. Einfache Erweiterbarkeit und Integrierbarkeit mit anderen Anwendungen durch
+   lose Kopplung von Diensten.
+
+Inwieweit diese Anforderungen erfüllt worden sind, wird im Fazit erläutert.
 
 ## Softwarearchitektur
 
@@ -902,7 +931,7 @@ $T_{Periode} = 50\mu s\times 256 = 12800\mu s = 0.0128s$
 $f = \frac{1}{T_{Periode}} = 78.125Hz$
 
 Diese Frequenz scheint optisch ausreichend flackerfrei zu sein und scheint die
-CPU nicht übermäßig stark zu beeinflussen (rund 2-3% pro Kanal).
+CPU nicht übermäßig stark zu beeinflussen (rund +2-3% Last pro Kanal).
 
 Es besteht eine Verbindung zu einen früheren Bastelprojekt namens
 ``catlight``[^catlight] --- einer mehrfarbigen, in einem Gehäuse montierten LED
@@ -950,6 +979,8 @@ Menüführung und der UI zu benutzt werden. Das LCD--Display unterstützt dabei 
 verschiedene *Custom Chars*, welche mittels der Codepoints 0-7 und 8-15
 (wiederholt) setzbar sind. Momentan sind diese auf folgende Glyphen gesetzt:
 
+TODO: auch niedrigere symbole
+
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.0\textwidth]{images/symbols.png}
@@ -964,16 +995,51 @@ TODO:
 
 - GPIO Anschluss?
 
-### Drehimpulsgeber--Treiber
+### Rotary--Switch Treiber (``driver/rot-driver.c``)
 
-- Prellung
-- ISR / kein printf
-- rotary encoder
-- http://theatticlight.net/posts/Reading-a-Rotary-Encoder-from-a-Raspberry-Pi/
-- grey code (buch zitieren)
-- button entprellen
-- "Polling" Mainloop
-- "Div by 3 hack"
+Dieser Treiber kümmert sich um das Einlesen von Werten und Ereignissen vom
+Rotary Switch. Nach dem Start schreibt er alle registrierten Ereignisse auf
+``stdout``. Dabei nimmt jede Zeile ein neues Ereignis ein. Die jeweilige Zeile
+beginnt mit einem einzelnen Buchstaben und einem Leerzeichen, gefolgt von einem
+Wert. Der Buchstabe beschreibt die Art des Ereignisses:
+
+- ``v:`` Änderung des **V**alues durch Drehen des Knopfes.
+- ``p:`` Der Knopf wurde gedrückt (eine ``1`` folgt) oder losgelassen eine
+  (``0`` folgt).
+- ``t:`` Der Knopf wurde für eine bestimmte Zeit lang gedrückt. Die Zeit folgt
+  dahinter in Sekundenbruchteilen.
+
+Initial wird zudem der Wert ``v 0`` herausgeschrieben.
+
+Technisch registriert sich der Treiber auf änderungen an den GPIO--Pins 12, 13
+(Pin A und B des Rotarty--Switch) und 14 (Button--Pin) mittels der
+``wiringPi``--Funtkion ``wiringPiISR``. Diese sorgt dafür dass bei jeder
+Wertänderung ein Interrupt aufgerufen wird. 
+
+In dem Interrupt wird der aktuelle Wert der Pins 12 und 13 ausgelesen und mit
+den vorigen Wert verglichen. Dadurch ist es möglich zu entscheiden in welche
+Richtung der Drehknopf bewegt wurde ohne dass ein Prellen auftritt.
+Mehr Informationen unter TODO: ref
+
+Da pro Einrastung des Drehknopfs ca. vier Interrupts getriggert werden, wird
+auf eine globale Gleitkommazahl der Wert $\frac{1}{4}$ addiert. Beim Herausgeben
+des Wertes wird der Wert dann auf den nächsten Integer gerundet.
+
+Auch für jeden Knopfdruck wird ein Interrupt ausgelöst. Da der Knopf prellt,
+wird hier mit einen niedrigen Timeout gearbeitet, welcher die Störsignale
+filtert.
+
+Da in Interrupts nur reentrante Funktionen aufgerufen werden sollte, werden nur
+globale Flags in den Interruptfunktionen gesetzt. In der ``main``--Funktion
+läuft eine Schleife mit einem Timeout von 50 Millisekunden, welche diese Werte
+abholt, formattiert und auf ``stdout`` schreibt.
+
+Der ursprüngliche Code für diesen Treiber stammt dabei von diesem Blogpost:
+
+- \url{http://theatticlight.net/posts/Reading-a-Rotary-Encoder-from-a-Raspberry-Pi}
+
+Er wurde etwas aufgeräumt und um Knopfdrücke sowie Ausgabe auf ``stdout``
+erweitert.
 
 ## Service Software
 
@@ -1325,12 +1391,14 @@ close                    -- Trenne die Verbindung.
 quit                     -- Trenne die Verbindung und beende den daemon.
 ```
 
-### ui
+### ``ui`` -- Menübasierte Bedienoberfläche
 
-Die ``ui`` ist der einzige Dienst ohne Netzwerkschnittstelle. Er kümmert sich um das Anlegen
-und Befüllen aller Fenster. Die genaue Beschaffenheit der Oberfläche wird im nächsten Kapitel
-im Stile eines Benutzerhandbuches beleuchtet. Daher wird hier nur ein kurzer Überblick über die
-Technik dahinter gegeben.
+Die ``ui`` ist der einzige Dienst ohne Netzwerkschnittstelle. Er kümmert sich um
+das Anlegen und Befüllen aller Fenster und um die Steuerung fast aller andere
+Dienste mittels einer Menübasierten Oberfläche. Die genaue Beschaffenheit der
+Oberfläche wird im nächsten Kapitel im Stile eines Benutzerhandbuches
+beleuchtet. Daher wird hier nur ein kurzer Überblick über die Technik dahinter
+gegeben.
 
 Im momentan Zustand existieren folgende Fenster:
 
@@ -1368,6 +1436,18 @@ mitgeben, die dieser verwalten soll. Es gibt momentan drei verschiedene Arten vo
   angezeigt werden. Ein Knopfdruck führt zum Weiterschalten zum nächsten Zustand. Dabei ist jeder Zustand
   mit einer Aktion verknüpft, die beim Umschalten ausgeführt wird.
 
+Diese Einträge kann der Entwickler dann mit beliebigen Aktionen verknüpfen.
+Daneben gibt es auch noch drei andere Aktionstypen die unabhängig vom aktuellen
+Eintrag ausgeführt werden:
+
+- ``TimedActions:`` Wird der Knopf für eine bestimmte Zeit gehalten, kann nach
+  einer bestimmten Zeit einmalig eine Aktion ausgeführt werden. Die Zeit nach
+  der das passiert wird beim Registrieren der Aktion angegeben.
+- ``ReleaseActions:`` Wird ausgeführt wenn der Knopf gedrückt wurde, aber
+  kein Menüeintrag ausgeführt wurde.
+- ``RotateActions:`` Wird ausgeführt sobald der Knopf nach rechts oder links
+  gedreht wurde.
+
 Auf Basis dieses minimalen Toolkits wurde dann eine leicht erweiterbare Menüführung entwickelt.
 	Eine genauere API--Beschreibung kann unter ``godoc.org`` eingesehen werden (TODO: https://godoc.org/github.com/studentkittens/eulenfunk/ui).
 
@@ -1403,6 +1483,24 @@ werden. Abbildung \ref{ympd-screen} zeigt die Weboberfläche.
 TODO: screenshot?
 
 TODO: snobaer?
+
+#### Zeroconf
+
+Normalerweise ist die Weboberfläche von *Eulenfunk* unter der Addresse
+``http://eulenfunk:8080`` erreichbar.
+Falls das wegen mangelender Namensauflösung aber nicht funktioniert kann 
+man *Zeroconf* (TODO: ref) dazu nutzen die IP von *Eulenfunk* herauszufinden:
+
+```bash
+$ avahi-browse _mpd._tcp -r | grep 'hostname = \[eulenfunk' -A 2]'
+   hostname = [eulenfunk.local]
+   address = [192.168.23.30]
+   port = [6600]
+```
+
+Das funktioniert, weil der MPD--Server seine Anwesenheit mittels des
+Zeroconf--Protokolls mitteilt. Es muss allerdings der Avahi--Daemon sowohl auf
+dem anfragenden Rechner als auch auf *Eulenfunk* aktiv sein.
 
 ## Einrichtung
 
@@ -1469,8 +1567,8 @@ $ systemctl status radio-ui.service
 [...]
 Jun 28 01:19:24 eulenfunk eulenfunk[410]: 2016/06/28 01:19:24 Pressed for 1s
 [...]
-# Alternativ falls mehr Log--Details benötigt werden:
-$ journalctl -u radio-ui.service --since today
+# Alternativ falls mehrere Dienste zeitgleich angezeigt werden sollen:
+$ journalctl -u radio-ambilight.service -u radio-ui.service --since today
 ```
 
 ### ``eulenfunk`` Software
@@ -1489,11 +1587,31 @@ $ make install
 
 Das mitgelieferte Makefile installiert alle ``.unit``--Files, Skripte Treiber--Binärdaten und die
 ``eulenfunk``--Binärdatei selbst. Die Software sollte dabei auch auf normalen Desktop--Rechnern
-kompilierbar
+kompilierbar sein.
 
-### Sonstiges
+## Fazit
+
+Die Anforderungen können durchaus als erfüllt betrachtet werden. Anforderung
+**#3** *(Ausfallsicherheit)*  und **#4** *(Wartbarkeit)* wurden durch den
+konsequenten Einsatz von ``systemd`` umgesetzt. Anforderung **5** *(Lose
+Kopplung)* wird durch die Aufteilung der Dienste in einzelne, durch das Netzwerk
+getrennte, Prozesse erreicht. Die Erweiterbarkeit sollte dadurch gewährleistet 
+sein, dass relativ klar strutkturierter und modularer Code verfasst wurde.
+Möchte man sich mit dem Code vertraut machen, so hilft die API--Dokumentation
+weiter:  \url{https://godoc.org/github.com/studentkittens/eulenfunk}
+
+Anforderung **2** *(Effizienz)* wurde durch die Wahl effizienter
+Programmiersprachen und Vermeidung rechenhungriger oder ineffizienter
+Programmierung vermieden. Die CPU--Last bewegt dabei sich meist zwischen 40--60%
+bei ``mp3``--enkodierten Liedern. Bei ``.flac``--Dateien liegt die Last etwa
+10--20 Prozentpunkte höher. Die Speicherauslastung ist auch nach mehren Stunden
+Benutzung bei konstanten 50MB.
+
+Auch wurde versucht die Anzahl von gestarteten Prozess klein zu halten und
+nur das nötigste zu starten:
 
 ```bash
+$ pstree -A
 systemd-+-2*[agetty]
         |-avahi-daemon---avahi-daemon
         |-dbus-daemon
@@ -1519,47 +1637,44 @@ systemd-+-2*[agetty]
         `-ympd
 ```
 
+Inwiefern Anforderung **#1** (*leichte Bedienbarkeit*) gewährleistet ist, wird
+das nächste Kapitel zeigen. Die Software darunter versucht die Möglichkeiten
+dafür zu schaffen.
 
-#### zeroconf
+### Quelltextumfang
 
-Alle MPD--Server samt IP und Port anzeigen:
-
-```bash
-$ avahi-browse _mpd._tcp -v -r
-```
-
-Die CPU--Last bewegt sich meist zwischen 40-60% bei ``mp3``--enkodierten
-Liedern. Bei ``.flac``--Dateien liegt die Last etwa 20 Prozentpunkte höher. Die
-Speicherauslastung ist auch nach mehren Stunden Benutzung bei konstanten 50MB.
-
-godoc:  https://godoc.org/github.com/studentkittens/eulenfunk
-
-systemd boot plot
-
-## Wartung
-
-ssh zugang
-
-## Fazit
-
-Toll!
+Mit dem Tool ``cloc`` (TODO: ref) wurde eine Statistik erstellt, welche den
+Umfang der Software zeigt. Diese Statistik wurde bereits von auto--generierten
+Code und Fremdcode bereinigt:
 
 
 | Language                   | files     |    blank     |  comment     |     code |
 |----------------------------|-----------|--------------|--------------|----------|
-| Go                         |    32     |      991     |      550     |     4080 |
+| Go                         |    32     |      991     |      550     |     4090 |
 | C                          |     3     |       99     |       15     |      493 |
 | make                       |     3     |       13     |        1     |       31 |
 | Bourne Shell               |     1     |        2     |        1     |       12 |
-| SUM:                       |    39     |     1105     |      567     |     4616 |
+| SUM:                       |    39     |     1105     |      567     |     4626 |
 
-Probleme:
+### Probleme und Verbesserungsmöglichkeiten
 
-- re-mount
-- Fehlerhafter Cursor
-- Displayd-eventbased
+Obwohl die Software für den *Eulenfunk* Prototypen durchaus gut und stabil
+funktioniert, gibt es natürlich noch Verbesserungspotenzial:
 
-
+- Steckt ein USB--Stick nach einem Reboot noch am Radio, so wird dieser nicht
+  automatisch gemounted. Erst nach einen An- und Abstecken desselben ist 
+  die zugehörige Playlist wieder abspielbar. Beim Start müssten daher manuell
+  ``udev``--Ereignisse getriggert werden. Versuche dies zu erreichen schlugen
+  aber leider aus bisher ungeklärten Gründen fehl.
+- In seltenen Fällen verschwindet der Cursor in Menüs aus ungeklärten Gründen.
+- Wie im Kapitel von ``displayd`` beschrieben, wäre auf lange Dauer ein
+  Ereignis-basierter Ansatz im Display--Server wünschenswert, um den
+  Stromverbrauch im Ruhezustand zu senken.
+- *Eulenfunk* benötigt zum Hochfahren momentan etwa 34 Sekunden. Das ist für die
+  meisten Anwendungsfalle vollkommen ausreichend, könnte aber eventuell noch
+  weiter optimiert werden. Eine genaue Übersicht darüber, welche Dienste wie lang
+  zum Start brauchen, liefert das Tool ``systemd-analyze plot``. 
+  Die aktuelle Übersicht findet sich unter (TODO: ref).
 
 # Bedienkonzept/Menüsteuerung
 
