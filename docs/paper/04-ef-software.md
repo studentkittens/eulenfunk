@@ -560,20 +560,20 @@ Folgende Seiten waren bei der Erstellung der Tabelle hilfreich:
 ### ``lightd`` -- Der Effektserver
 
 ``lightd`` ist ein relativ einfacher Service, dessen Hauptaufgabe die
-Verwaltung auf den Zugriff auf die LED ist. Wollen mehrere Programme die LED
+Verwaltung des Zugriffs auf die LEDs ist. Wollen mehrere Programme die LED
 ansteuern, um beispielsweise einen sanften roten und grünen Fade--Effekt zu
-realisieren so würde ohne Synchronisation zwangsläufig ein zittrige Mischung
+realisieren, so würde ohne Synchronisation zwangsläufig eine zittrige Mischung
 beider Effekte entstehen.
 
 Ursprünglich war ``light`` als »``lockd``« konzipiert, der den Zugriff auf
 verschiedene Ressourcen verwalten kann. Da aber das Display bereits von
 ``displayd`` synchronisiert wird und durchaus mehrere Programme den Drehknopf
-auslesen dürfen wurde diese etwa generellere Idee wieder verworfen.
+auslesen dürfen, wurde diese etwas generellere Idee wieder verworfen.
 
 Die zweite Hauptaufgabe von ``lightd`` ist die Darstellung von Farbeffekten auf
-der LED. Ursprünglich waren diese dafür gedacht um beispielsweise beim Verlust
+der LED. Ursprünglich waren diese dafür gedacht, um beispielsweise beim Verlust
 der WLAN--Verbindung ein rotes Blinken anzuzeigen. Momentan wird allerdings nur
-beim Herunterfahrend bzw. Rebooten ein rotes bzw. oranges Blinken angezeigt.
+beim Herunterfahren bzw. Rebooten ein rotes bzw. oranges Blinken angezeigt.
 Folgende Effekte sind also momentan als Möglichkeit zur Erweiterung zu
 begreifen:
 
@@ -583,7 +583,7 @@ begreifen:
 - ``fire:`` Kaminfeuerartiges Leuchten.
 
 Wie andere Dienste wird auch ``lightd`` mittels einer Netzwerkschnittstelle kontrolliert.
-Die mögliche Kommandoes sind dabei wie folgt:
+Die möglichen Kommandos sind dabei wie folgt:
 
 ```
 !lock      -- Versuche exklusive Zugriffsrechte zu erlangen oder warte bis möglich.
@@ -615,24 +615,24 @@ spielenden Musik eingefärbt wird. Hier erklärt sich auch der Name dieses
 Dienstes: *Ambilight* (vgl. [@seuntiens2007visual]) bezeichnet eigentlich eine
 von Phillips entwickelte Technologie, um an einem Fernseher angebrachte LEDs
 passend zum momentanen Bildinhalt einzufärben. Hierher kommt auch die
-ursprüngliche Idee dies auf Musik umzumünzen.
+ursprüngliche Idee, dies auf Musik umzumünzen.
 
-Um aus den momentan spielenden Audiosamples eine Farbe abzuleiten gibt es
-einige Möglichkeiten. (vgl. Kapitel \ref{internal-audio-vis}). Eine
+Um aus den momentan spielenden Audiosamples eine Farbe abzuleiten, gibt es
+einige Möglichkeiten (vgl. Kapitel \ref{internal-audio-vis}). Eine
 große Einschränkung bildet hierbei allerdings die sehr begrenzte Rechenleistung
-des Raspberry Pi. Daher haben wir für eine Variante entschieden, bei der die
-Farbwerte vorberechnet werden. Das hast den offensichtlichen Nachteil, dass man
+des *Raspberry Pi*. Daher haben wir uns für eine Variante entschieden, bei der die
+Farbwerte vorberechnet werden. Das hat den offensichtlichen Nachteil, dass man
 für Radiostreams kein Ambientlicht anzeigen kann. Andererseits möchte man das
 bei Nachrichtensendung und Diskussionsrunden vermutlich auch nicht.
 
 Zur Vorberechnung nutzen wir dabei das ``moodbar`` Programm (vgl. das Paper von
-Gavin Wood[@wood2005techniques]). Diese analysiert mit Hilfe des
+Gavin Wood[@wood2005techniques]). Dieses analysiert mit Hilfe des
 GStreamer--Frameworks (vgl. [@taymans2013gstreamer]) eine Audiodatei in einem
 gebräuchlichen Format und zerlegt diese in 1000 Einzelteile. Sehr oberflächlich
 erklärt[^NOTE] wird für jedes dieser Teile ein Farbwert berechnet, wobei
 niedrige Frequenzen tendenziell zu roten Farbtönen werden, mittlere Frequenzen
 zu Grüntönen und hohe Frequenzen zu blauen Tönen werden. Die so gesammelten
-Farbwerte werden dann in einer ``.mood`` Datei gespeichert, welche aus 1000
+Farbwerte werden dann in einer ``.mood``--Datei gespeichert, welche aus 1000
 RGB--Tripeln à 3 Byte (1 Byte pro Farbkanal) bestehen. Ein visualisiertes
 Beispiel für eine Moodbar kann man in Abbildung \ref{queen-moodbar} sehen.
 
@@ -648,7 +648,7 @@ Beispiel für eine Moodbar kann man in Abbildung \ref{queen-moodbar} sehen.
   \label{queen-moodbar}
 \end{figure}
 
-Um nun aber tatsächlich ein zur Musik passendes Licht anzuzeigen muss für jedes
+Um nun aber tatsächlich ein zur Musik passendes Licht anzuzeigen, muss für jedes
 Lied in der Musikdatenbank eine passende Moodbar in einer Datenbank
 abgespeichert werden. Diese Datenbank ist im Fall von *Eulenfunk* ein simples
 Verzeichnis in dem für jedes Lied die entsprechende Moodbar mit dem Pfad
@@ -656,7 +656,7 @@ relativ zum Musikverzeichnis[^NOTE2] als Dateinamen abgespeichert wird.
 
 [^NOTE2]: Wobei »/« durch »|« im Dateinamen ersetzt werden.
 
-Die Datenbank kann dabei mit folgenden Befehl angelegt und aktuell gehalten werden:
+Die Datenbank kann dabei mit folgendem Befehl angelegt und aktuell gehalten werden:
 
 ```bash
 $ eulenfunk ambilight --update-mood-db --music-dir /music --mood-dir /var/mood 
@@ -664,7 +664,7 @@ $ eulenfunk ambilight --update-mood-db --music-dir /music --mood-dir /var/mood
 
 Die eigentliche Aufgabe von ``ambilightd`` ist es nun den Status von MPD zu
 holen, die passende ``.mood``--Datei zu laden und anhand der Liedlänge und der
-bereits vergangenen Zeit den aktuellen passenden Sample aus den 1000
+bereits vergangenen Zeit den aktuell passenden Sample aus den 1000
 vorhandenen anzuzeigen. Damit der Übergang zwischen den Samples flüssig ist
 wird linear zwischen den einzelnen Farbwerten überblendet. Da die LED eher zu
 einer weißen Farbe tendiert, wenn mehrere Kanäle an sind, werden mittlere
@@ -673,7 +673,7 @@ Sättigungwerte leicht verstärkt und mittlere Helligkeitswerte etwas abgeschwä
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.0\textwidth]{images/eulenfunk-ambilight.png}
-  \caption{Konzeptuelle Übersicht über ambilight und verwandte Dienste.}
+  \caption{Konzeptuelle Übersicht über \emph{ambilight} und verwandte Dienste.}
   \label{eulenfunk-ambilight}
 \end{figure}
 
@@ -686,13 +686,13 @@ von ``ambilight`` findet sich in Abbildung \ref{eulenfunk-ambilight}.
 Im Fazit kann man sagen, dass die verwendete Technik durchaus gut für die meisten Lieder funktioniert.
 Besonders die Synchronisation ist dabei erstaunlich akkurat und solange nur ein einzelnes Instrument spielt,
 wird dem auch eine passende Farbe zugeordnet. Ein Dudelsack erscheint beispielsweise meist grün, während 
-ein Kontrabass in mehreren Liedern Rot erschien.
+ein Kontrabass in mehreren Liedern rot erschien.
 
 Lediglich bei schnellen Tempowechseln (Beispiel: »Prison Song« von »System of a
 Down«) sieht man, dass der Farbübergang bereits anfängt bevor man den
-zugehörigen Ton hört. Dem könnte im Zukunft abgeholfen werden indem keine
-lineare Interpolation zwischen den Farben mehr genutzt wird, sondern ein
-Verfahren dass plötzliche Übergänge eher berücksichtigt.
+zugehörigen Ton hört. Dem könnte im Zukunft abgeholfen werden, indem keine
+lineare Interpolation zwischen den Farben genutzt wird, sondern ein
+Verfahren, das plötzliche Übergänge eher berücksichtigt.
 
 ### ``automount`` -- Playlists von USB Sticks erstellen
 
@@ -703,26 +703,27 @@ Verfahren dass plötzliche Übergänge eher berücksichtigt.
   \label{eulenfunk-automount}
 \end{figure}
 
-Der ``autmount``--Daemon  sorgt dafür, dass angesteckte USB--Sticks automatisch auf gemounted werden,
+Der ``autmount``--Daemon  sorgt dafür, dass angesteckte USB--Sticks automatisch gemounted werden,
 Musikdateien darauf indiziert werden und in einer Playlist mit dem »Label« des Sticks landen.
 
-Unter Linux kümmert sich ``udev``, um die Verwaltung  des
+Unter Linux kümmert sich ``udev`` um die Verwaltung  des
 ``/dev``--Verzeichnis. Zur Steuerung und Konfiguration erlaubt ``udev`` das
 Anlegen von Regeln. Wird ein neues Gerät angesteckt, so geht ``udev`` alle
 bekannten und auf das Gerät passende Regeln durch und wendet die darin
 definierten Aktionen an.
 Bei *Eulenfunk* wird die Regel ``config/udev/11-music-usb-mount.rules`` in das
 Verzeichnis ``/etc/udev/rules.d`` kopiert. Die ``11`` im Namen sorgt dafur,
-dass die Regel alphabetisch vor den Standardregeln abgearbeitet wird (beginnen
+dass die Regel alphabetisch vor den Standardregeln abgearbeitet wird (beginnend
 mit ``50``).  Abbildung \ref{eulenfunk-automount} zeigt danach den Ablauf beim
-Anstecken eines USB--Sticks mit dem Label »usb-music«. Es wird ein von der
+Anstecken eines USB--Sticks mit dem Label »usb-music«. Es wird von der
 Regel aus ein Befehl über Netzwerk an ``automount`` gesendet, welcher dann das
 Mount und Unmount samt Erstellen der Playlist übernimmt.
 Die genaue Erklärung der Einzelheiten wird hier aus Platzgründen ausgelassen.
-Es sei hier aber auf die folgenden Resourcen verwiesen:
+Weitere Informationen zu ``udev``--Regeln sind online[^UDEV][^UDEV2] zu finden.
 
-- \url{http://www.reactivated.net/writing_udev_rules.html}
-- \url{https://wiki.archlinux.de/title/Udev#Unter_.2Fmedia_einbinden.3B_Partitions_Label_verwenden_falls_vorhanden}
+[^UDEV]: Writing udev rules: \url{http://www.reactivated.net/writing\_udev\_rules.html}
+[^UDEV2]: Arch Linux udev:
+\url{https://wiki.archlinux.de/title/Udev\#Unter\_.2Fmedia\_einbinden.3B\_Partitions\_Label\_verwenden\_falls\_vorhanden}
 
 Eine berechtigte Frage ist warum ``automount`` das Mounten/Unmounten des Sticks
 übernimmt, wenn diese Aktionen prinzipiell auch direkt von der ``udev``--Regel
@@ -740,40 +741,41 @@ Stick ganz normal als ``root``--Nutzer mounten.
 Beim Entfernen des USB--Sticks wird die inverse Operation ausgeführt: Die Playlist wird 
 gelöscht (da MPD die Lieder nicht mehr abspielen könnte) und der Mount wird wieder entfernt.
 
-Ähnlich wie die vorigen Dienste unterstützt ``automount`` einige wenige Befehle
-die es über einen Netzwerk--Socket auf Port 5555 erhält:
+Ähnlich wie die vorherigen Dienste unterstützt ``automount`` einige wenige
+Befehle, die es über einen Netzwerk--Socket auf Port 5555 erhält:
 
 * ``mount <device> <label>:`` Mounte ``<device>`` (z.B. ``/dev/sda1``) zu ``<music_dir>/mounts/<label>``
-   und erstelle eine Playlist names <label> aus den Liedern.
+   und erstelle eine Playlist names `<label>` aus den Liedern.
 * ``unmount <device> <label>:`` Entferne Playlist und Mountpoint wieder.
 * ``close:`` Trenne die Verbindung.
-* ``quit:``  Trenne die Verbindung und beende den daemon.
+* ``quit:``  Trenne die Verbindung und beende den Daemon.
 
 ### ``ui`` -- Menübasierte Bedienoberfläche
 
 Die ``ui`` ist der einzige Dienst ohne Netzwerkschnittstelle. Er kümmert sich
 um das Anlegen und Befüllen aller Fenster und um die Steuerung fast aller
-andere Dienste mittels einer menübasierten Oberfläche. Die genaue
+anderen Dienste mittels einer menübasierten Oberfläche. Die genaue
 Beschaffenheit der Oberfläche wird im nächsten Kapitel (siehe
-\ref{internal-owl-chapter}) im Stile eines Benutzerhandbuches beleuchtet. Daher
+\ref{internal-owl-chapter}, TODO: FIXREF) im Stile eines Benutzerhandbuches beleuchtet. Daher
 wird hier nur ein kurzer Überblick über die Technik dahinter gegeben.
 
-Im momentan Zustand existieren folgende Fenster:
+Im momentanen Zustand existieren folgende Fenster:
 
-- ``mpd:`` Zeigt Infos über das das momentan laufende Lied oder den aktuellen Radiostream.
+- ``mpd:`` Zeigt Infos über das momentan laufende Lied oder den aktuellen Radiostream.
 - ``clock:`` Zeigt das aktuelle Datum und Uhrzeit.
 - ``stats:`` Zeigt Statistiken über die MPD--Datenbank an.
 - ``sysinfo:`` Zeigt die Ausgabe des Skripts ``config/scripts/radio-sysinfo.sh`` an.
 - ``about:`` Zeigt die Credits an.
-- ``menu-main`` Hauptmenü von dem alle Funktionen erreichbar sind.
+- ``menu-main`` Hauptmenü von dem aus alle Funktionen erreichbar sind.
 - ``menu-playlists:`` Zeigt alle verfügbaren Playlists.
 - ``menu-power:`` Einträge zum Herunterfahren und Rebooten.
 
-Fenster die »``menu-``« beginnen, können durch Benutzung des Drehknopfs erkundet werden.
+Fenster, die mit »``menu-``« beginnen, können durch Benutzung des
+Drehimpulsgebers erkundet werden.
 Eine Drehung nach rechts verschiebt das Menü nach unten, eine Drehung nach links nach oben.
 
-Wie oben bereits erwähnt wurde ein kleines Client--Seitiges »Toolkit« implementiert, welches die
-leichte Erstellung von Menüs und die Verknüpfung mit dem Drehknopf mittels Aktionen möglich macht.
+Wie oben bereits erwähnt wurde ein kleines Client--seitiges »Toolkit« implementiert, welches die
+leichte Erstellung von Menüs und die Verknüpfung mit dem Drehimpulsgeber mittels Aktionen möglich macht.
 Der prinzipielle Aufbau dieses Toolkits ist in Abbildung \ref{eulenfunk-ui} gezeigt.
 
 \begin{figure}[h!]
@@ -790,13 +792,13 @@ mitgeben, die dieser verwalten soll. Es gibt momentan drei verschiedene Arten vo
 - ``SeparatorEntry:`` Zeigt einen vordefinierten Text. Wird zum Abtrennen verschiedener Sektionen
   innerhalb eines Menüs benutzt, daher der Name.
 - ``ClickEntry:`` Zeigt einen Text und ist mit einer Aktion verknüpft. Drückt der Nutzer den Drehknopf 
-  während der Fokus auf dem Eintrag ist, so wird die Aktion ausgeführt,.
-- ``ToggleEntry:`` Wie ``ClickEntry``, hat aber mehrere Zustände die in eckigen Klammern hinter dem Text
+  während der Fokus auf dem Eintrag ist, so wird die Aktion ausgeführt.
+- ``ToggleEntry:`` Wie ``ClickEntry``, hat aber mehrere Zustände, die in eckigen Klammern hinter dem Text
   angezeigt werden. Ein Knopfdruck führt zum Weiterschalten zum nächsten Zustand. Dabei ist jeder Zustand
   mit einer Aktion verknüpft, die beim Umschalten ausgeführt wird.
 
 Diese Einträge kann der Entwickler dann mit beliebigen Aktionen verknüpfen.
-Daneben gibt es auch noch drei andere Aktionstypen die unabhängig vom aktuellen
+Daneben gibt es auch noch drei andere Aktionstypen, die unabhängig vom aktuellen
 Eintrag ausgeführt werden:
 
 - ``TimedActions:`` Wird der Knopf für eine bestimmte Zeit gehalten, kann nach
@@ -816,7 +818,7 @@ Menüführung entwickelt. Eine genauere API--Beschreibung kann unter
 #### ``info`` -- Anzeige des ``mpd``--Status
 
 ``info`` ist der Teil der UI, welcher den Inhalt des ``mpd`` Fensters pflegt
-und darstellt. Im Hintergrund steht dabei ein vollfunktionsfähger MPD--Client,
+und darstellt. Im Hintergrund steht dabei ein voll funktionsfähiger MPD--Client,
 welcher auch auf Zustandsänderungen von außen reagiert. Das heißt: Ändert man
 das aktuelle Lied mittels eines anderen MPD--Clients (von einem Handy als
 Fernbedienung etwa), so wird die Änderung umgehend an die UI propagiert.
@@ -844,10 +846,10 @@ werden. Abbildung \ref{ympd-screen} zeigt die Weboberfläche.
 \end{figure}
 
 Ursprünglich war der Einsatz eines, in einer früheren Studienarbeit
-entwickelten, Webclients namens »Snøbær« (siehe Abbildung \ref{snobaer-screen}
+entwickelten, Webclients namens »Snøbær« (siehe Abbildung \ref{snobaer-screen})
 angedacht. Dieser hat ein paar mehr Features wie das automatische Herunterladen
 von Coverart und Liedtexten. Leider lies sich dieser nicht ohne größeren Aufwand
-auf dem Raspberry kompilieren weswegen aus Zeitgründen einstweilen auf ``ympd`` umgeschwenkt wurde.
+auf dem *Raspberry Pi* kompilieren, weswegen aus Zeitgründen einstweilen auf ``ympd`` umgeschwenkt wurde.
 
 \begin{figure}[h!]
   \centering
@@ -858,9 +860,9 @@ auf dem Raspberry kompilieren weswegen aus Zeitgründen einstweilen auf ``ympd``
 
 #### Zeroconf
 
-Normalerweise ist die Weboberfläche von *Eulenfunk* unter der Addresse
+Normalerweise ist die Weboberfläche von *Eulenfunk* unter der Adresse
 ``http://eulenfunk:8080`` erreichbar.
-Falls das wegen mangelender Namensauflösung aber nicht funktioniert kann 
+Falls das wegen mangelnder Namensauflösung aber nicht funktioniert, kann 
 man *Zeroconf* (vgl. [@ietf2013zero]) dazu nutzen die IP von *Eulenfunk* herauszufinden:
 
 ```bash
@@ -870,14 +872,14 @@ $ avahi-browse _mpd._tcp -r | grep 'hostname = \[eulenfunk' -A 2
    port = [6600]
 ```
 
-Das funktioniert, weil der MPD--Server seine Anwesenheit mittels des
+Das funktioniert, weil der MPD--Server seine Anwesenheit mittels 
 Zeroconf--Protokolls mitteilt. Es muss allerdings der Avahi--Daemon sowohl auf
 dem anfragenden Rechner als auch auf *Eulenfunk* aktiv sein.
 
 ## Einrichtung
 
 In diesem Teilkapitel soll die Einrichtung aller relevanten Komponenten dokumentiert werden.
-Dies soll hauptsächlich zur Referenz dienen, um das Radio notfalls wieder nachbauen zu können.
+Dies soll hauptsächlich zur Referenz dienen, um das Radio nachbauen zu können.
 
 ### ``mpd`` und ``ympd``
 
@@ -893,7 +895,7 @@ $ mpd /var/mpd/mpd.conf
 $ mpc update -w
 ```
 
-``mpd`` und ``ympd`` sind die einzigen Dienste die von außen (ohne
+``mpd`` und ``ympd`` sind die einzigen Dienste, die von Außen (ohne
 Authentifizierung) zugreifbar sind. Auch wenn *Eulenfunk* normal in einem
 abgesicherten WLAN hängt, wurde für die beiden Dienste jeweils ein eigener
 Nutzer mit eingeschränkten Rechten und ``/bin/false`` als Login--Shell angelegt.
@@ -920,7 +922,7 @@ eigenes ``.unit``--File[^UNIT-FILES].
 \begin{figure}[h!]
   \centering
   \includegraphics[width=0.9\textwidth]{images/eulenfunk-systemd.png}
-  \caption{Abhängigkeits Graph beim Start der einzelnen Dienste}
+  \caption{Abhängigkeits--Graph beim Start der einzelnen Dienste}
   \label{eulenfunk-systemd}
 \end{figure}
 
@@ -930,7 +932,7 @@ Sollte ein Dienst abstürzen, weil beispielsweise die Software doch noch Fehler
 hat, dann wird der Service von ``systemd`` automatisch neu gestartet, da die
 Option ``Restart=on-failure`` in den ``.unit``--Files von *Eulenfunk* gesetzt
 ist. Besonders zur Fehlersuche war ``systemd`` bereits sehr hilfreich, da es
-möglich ist die Ausgabe des Dienstes im Nachhinein zu Betrachten:
+möglich, ist die Ausgabe des Dienstes im Nachhinein zu betrachten:
 
 ```bash
 $ systemctl status radio-ui.service
@@ -969,18 +971,20 @@ Die Anforderungen können durchaus als erfüllt betrachtet werden. Anforderung
 konsequenten Einsatz von ``systemd`` umgesetzt. Anforderung **#5** *(Lose
 Kopplung)* wird durch die Aufteilung der Dienste in einzelne, durch das Netzwerk
 getrennte, Prozesse erreicht. Die Erweiterbarkeit sollte dadurch gewährleistet 
-sein, dass relativ klar strutkturierter und modularer Code verfasst wurde.
-Möchte man sich mit dem Code vertraut machen, so hilft die API--Dokumentation
-weiter:  \url{https://godoc.org/github.com/studentkittens/eulenfunk}
+sein, dass relativ klar strukturierter und modularer Code verfasst wurde.
+Möchte man sich mit dem Code vertraut machen, so hilft die
+API--Dokumentation[^EULENFUNK] weiter.  
+
+[^EULENFUNK]: API--Doc Eulenfunk: \url{https://godoc.org/github.com/studentkittens/eulenfunk}
 
 Anforderung **#2** *(Effizienz)* wurde durch die Wahl effizienter
-Programmiersprachen und Vermeidung rechenhungriger oder ineffizienter
-Programmierung vermieden. Die CPU--Last bewegt dabei sich meist zwischen 40--60%
+Programmiersprachen und Vermeidung ressourcenhungriger oder ineffizienter
+Programmierung vermieden. Die CPU--Last bewegt sich dabei meist zwischen 40--60%
 bei ``mp3``--enkodierten Liedern. Bei ``.flac``--Dateien liegt die Last etwa
-10--20 Prozentpunkte höher. Die Speicherauslastung ist auch nach mehren Stunden
+10--20 Prozentpunkte höher. Die Speicherauslastung ist auch nach mehreren Stunden
 Benutzung bei konstanten 50MB.
 
-Auch wurde versucht die Anzahl von gestarteten Prozess klein zu halten und
+Auch wurde versucht, die Anzahl von gestarteten Prozess klein zu halten und
 nur das Nötigste zu starten:
 
 ```html
@@ -1029,11 +1033,11 @@ bereits von auto--generierten Code und Fremdcode bereinigt:
 
 ### Probleme und Verbesserungsmöglichkeiten
 
-Obwohl die Software für den *Eulenfunk* Prototypen bisher durchaus gut und stabil
+Obwohl die Software für den *Eulenfunk*--Prototypen bisher durchaus gut und stabil
 funktioniert, gibt es natürlich noch Verbesserungspotenzial:
 
 - Steckt ein USB--Stick nach einem Reboot noch am Radio, so wird dieser nicht
-  automatisch gemounted. Erst nach einen An- und Abstecken desselben ist 
+  automatisch gemounted. Erst nach einem An- und Abstecken desselben ist 
   die zugehörige Playlist wieder abspielbar. Beim Start müssten daher manuell
   ``udev``--Ereignisse getriggert werden. Versuche dies zu erreichen schlugen
   aber leider aus bisher ungeklärten Gründen fehl.
@@ -1042,11 +1046,10 @@ funktioniert, gibt es natürlich noch Verbesserungspotenzial:
   Ereignis-basierter Ansatz im Display--Server wünschenswert, um den
   Stromverbrauch im Ruhezustand zu senken.
 - *Eulenfunk* benötigt zum Hochfahren momentan etwa 34 Sekunden. Das ist für die
-  meisten Anwendungsfalle vollkommen ausreichend, könnte aber eventuell noch
+  meisten Anwendungsfälle vollkommen ausreichend, könnte aber eventuell noch
   weiter optimiert werden. Eine genaue Übersicht darüber, welche Dienste wie lang
   zum Start brauchen, liefert das Tool ``systemd-analyze plot``. 
   Der aktuelle Plot kann online auf GitHub eingesehen werden[^BOOT-PLOT].
 
 [^BOOT-PLOT]: \url{https://github.com/studentkittens/eulenfunk/blob/master/docs/paper/images/boot-plot.svg}
 
-\label{internal-owl-chapter}
