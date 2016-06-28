@@ -755,8 +755,8 @@ Befehle, die es über einen Netzwerk--Socket auf Port 5555 erhält:
 Die ``ui`` ist der einzige Dienst ohne Netzwerkschnittstelle. Er kümmert sich
 um das Anlegen und Befüllen aller Fenster und um die Steuerung fast aller
 anderen Dienste mittels einer menübasierten Oberfläche. Die genaue
-Beschaffenheit der Oberfläche wird im nächsten Kapitel (siehe
-\ref{internal-owl-chapter}, TODO: FIXREF) im Stile eines Benutzerhandbuches beleuchtet. Daher
+Beschaffenheit der Oberfläche wird im nächsten Kapitel (siehe Kapitel
+\ref{internal-owl-chapter}) im Stile eines Benutzerhandbuches beleuchtet. Daher
 wird hier nur ein kurzer Überblick über die Technik dahinter gegeben.
 
 Im momentanen Zustand existieren folgende Fenster:
@@ -1052,4 +1052,3 @@ funktioniert, gibt es natürlich noch Verbesserungspotenzial:
   Der aktuelle Plot kann online auf GitHub eingesehen werden[^BOOT-PLOT].
 
 [^BOOT-PLOT]: \url{https://github.com/studentkittens/eulenfunk/blob/master/docs/paper/images/boot-plot.svg}
-
