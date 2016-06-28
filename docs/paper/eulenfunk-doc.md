@@ -1100,15 +1100,12 @@ Instanz ein eher unleserliches Resultat dabei heraus. Durch ``displayd`` können
 Anwendungen auf ein separates Fenster schreiben, wovon jeweils nur eines aktiv
 angezeigt wird. Abbildung \ref{eulenfunk-displayd} zeigt die Architektur in der Übersicht.
 
-
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.0\textwidth]{images/eulenfunk-displayd.png}
   \caption{Archtitektonische Übersicht von \texttt{displayd} mit Beispielfenstern.}
   \label{eulenfunk-displayd}
 \end{figure}
-
-
 
 Nach dem Start kann man auf Port 7777 ``displayd`` mittels eines simplen,
 zeilenbasierten Textprotokolls kontrollieren. Dabei werden die folgenden
@@ -1837,11 +1834,11 @@ Master-Reglers navigiert innerhalb des Playlist--Ansicht. In der Ansicht
 
   Der Menüpunkt *Systeminfo* (siehe Abb. \ref{systeminfo}) zeigt folgende Informationen zum System an:
 
-* CPU-Auslastung 
-* Speicher-Auslastung 
+* CPU-Auslastung in Prozent.
+* Speicher-Auslastung in Prozent.
 * IP-Adresse, Systemlaufzeit,
-* WLAN-Empfangsstärke 
-* CPU-Temperatur
+* WLAN-Empfangsstärke in Prozent.
+* CPU-Temperatur in Celsius.
 
 Ein Drücken des Master-Reglers führt zurück zum Hauptmenü.
 
@@ -1937,7 +1934,7 @@ gut funktionieren.
 
 ## Ziel erreicht?
 
-Das selbstgesetzte Ziel --- mit möglichst wenig Aufwand ein Internetradio auf Basis
+Das selbstgesetzte Ziel --- mit möglichst geringen finanziellen Einsatz ein Internetradio auf Basis
 eines *Raspberry Pi* zu entwickeln --- kann durchaus als erfolgreich betrachtet
 werden. 
 
@@ -1948,6 +1945,7 @@ werden.
 Der aktuelle Prototyp hat lediglich nur ein Potentiometer um die Hintergrundbeleuchtung
 des LCD zu regeln. Ein anderer Ansatz wäre der Einsatz eines Relais, welches es
 ermöglichen würde die LCD--Hintergrundbeleuchtung Software--seitig ein-- und auszuschalten.
+Die Software könnte dann automatisch nach längerer Inaktivtät die Beleuchtung dimmen.
 
 \label{internal-audio-vis}
 
@@ -2003,11 +2001,12 @@ einem *LM7805*--Spannungsregler oder einem Abwärtswandler realisieren lassen
 Die relativ junge Linux--Distribution *Alpine Linux*[^APL] wäre eine mögliche
 Verbesserung für den Einsatzzweck Internetradio. Diese Distribution hat ihren
 Fokus auf Ressourceneffizienz und Systemsicherheit. Ein weiterer Vorteil wäre
-der `diskless mode`, welcher das komplette Betriebssystem in den Arbeitsspeicher
-lädt. In diesem Modus müssen Änderungen mit einem *Alpine Local Backup
-(lbu)*--Tool explizit auf die Festplatte geschrieben werden. Das hätte den
-Vorteil, dass man die Abnutzung des Flash--Speichers, durch unnötige
-Schreib/Lese--Vorgänge, minimieren würde.
+der `diskless mode`, welcher das komplette Betriebssystem in den
+Arbeitsspeicher lädt. In diesem Modus müssen Änderungen mit einem *Alpine Local
+Backup (lbu)*--Tool explizit auf die Festplatte geschrieben werden. Das hätte
+den Vorteil, dass man die Abnutzung des Flash--Speichers, durch unnötige
+Schreib/Lese--Vorgänge, minimieren würde. Momentan unterstützt diese
+Distribution allerdings noch nicht das von uns favorisierte ``systemd``.
 
 [^APL]: Alpine Linux für Raspberry Pi: \url{https://wiki.alpinelinux.org/wiki/Raspberry_Pi}
 
