@@ -644,15 +644,6 @@ mit dem Profil `wlan0-Phobos`.
 [^ARCH]: Arch Linux ARM: \url{https://archlinuxarm.org/}
 [^INSTALL]: Arch Linux Installation für Raspberry Pi: https://archlinuxarm.org/platforms/armv6/raspberry-pi#installation
 
-
-### Abspielsoftware
-
-Für den Betrieb des Internetradios soll der MPD (Music--Player--Daemon) verwendet
-werden, da *Eulenfunk* auf einem eigens entwickeltem MPD--Client basieren soll
-(mehr zur Eulenkfunk Software siehe Kapitel Software). Andere Projekte greifen
-oft auf Abspielsoftware wie den *MOC* [vgl. @pietraszak2014buch], Seite 189 ff.
-oder *mplayer* [@exploring] Seite 638 ff. zu. 
-
 \label{internal-software-anforderungen}
 
 # Software
@@ -666,14 +657,14 @@ Zu Beginn der Entwicklung wurden einige Anforderungen an die Software
 festgelegt:
 
 1. Leichte Bedienbarkeit, obwohl es nur einen Knopf gibt, der nur die
-   Aktionen »links drehen«, »rechts drehen« und drücken zulässt.
+   Aktionen »links drehen«, »rechts drehen« und Drücken zulässt.
 2. Die Software sollte vernünftig mit den Hardwareressourcen des Rasperry Pi's
-   umgehen. Dabei sollte die Hardware nicht die ganze Zeit auf volle Last laufen
+   umgehen. Dabei sollte die Hardware nicht die ganze Zeit auf volle Last laufen,
    um eine Überhitzung im beengten Gehäuse zu vermeiden.
 3. Die Software sollte möglichst ausfallsicher sein. Fällt beispielsweise ein
    Feature durch einen Absturz der Software aus, so sollten andere Teile des Radios
    nach Möglichkeit nicht betroffen sein. Auch sollte der abgestürzte Teil sich
-   falls möglich ist neu starten können und entsprechende Log--Nachrichten
+   neu starten können und entsprechende Log--Nachrichten
    hinterlassen. Dienste die von dem abgestürzten Dienst abhängen, sollten
    sich bei Neustart dessen wieder neu verbinden.
 4. Leichte Wartbarkeit und Fehlersuche durch Schreiben von Logs.
@@ -682,8 +673,14 @@ festgelegt:
 
 Inwieweit und wodurch diese Anforderungen erfüllt worden sind, wird im Fazit erläutert.
 
-
 ## Abspielsoftware
+
+Für den Betrieb des Internetradios soll der MPD (Music--Player--Daemon) verwendet
+werden, da *Eulenfunk* auf einem eigens entwickeltem MPD--Client basieren soll
+(mehr zur Eulenkfunk Software siehe Kapitel Software). Andere Projekte greifen
+oft auf Abspielsoftware wie den *MOC* [vgl. @pietraszak2014buch], Seite 189 ff.
+oder *mplayer* [@exploring] Seite 638 ff. zu. 
+
 
 Der MPD ist ein unter Unix gern genutzte Daemon zum Verwalten und Abspielen von
 Musik und Radiostreams. Er unterstützt dabei eine große Anzahl von Formaten und
@@ -702,7 +699,7 @@ fungiert.
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=1.0\textwidth]{images/mpd-overview.png}
+  \includegraphics[width=0.85\textwidth]{images/mpd-overview.png}
   \caption{Übersicht über die Architektur des MPD--Daemons (Quelle: \url{http://mpd.wikia.com/wiki/What_MPD_Is_and_Is_Not})}
   \label{mpd-overview}
 \end{figure}
@@ -717,44 +714,30 @@ unübersichtliches Python--Skript. Aus diesem Grunde soll die
 Software für *Eulenfunk* derart modular aufgebaut sein, dass man einzelne Module
 problemlos auch auf andere Projekte übertragbar sind und später eine leichte 
 Erweiterbarkeit gewährleistet ist. Damit auch andere die Software einsetzen
-können wird sie unter die GPL in der Version 3 [vgl. @GplQuickstart] gestellt.
+können wird sie unter die GPL in der Version 3 (vgl. [@GplQuickstart]) gestellt.
 
 Zu diesem Zwecke ist die Software in zwei Hauptschichten unterteilt.
 Die untere Schicht bilden dabei die *Treiber*, welche die tatsächliche
 Ansteuerung der Hardware erledigt. Dabei gibt es für jeden Teil der Hardware
 einen eigene Treiber, im Falle von *Eulenfunk* also ein separates Programm für
-die LCD-Ansteuerung, das Setzen der LED Farbe und dem Auslesen des oberen Rotary
-Switches.
+die LCD-Ansteuerung, das Setzen der LED Farbe und dem Auslesen des oberen Drehknopfs.
 
-Die Schicht darüber bilden einzelne Dienste (ingesamt fünf), die über eine
+Die Schicht darüber bilden ingesamt fünf einzelne Dienste, die über eine
 Netzwerkschnittstelle angesprochen werden und jeweils eine Funktionalität des
-Radios umsetzen. So gibt es beispielsweise einen Dienst der die Ansteuerung des
+Radios umsetzen. So gibt es beispielsweise einen Dienst, der die Ansteuerung des
 LCD--Displays *komfortabel* macht, ein Dienst, der die LEDs passend zur Musik
-schaltet und ein Dienst der automatisch eine Playlist aus der Musik auf
+einfärbt und ein Dienst der automatisch eine Playlist aus der Musik auf
 angesteckten externen Speichermedien erstellt. Die jeweiligen Dienste sprechen
 mit den Treibern indem sie Daten auf ``stdin`` schreiben, bzw. Daten von
 ``stdout`` lesen. Um die Dienste auf neue Projekte zu portieren ist also nur
-eine Anpassung der Treiber notwendig.
+eine Anpassung oder Erweiterung der jeweiligen Treiber notwendig.
 
 Der Vorteil liegt dabei klar auf der Hand: Die lose Kopplung der einzelnen
 Dienste erleichtert die Fehlersuche ungemein und macht eine leichte
 Austauschbarkeit und Übertragbarkeit der Dienste in anderen Projekte möglich.
 Stellt man beispielsweise fest, dass der Prozessor des Radios voll ausgelastet
-ist, so kann man mit Tools wie ``htop`` sehr einfach herausfinden welcher Dienst dafür
+ist, so kann man mit Tools wie ``htop`` einfach herausfinden welcher Dienst dafür
 verantwortlich ist.
-
-## Überblick der einzelnen Komponenten
-
-Ein Überblick über die existierenden Dienste liefert Abbildung
-\ref{eulenfunk-services}. Die einzelnen Komponenten werden im Folgenden detailliert erläutert.
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=1.0\textwidth]{images/eulenfunk-services.png}
-  \caption{Übersicht über die Softwarelandschaft von Eulenfunk. Dienste mit
-  einer Netzwerkschnittstelle sind durch den entsprechenden Port gekennzeichnet.}
-  \label{eulenfunk-services}
-\end{figure}
 
 ### Sprachwahl
 
@@ -770,23 +753,24 @@ aus diesem Grund aus.
 Ursprünglich war sogar geplant, alles in *Go* zu schreiben. Leider gibt es nur
 wenige Pakete für die GPIO Ansteuerung und auch keine Bibliothek für
 softwareseitige Pulsweitenmodulation. Zwar hätte man diese notfalls auch selbst
-mittels ``/sys/class/gpio/*`` implementieren können, doch bietet *Go* leider
+mittels ``/sys/class/gpio/*`` implementieren können, doch bietet *Go* leider auch
 keine native Möglichkeit mit Interrupts zu arbeiten. Wie später beschrieben ist
 dies allerdings für den Treiber nötig, der den Drehknopf ausliest.
 
-Für *Go* sprechen ansonsten folgende Gründe:
+Für *Go* sprechen ansonsten folgende Gründe als Sprache für die höhere Logik:
 
-- **Garbage collector:** Erleichtert die Entwicklung lang laufender Dienste.
+- **Garbage Collector:** Erleichtert die Entwicklung lang laufender Dienste.
 - **Hohe Grundperformanz:** Zwar erreicht diese nicht die Performanz von C, 
-  liegt aber zumindest in der selben Größenordnung (vgl. [@pike2009go], S. 37)
+  liegt aber zumindest in der selben Größenordnung (vgl. [@pike2009go], S. 37).
 - **Weitläufige Standardlibrary:** Kaum externe Bibliotheken notwendig.
 - **Schneller Kompiliervorgang:** Selbst große Anwendungen werden in wenigen 
   Sekunden in eine statische Binärdatei ohne Abhängigkeiten übersetzt.
-- **Kross--Kompilierung:** Durch Setzen der ``GOARCH`` Umgebungsvariable kann 
+- **Kross--Kompilierung:** Durch Setzen der ``GOARCH=arm`` Umgebungsvariable kann 
   problemlos auf einen x86-64--Entwicklungsrechner eine passende
   ARM--Binärdatei erzeugt werden.
 - **Eingebauter Scheduler:** Parallele und nebenläufige Anwendungen wie
-  Netzwerkserver sind sehr einfach zu entwickeln.
+  Netzwerkserver sind sehr einfach zu entwickeln ohne für jede Aufgabe einen neuen
+  Thread starten zu müssen.
 - Ein Kriterium war natürlich auch dass der Autor gute Erfahrung mit der Sprache
   hatte und **neugierig** war, ob sie auch für solche Bastelprojekte gut einsetzbar
   ist.
@@ -795,8 +779,21 @@ Für *Go* sprechen ansonsten folgende Gründe:
 eine gute Wahl:
 
 - Programmierung mit **Interrupts** bequem und nativ möglich.
-- Hohe **Performanz** und geringer Speicherverbrauch.
+- Hohe **Performanz** und genaue Kontrolle über den Speicherverbrauch.
 - Verfügbarkeit von **wiringPi**.
+
+## Überblick der einzelnen Komponenten
+
+Ein Überblick über die existierenden Dienste liefert Abbildung
+\ref{eulenfunk-services}. Die einzelnen Komponenten werden im Folgenden detailliert erläutert.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.0\textwidth]{images/eulenfunk-services.png}
+  \caption{Übersicht über die Softwarelandschaft von Eulenfunk. Dienste mit
+  einer Netzwerkschnittstelle sind durch den entsprechenden Port gekennzeichnet.}
+  \label{eulenfunk-services}
+\end{figure}
 
 ### Vorhandene Softwarelibraries
 
@@ -813,7 +810,7 @@ wenig mehr als die meisten Kommandos des MPD--Protokolls unterstützt.
 
 ``go-colorful`` (\url{github.com/lucasb-eyer/go-colorful}): Eine Bibliothek um
 Farben in verschiedene Farbräume zu konvertieren. Der Dienst der die LED
-passend zur Musik setzt nutzt diese Bibliothek um RGB--Farbwerte in den
+passend zur Musik setzt, nutzt diese Bibliothek um RGB--Farbwerte in den
 HCL--Farbraum zu übersetzen. Dieser eignet sich besser um saubere Übergänge
 zwischen zwei Farben zu berechnen und Farbanpassungen vorzunehmen. 
 
@@ -833,7 +830,7 @@ Präfix ``radio-`` beginnen:
 
 - ``radio-led:`` Setzt die Farbe des LED--Panels auf verschiedene Weise.
 - ``radio-lcd:`` Liest Befehle von ``stdin`` und setzt das Display entsprechend.
-- ``radio-rotary:`` Gibt Änderungen des Rotary Switches auf ``stdout`` aus.
+- ``radio-rotary:`` Gibt Änderungen des Drehknopfs auf ``stdout`` aus.
 
 Die genaue Funktionsweise dieser drei Programme wird im Folgenden näher beleuchtet.
 
@@ -865,12 +862,14 @@ um kontinuierlich Farben zu setzen ohne ständig das Treiberprogramm neu zu star
   \centering
   \includegraphics[width=1.0\textwidth]{images/eulenfunk-pwm.png}
   \caption{Grafische Darstellung der Pulsweitenmodulation mit zwei Beispielfrequenzen.
-  Jeder weiße Block entspricht einem modulierten Wert. Die Prozentzahl darin entspricht dem »Duty--Cycle«
-  (dt. Tastgrad) an. Zusammen mit dem Wertebereich ergibt sich aus ihm der eigentliche Wert.} 
+    Jeder weiße Block entspricht einem modulierten Wert. Die Prozentzahl darin entspricht dem »Duty--Cycle«
+    (dt. Tastgrad) an. Zusammen mit dem Wertebereich ergibt sich aus ihm der eigentliche Wert.
+    (z.B. $255 \times 0.2 = 51$)
+  } 
   \label{eulenfunk-pwm}
 \end{figure}
 
-Da ein GPIO--Pin prinzipiell nur ein oder ausgeschaltet werden kann verwenden
+Da ein GPIO--Pin prinzipiell nur ein oder ausgeschaltet werden kann, verwenden
 wir Pulsweitenmodulation (vgl. dazu [@gay2014experimenting], S 183). Dabei
 macht man sich die träge Natur des menschlichen Auges zu nutze indem man die
 LED sehr schnell hintereinander ein und ausschaltet. Ist die LED dabei pro Ein-
@@ -878,10 +877,10 @@ und Ausschaltvorgang genauso lang hell wie dunkel so leuchtet die LED mit etwa
 der Hälfte ihrer maximalen Leuchtstärke. Durch Verlängerung/Verkürzung des
 eingeschalteten Zustands können so viele verschiedene Helligkeitsstufen
 abgebildet werden. Eine beispielhafte Illustration findet sich in Abbildung
-\ref{eulenfunk-pwm}.
+\ref{eulenfunk-pw 
 
 Da bei niedrigen Helligkeitswerten der ausgeschaltete Zustand besonders lange
-gehalten wird, kann es dazu kommen dass ein flackernder Eindruck entsteht, da
+gehalten wird, kann es dazu kommen, dass ein flackernder Eindruck entsteht, da
 man die ausgeschalteten Phasen als solche wahrnehmen kann. Um dies zu
 verhindern muss eine ausreichende hohe Frequenz gewählt werden. 
 
@@ -896,7 +895,7 @@ Diese hat allerdings das Problem, dass eine hartkodierte Pulsweite von 100µs
 verwendet wird. Für die meisten Anwendungsfälle und den vom Autor empfohlenen
 100 Abstufungen ist das auch in Ordnung. Hundert unterschiedliche Zustände
 waren nach kurzem Ausprobieren bei einem weichen Farbübergang zu stark
-abgestuft.
+abgestuft, obwohl kein nennenswertes Flackern mit 100Hz sichtbar war:
 
 $$T_{Periode} = 100\mu s\times 100= 10000\mu s = 0.01s$$
 
@@ -917,11 +916,11 @@ CPU nicht übermäßig stark zu beeinflussen (rund +3% Last pro Farbkanal).
 Es besteht eine Verbindung zu einen früheren Bastelprojekt namens
 ``catlight``[^catlight] --- einer mehrfarbigen, in einem Gehäuse montierten LED,
 die über USB angesprochen werden kann. Genutzt wird diese zur Benachrichtigung
-bei neuen E--Mails, Chat--Nachrichten und ähnlichem. Zu diesem Zwecke wurde
+bei neuen E--Mails, Chat--Nachrichten und Ähnlichem. Zu diesem Zwecke wurde
 auch bereits damals ein Treiberprogramm entwickelt, welches das selbe
 Bedienungskonzept wie ``radio-led`` hat. Dies war während der Entwicklung von
 *Eulenfunk* nützlich, da es die Entwicklung der Dienste ``ambilight`` und
-``lightd`` unabhängig von der Radio--Hardware macht.
+``lightd`` unabhängig von der Fertigstellung der Radio--Hardware machte.
 
 [^catlight]: Projektseite unter: \url{https://github.com/studentkittens/catlight}
 
@@ -929,7 +928,7 @@ Bedienungskonzept wie ``radio-led`` hat. Dies war während der Entwicklung von
 ### LCD--Treiber (``driver/lcd-driver.c``)
 
 Der LCD--Treiber setzt Bereiche des LCD--Displays auf einen gegebenen Text.
-Beim Start leert er das Display und liest ähnlich wie ``radio-led cat``
+Beim Start leert er das Display und liest ähnlich wie »``radio-led cat``«
 zeilenweise von ``stdin`` und entnimmt diesen Zeilen die Information welchen
 Bereich des Displays gesetzt werden soll. Das vom Treiber erwartete
 Zeilenformat ist dabei ``LINENO[,OFFSET] TEXT...``, wobei ``LINENO`` die
@@ -974,7 +973,7 @@ heißt, dass nur vier Datenpins benötigt werden (bei uns Pin 25, 24, 23, und
 ### Drehknopf Treiber (``driver/rot-driver.c``)
 
 Dieser Treiber kümmert sich um das Einlesen von Werten und Ereignissen vom
-Rotary Switch. Nach dem Start schreibt er alle registrierten Ereignisse auf
+oberen Drehknopf. Nach dem Start schreibt er alle registrierten Ereignisse auf
 ``stdout``. Dabei nimmt jede Zeile ein neues Ereignis ein. Die jeweilige Zeile
 beginnt mit einem einzelnen Buchstaben und einem Leerzeichen, gefolgt von einem
 Wert. Der Buchstabe beschreibt die Art des Ereignisses:
@@ -987,21 +986,20 @@ Wert. Der Buchstabe beschreibt die Art des Ereignisses:
 
 Initial wird zudem der Wert ``v 0`` herausgeschrieben.
 
-Technisch registriert sich der Treiber auf änderungen an den GPIO--Pins 12, 13
+Technisch registriert sich der Treiber auf Änderungen an den GPIO--Pins 12, 13
 (Pin A und B des Rotarty--Switch) und 14 (Button--Pin) mittels der
-``wiringPi``--Funtkion ``wiringPiISR``. Diese sorgt dafür dass bei jeder
+``wiringPi``--Funtkion ``wiringPiISR()``. Diese sorgt dafür dass bei jeder
 Wertänderung ein Interrupt aufgerufen wird. 
 
 In dem Interrupt wird der aktuelle Wert der Pins 12 und 13 ausgelesen und mit
 den vorigen Wert verglichen. Dadurch ist es möglich zu entscheiden in welche
 Richtung der Drehknopf bewegt wurde ohne dass ein Prellen auftritt. Mehr
 Informationen zum sogenannten »Grey Code« findet sich unter [@2014projekte], S.
-362 und folgende.
+362 und folgenden Seiten.
 
 Da pro Einrastung des Drehknopfs ca. vier Interrupts getriggert werden, wird
 auf eine globale Gleitkommazahl der Wert $\frac{1}{4}$ addiert. Beim Herausgeben
 des Wertes wird der Wert dann auf den nächsten Integer gerundet.
-
 Auch für jeden Knopfdruck wird ein Interrupt ausgelöst. Da der Knopf prellt,
 wird hier mit einen niedrigen Timeout gearbeitet, welcher die Störsignale
 filtert.
@@ -1015,24 +1013,28 @@ Der ursprüngliche Code für diesen Treiber stammt dabei von diesem Blogpost:
 
 - \url{http://theatticlight.net/posts/Reading-a-Rotary-Encoder-from-a-Raspberry-Pi}
 
-Er wurde etwas aufgeräumt und um Knopfdrücke sowie Ausgabe auf ``stdout``
+Der Code wurde etwas aufgeräumt und um Knopfdrücke sowie Ausgabe auf ``stdout``
 erweitert.
 
 ## Service Software
 
 Die folgenden Dienste implementieren die eigentliche Logik von *Eulenfunk*. 
-Alle Dienste finden sich in einer gemeinsame Binärdatei namens ``eulenfunk``:
+Alle Dienste finden sich in einer gemeinsamen Binärdatei namens ``eulenfunk``:
 
 ```
 $ eulenfunk help
 NAME:
    eulenfunk - Control the higher level eulenfunk services
+
 USAGE:
    eulenfunk [global options] command [command options] [arguments...]
+
 VERSION:
    0.0.1
+
 AUTHOR(S):
    Waldsoft <sahib@online.de> 
+
 COMMANDS:
      info       Send mpd infos to the display server on the `mpd` window
      ui         Handle window rendering and input control
@@ -1040,6 +1042,7 @@ COMMANDS:
      lightd     Utility server to lock the led and enable nice atomic effects
      display    Display manager and utilites
      ambilight  Control the ambilight feature
+
 GLOBAL OPTIONS:
    --width value   Width of the LCD screen (default: 20) [$LCD_HEIGHT]
    --height value  Height of the LCD screen (default: 4) [$LCD_HEIGHT]
@@ -1059,13 +1062,13 @@ Display--Inhalte. Er bietet eine höhere Abstraktionsschicht als der
 vergleichsweise simple LCD--Treiber. Dabei bietet er die Abstraktion von
 *Zeilen*, *Fenstern* und erleichtert dem Programmierer Enkodierungsaufgaben
 indem es ein Subset von Unicode unterstützt. Eine Zeile ist dabei eine beliebig
-langer utf8--enkodiertert Text ohne Zeilenumbruch. Die Zeile kann dabei länger
+langer UTF8--enkodiertert Text ohne Zeilenumbruch. Die Zeile kann dabei länger
 als das Display sein. In diesem Fall wird die Zeile abgeschnitten oder scrollt
 je nach Konfiguration mit einer bestimmten Geschwindigkeit durch. Ein Fenster
 hingegen ist eine benannte Ansammlung von Zeilen. Auch ein Fenster kann mehr
-Zeilen haben als das Display. Vom Nutzer kann der Fensterinhalt dann vertikal
-verschoben werden. Es können mehrere Fenster verwaltet werden, aktiv ist dabei
-aber nur ein ausgewähltes.
+Zeilen haben als das Display physikalisch bietet. Vom Nutzer kann der
+Fensterinhalt dann vertikal verschoben werden. Es können mehrere Fenster
+verwaltet werden, aktiv ist dabei aber nur ein Ausgewähltes.
 
 Die Idee diese Funktionalität in einem eigenen Daemon auszulagern, ist vom
 Grafikstack in unixoiden Betriebssystemen inspiriert. Dabei kümmert sich
@@ -1077,6 +1080,8 @@ Protokoll zwischen Client und Displayserver meist trotzdem zu komplex ist,
 haben sich für diese Aufgaben simple UI--Bibliotheken wie Xlib oder komplexere
 GTK+ und Qt etabliert. Auch die Fenster--Metapher wurde dabei von den
 Fenstermanagern übernommen.
+
+#### Architektur
 
 Das Protokoll von ``displayd`` ist ein relativ simpel gehaltenes,
 zeilenbasiertes Textprotokoll. Für den Zugriff auf dasselbige ist daher wird
@@ -1092,18 +1097,17 @@ Neben diesen Aufgaben löst ``displayd`` ein architektonisches Problem:
 Wenn mehrere Anwendung versuchen auf das Display zu schreiben käme ohne zentrale
 Instanz ein eher unleserliches Resultat dabei heraus. Durch ``displayd`` können
 Anwendungen auf ein separates Fenster schreiben, wovon jeweils nur eines aktiv
-angezeigt wird.
+angezeigt wird. Abbildung \ref{eulenfunk-displayd} zeigt die Architektur in der Übersicht.
 
-#### Architektur
 
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.0\textwidth]{images/eulenfunk-displayd.png}
-  \caption{}
+  \caption{Archtitektonische Übersicht von \texttt{displayd} mit Beispielfenstern.}
   \label{eulenfunk-displayd}
 \end{figure}
 
-Abbildung \ref{eulenfunk-displayd} zeigt die Architektur in der Übersicht.
+
 
 Nach dem Start kann man auf Port 7777 ``displayd`` mittels eines simplen,
 zeilenbasierten Textprotokolls kontrollieren. Dabei werden die folgenden
@@ -1137,7 +1141,7 @@ Treiberprogramm ``radio-lcd``. Dabei wird in periodischen Abständen (momentan
 150ms) das aktuelle Fenster auf den Treiber geschrieben. Zukünftige Versionen
 sollen dabei intelligenter sein und nur die aktuell geänderten Zeilen
 herausschreiben. Allerdings hat sich herausgestellt, dass man mit mehreren
-scrollenden Zeilen bereits mit diesen Ereignisbasierten Ansatz auf eine höhere
+scrollenden Zeilen bereits mit diesen ereignisbasierten Ansatz auf eine höhere
 Aktualisierungsrate kommt als mit den statischen 150ms. Eine Art »VSync«,
 welches die Aktualisierungsrate intelligent limitiert wäre hier in Zukunft
 wünschenswert.
@@ -1152,14 +1156,15 @@ die ``displayd`` benutzen:
 
 ```bash
 # Den display server starten; --no-encoding schaltet spezielles LCD encoding
-# ab welches auf normalen Terminals zu Artifakten # führt. 
+# ab welches auf normalen Terminals zu Artifakten führt. 
 $ eulenfunk display server --no-encoding &
 
-# Gebe in kurzen Abständen das  "mpd" Fenster aus.
+# Gebe in kurzen Abständen das "mpd" Fenster aus.
 # (In separaten Terminal eingeben!)
 $ eulenfunk display --dump --update --window mpd
 
 # Verbinde zu MPD und stelle aktuellen Status auf "mpd" Fenster dar.
+# (auch in separaten Terminal eingeben)
 $ eulenfunk info
 # Auch nach Unterbrechung wird der zuletzt gesetzte Text weiterhin angezeigt:
 $ <CTRL-C>
@@ -1169,6 +1174,7 @@ $ <CTRL-C>
 $ telnet localhost 7777
 line mpd 0 Erste Zeile geändert!
 render                        
+(... Ausgabe ...)
 close
 ```
 
@@ -1184,11 +1190,11 @@ Symbolen belegt worden, die keinem dem Autor bekannten Encoding entsprechen. Da
 auch nach längerer Internetrecherche keine passende Encoding--Tabelle gefunden
 werden konnte, wurde (in mühevoller Handarbeit) eine Tabelle erstellt, die
 passende Unicode--Glyphen auf das jeweilige Zeichen des Displays abbildet.
-Nicht erkannte utf8--Zeichen werden als ein »?« gerendert anstatt Zeichen die
+Nicht erkannte UTF8--Zeichen werden als ein »?« gerendert anstatt Zeichen die
 mehrere Bytes zur Enkodierung (wie » $\mu$  «) als mehrere falsche Glyphen
 darzustellen. So wird beispielsweise aus dem scharfen »ß« das Zeichen 223.
-Diese Konvertierung wird transparent von ``displayd`` vorgenommen wodurch es
-möglich wird auch Musiktitel und ähnliches (annäherend) korrekt darzustellen.
+Diese Konvertierung wird transparent von ``displayd`` vorgenommen, wodurch es
+möglich wird die meisten Musiktitel und Ähnliches annäherend korrekt darzustellen.
 
 Abbildung \ref{eulenfunk-encoding} zeigt das erstellte Mapping zwischen Unicode und LCD--Display.
 Folgende Seiten waren bei der Erstellung der Tabelle hilfreich:
@@ -1199,7 +1205,7 @@ Folgende Seiten waren bei der Erstellung der Tabelle hilfreich:
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.0\textwidth]{images/encoding.png}
-  \caption{Unicode Version der LCD--Glyphen. Der normale ASCII Bereich 32-127 wurde ausgelassen.}
+  \caption{Unicode Version der LCD--Glyphen. Der normale ASCII Bereich (32-127) wurde ausgelassen.}
   \label{eulenfunk-encoding}
 \end{figure}
 
@@ -1212,10 +1218,10 @@ ansteuern, um beispielsweise einen sanften roten und grünen Fade--Effekt zu
 realisieren so würde ohne Synchronisation zwangsläufig ein zittrige Mischung
 beider Effekte entstehen.
 
-Ursprünglich war ``light`` als ``lockd`` konzipiert, der den Zugriff auf
+Ursprünglich war ``light`` als »``lockd``« konzipiert, der den Zugriff auf
 verschiedene Ressourcen verwalten kann. Da aber das Display bereits von
-``displayd`` synchronisiert wird und durchaus mehrere Programme den Rotary
-Switch auslesen dürfen wurde diese etwa generellere Idee wieder verworfen.
+``displayd`` synchronisiert wird und durchaus mehrere Programme den Drehknopf
+auslesen dürfen wurde diese etwa generellere Idee wieder verworfen.
 
 Die zweite Hauptaufgabe von ``lightd`` ist die Darstellung von Farbeffekten auf
 der LED. Ursprünglich waren diese dafür gedacht um beispielsweise beim Verlust
@@ -1233,10 +1239,10 @@ Wie andere Dienste wird auch ``lightd`` mittels einer Netzwerkschnittstelle kont
 Die mögliche Kommandoes sind dabei wie folgt:
 
 ```
-!lock      -- Try to acquire lock or block until available.
-!unlock    -- Give back lock.
-!close     -- Close the connection.
-<effect>   -- Lines starting without ! are parsed as effect spec.
+!lock      -- Versuche exklusive Zugriffsrechte zu erlangen oder warte bis möglich.
+!unlock    -- Gebe exklusive Zugriffsrechte zurück.
+!close     -- Schließe die Verbindung.
+<effect>   -- Auszuführender Effekt, siehe unten.
 ```
 
 ``<effect>`` darf dabei folgendes sein:
@@ -1250,7 +1256,7 @@ fade{<duration>|<color>|<repeat>}          -- Fade Effekt.
 ```
 
 Der Platzhalter ``<*-color>`` steht dabei für eine einzelne Farbe.
-``<duration>`` ist eine zeitliche Dauer und ``<repeat>`` eine Ganzzahl die beschreibt wie oft
+``<duration>`` ist eine zeitliche Dauer und ``<repeat>`` eine Ganzzahl, die beschreibt wie oft
 der Effekt wiederholt wird.
 
 Die Farbe wird, ähnlich wie bei ``displayd``, auf ``stdin`` von ``radio-led`` geschrieben.
@@ -1314,8 +1320,8 @@ holen, die passende ``.mood``--Datei zu laden und anhand der Liedlänge und der
 bereits vergangenen Zeit den aktuellen passenden Sample aus den 1000
 vorhandenen anzuzeigen. Damit der Übergang zwischen den Samples flüssig ist
 wird linear zwischen den einzelnen Farbwerten überblendet. Da die LED eher zu
-einer weißen Farbe tendiert, wenn mehrere Kanäle an sind, wird mittlere
-Sättigungwerte leicht verstärkt und mittlere Helligkeitswerte abgeschwächt.
+einer weißen Farbe tendiert, wenn mehrere Kanäle an sind, werden mittlere
+Sättigungwerte leicht verstärkt und mittlere Helligkeitswerte etwas abgeschwächt.
 
 \begin{figure}[h!]
   \centering
@@ -1335,10 +1341,11 @@ Besonders die Synchronisation ist dabei erstaunlich akkurat und solange nur ein 
 wird dem auch eine passende Farbe zugeordnet. Ein Dudelsack erscheint beispielsweise meist grün, während 
 ein Kontrabass in mehreren Liedern Rot erschien.
 
-Lediglich bei schnellen Tempowechseln (Beispiel: »Prison Song« von »System of a Down«)
-sieht man, dass der Farbübergang bereits anfängt bevor man den zugehörigen Ton
-hört. Dem könnte im Zukunft abgeholfen werden indem keine lineare Interpolation
-zwischen den Farben mehr genutzt wird sondern beispielsweise quadratische.
+Lediglich bei schnellen Tempowechseln (Beispiel: »Prison Song« von »System of a
+Down«) sieht man, dass der Farbübergang bereits anfängt bevor man den
+zugehörigen Ton hört. Dem könnte im Zukunft abgeholfen werden indem keine
+lineare Interpolation zwischen den Farben mehr genutzt wird, sondern ein
+Verfahren dass plötzliche Übergänge eher berücksichtigt.
 
 ### ``automount`` -- Playlists von USB Sticks erstellen
 
@@ -1357,7 +1364,6 @@ Unter Linux kümmert sich ``udev``, um die Verwaltung  des
 Anlegen von Regeln. Wird ein neues Gerät angesteckt, so geht ``udev`` alle
 bekannten und auf das Gerät passende Regeln durch und wendet die darin
 definierten Aktionen an.
-
 Bei *Eulenfunk* wird die Regel ``config/udev/11-music-usb-mount.rules`` in das
 Verzeichnis ``/etc/udev/rules.d`` kopiert. Die ``11`` im Namen sorgt dafur,
 dass die Regel alphabetisch vor den Standardregeln abgearbeitet wird (beginnen
@@ -1374,8 +1380,8 @@ Es sei hier aber auf die folgenden Resourcen verwiesen:
 Eine berechtigte Frage ist warum ``automount`` das Mounten/Unmounten des Sticks
 übernimmt, wenn diese Aktionen prinzipiell auch direkt von der ``udev``--Regel
 getriggert werden können. Der Grund für diese Entscheidung liegt am
-*Namespace*--Feature von ``systemd`` (weit verbreitetes Init--System; siehe
-[^SYSTEMD]):  Dabei können einzelne Prozesse in einer Sandbox laufen, der nur
+*Namespace*--Feature von ``systemd`` (weit verbreitetes Init--System[^SYSTEMD]):
+  Dabei können einzelne Prozesse in einer Sandbox laufen, der nur
 begrenzten Zugriff auf seine Umgebung hat. Ruft man ``/bin/mount`` direkt aus
 der Regel heraus auf, so wird der Mount im *Namespace* von ``udev`` erstellt
 und taucht daher nicht im normalen Dateisystem auf.  Sendet man hingegen einen
@@ -1385,27 +1391,26 @@ Stick ganz normal als ``root``--Nutzer mounten.
 [^SYSTEMD]: \url{https://de.wikipedia.org/wiki/Systemd}
 
 Beim Entfernen des USB--Sticks wird die inverse Operation ausgeführt: Die Playlist wird 
-gelöscht (da MPD die Lieder nicht mehr abspielen könnte) und der Mount wird wieder entfertn.
+gelöscht (da MPD die Lieder nicht mehr abspielen könnte) und der Mount wird wieder entfernt.
 
 Ähnlich wie die vorigen Dienste unterstützt ``automount`` einige wenige Befehle
 die es über einen Netzwerk--Socket auf Port 5555 erhält:
 
-```
-mount <device> <label>   -- Mounte <device> (z.B. /dev/sda1) zu <music_dir>/mounts/<label>
-                         -- und erstelle eine Playlist names <label> aus den Liedern.
-unmount <device> <label> -- Entferne Playlist und Mountpoint wieder.
-close                    -- Trenne die Verbindung.
-quit                     -- Trenne die Verbindung und beende den daemon.
+* ``mount <device> <label>:`` Mounte ``<device>`` (z.B. ``/dev/sda1``) zu ``<music_dir>/mounts/<label>``
+   und erstelle eine Playlist names <label> aus den Liedern.
+* ``unmount <device> <label>:`` Entferne Playlist und Mountpoint wieder.
+* ``close:`` Trenne die Verbindung.
+* ``quit:``  Trenne die Verbindung und beende den daemon.
 ```
 
 ### ``ui`` -- Menübasierte Bedienoberfläche
 
-Die ``ui`` ist der einzige Dienst ohne Netzwerkschnittstelle. Er kümmert sich um
-das Anlegen und Befüllen aller Fenster und um die Steuerung fast aller andere
-Dienste mittels einer Menübasierten Oberfläche. Die genaue Beschaffenheit der
-Oberfläche wird im nächsten Kapitel im Stile eines Benutzerhandbuches
-beleuchtet. Daher wird hier nur ein kurzer Überblick über die Technik dahinter
-gegeben.
+Die ``ui`` ist der einzige Dienst ohne Netzwerkschnittstelle. Er kümmert sich
+um das Anlegen und Befüllen aller Fenster und um die Steuerung fast aller
+andere Dienste mittels einer menübasierten Oberfläche. Die genaue
+Beschaffenheit der Oberfläche wird im nächsten Kapitel (siehe
+\ref{internal-owl-chapter}) im Stile eines Benutzerhandbuches beleuchtet. Daher
+wird hier nur ein kurzer Überblick über die Technik dahinter gegeben.
 
 Im momentan Zustand existieren folgende Fenster:
 
@@ -1418,11 +1423,11 @@ Im momentan Zustand existieren folgende Fenster:
 - ``menu-playlists:`` Zeigt alle verfügbaren Playlists.
 - ``menu-power:`` Einträge zum Herunterfahren und Rebooten.
 
-Fenster die ``menu-`` beginnen, können durch Benutzung des Rotary--Switches erkundet werden.
+Fenster die »``menu-``« beginnen, können durch Benutzung des Drehknopfs erkundet werden.
 Eine Drehung nach rechts verschiebt das Menü nach unten, eine Drehung nach links nach oben.
 
 Wie oben bereits erwähnt wurde ein kleines Client--Seitiges »Toolkit« implementiert, welches die
-leichte Erstellung von Menüs und die Verknüpfung mit dem Rotary--Switch mittels Aktionen möglich macht.
+leichte Erstellung von Menüs und die Verknüpfung mit dem Drehknopf mittels Aktionen möglich macht.
 Der prinzipielle Aufbau dieses Toolkits ist in Abbildung \ref{eulenfunk-ui} gezeigt.
 
 \begin{figure}[h!]
@@ -1438,9 +1443,9 @@ mitgeben, die dieser verwalten soll. Es gibt momentan drei verschiedene Arten vo
 
 - ``SeparatorEntry:`` Zeigt einen vordefinierten Text. Wird zum Abtrennen verschiedener Sektionen
   innerhalb eines Menüs benutzt, daher der Name.
-- ``ClickEntry:`` Zeigt einen Text und ist mit einer Aktion verknüpft. Drückt der Nutzer den Rotary--Switch
+- ``ClickEntry:`` Zeigt einen Text und ist mit einer Aktion verknüpft. Drückt der Nutzer den Drehknopf 
   während der Fokus auf dem Eintrag ist, so wird die Aktion ausgeführt,.
-- ``ToggleEntry:`` Wie ``ClickEntry`` hat aber mehrere Zustände die in eckigen Klammern hinter dem Text
+- ``ToggleEntry:`` Wie ``ClickEntry``, hat aber mehrere Zustände die in eckigen Klammern hinter dem Text
   angezeigt werden. Ein Knopfdruck führt zum Weiterschalten zum nächsten Zustand. Dabei ist jeder Zustand
   mit einer Aktion verknüpft, die beim Umschalten ausgeführt wird.
 
@@ -1555,7 +1560,7 @@ in *Eulenfunk* eingesetzt wird. Im Gegensatz zu anderen Init--Systemen werden ke
 zum Starten genutzt, sondern sogenannte Unit--Files. Diese regeln welche Binaries gestartet werden,
 von was diese abhängen und was bei einem Crash passieren soll. Diese Dateien kopiert man in ein 
 von ``systemd`` überwachtes Verzeichnis (beispielsweise ``/usr/lib/systemd/system``). Dort kann man
-nach einem ``systemctl daemon-reload`` den Dienst starten und für den nächsten Bootvorgang vormerken:
+nach einem »``systemctl daemon-reload``« den Dienst starten und für den nächsten Bootvorgang vormerken:
 
 ```bash
 $ systemctl start my-unit-file    # Jetzt den Dienst starten.
@@ -1575,12 +1580,11 @@ eigenes ``.unit``--File[^UNIT-FILES].
 
 [^UNIT-FILES]: Siehe GitHub für eine Auflistung aller Unit--Files: \url{https://github.com/studentkittens/eulenfunk/tree/master/config/systemd}
 
-Sollte ein Dienst abstürzen, weil beispielsweise die Software doch noch Fehler hat, dann wird der 
-Service von ``systemd`` automatisch neu gestartet, da die Option ``Restart=on-failure`` in den 
-``.unit``--Files von *Eulenfunk* gesetzt ist.
-
-Besonders zur Fehlersuche war ``systemd`` bereits sehr hilfreich, da es möglich ist die Ausgabe des Dienstes
-im Nachhinein zu Betrachten:
+Sollte ein Dienst abstürzen, weil beispielsweise die Software doch noch Fehler
+hat, dann wird der Service von ``systemd`` automatisch neu gestartet, da die
+Option ``Restart=on-failure`` in den ``.unit``--Files von *Eulenfunk* gesetzt
+ist. Besonders zur Fehlersuche war ``systemd`` bereits sehr hilfreich, da es
+möglich ist die Ausgabe des Dienstes im Nachhinein zu Betrachten:
 
 ```bash
 $ systemctl status radio-ui.service
@@ -1591,11 +1595,12 @@ Jun 28 01:19:24 eulenfunk eulenfunk[410]: 2016/06/28 01:19:24 Pressed for 1s
 [...]
 # Alternativ falls mehrere Dienste zeitgleich angezeigt werden sollen:
 $ journalctl -u radio-ambilight.service -u radio-ui.service --since today
+[...]
 ```
 
 ### ``eulenfunk`` Software
 
-Die Software kann ohne große Abhängigkeiten direkt von *GitHub* installiert werden:
+Die Software selbst kann ohne große Abhängigkeiten direkt von *GitHub* installiert werden:
 
 ```bash
 $ pacman -S wiringpi go git
@@ -1607,22 +1612,22 @@ $ go get .
 $ make install
 ```
 
-Das mitgelieferte Makefile installiert alle ``.unit``--Files, Skripte Treiber--Binärdaten und die
+Das mitgelieferte Makefile installiert alle ``.unit``--Files, Skripte, Treiber--Binärdateien und die
 ``eulenfunk``--Binärdatei selbst. Die Software sollte dabei auch auf normalen Desktop--Rechnern
-kompilierbar sein.
+kompilierbar sein, ist dort aber mangels passender Treiber nur bedingt ausführbar.
 
 ## Fazit
 
 Die Anforderungen können durchaus als erfüllt betrachtet werden. Anforderung
 **#3** *(Ausfallsicherheit)*  und **#4** *(Wartbarkeit)* wurden durch den
-konsequenten Einsatz von ``systemd`` umgesetzt. Anforderung **5** *(Lose
+konsequenten Einsatz von ``systemd`` umgesetzt. Anforderung **#5** *(Lose
 Kopplung)* wird durch die Aufteilung der Dienste in einzelne, durch das Netzwerk
 getrennte, Prozesse erreicht. Die Erweiterbarkeit sollte dadurch gewährleistet 
 sein, dass relativ klar strutkturierter und modularer Code verfasst wurde.
 Möchte man sich mit dem Code vertraut machen, so hilft die API--Dokumentation
 weiter:  \url{https://godoc.org/github.com/studentkittens/eulenfunk}
 
-Anforderung **2** *(Effizienz)* wurde durch die Wahl effizienter
+Anforderung **#2** *(Effizienz)* wurde durch die Wahl effizienter
 Programmiersprachen und Vermeidung rechenhungriger oder ineffizienter
 Programmierung vermieden. Die CPU--Last bewegt dabei sich meist zwischen 40--60%
 bei ``mp3``--enkodierten Liedern. Bei ``.flac``--Dateien liegt die Last etwa
@@ -1630,7 +1635,7 @@ bei ``mp3``--enkodierten Liedern. Bei ``.flac``--Dateien liegt die Last etwa
 Benutzung bei konstanten 50MB.
 
 Auch wurde versucht die Anzahl von gestarteten Prozess klein zu halten und
-nur das nötigste zu starten:
+nur das Nötigste zu starten:
 
 ```html
 $ pstree -A
@@ -1678,7 +1683,7 @@ bereits von auto--generierten Code und Fremdcode bereinigt:
 
 ### Probleme und Verbesserungsmöglichkeiten
 
-Obwohl die Software für den *Eulenfunk* Prototypen durchaus gut und stabil
+Obwohl die Software für den *Eulenfunk* Prototypen bisher durchaus gut und stabil
 funktioniert, gibt es natürlich noch Verbesserungspotenzial:
 
 - Steckt ein USB--Stick nach einem Reboot noch am Radio, so wird dieser nicht
@@ -1686,7 +1691,7 @@ funktioniert, gibt es natürlich noch Verbesserungspotenzial:
   die zugehörige Playlist wieder abspielbar. Beim Start müssten daher manuell
   ``udev``--Ereignisse getriggert werden. Versuche dies zu erreichen schlugen
   aber leider aus bisher ungeklärten Gründen fehl.
-- In seltenen Fällen verschwindet der Cursor in Menüs aus ungeklärten Gründen.
+- In seltenen Fällen verschwindet der Cursor in Menüs aus ebenfalls ungeklärten Gründen.
 - Wie im Kapitel von ``displayd`` beschrieben, wäre auf lange Dauer ein
   Ereignis-basierter Ansatz im Display--Server wünschenswert, um den
   Stromverbrauch im Ruhezustand zu senken.
@@ -1697,6 +1702,8 @@ funktioniert, gibt es natürlich noch Verbesserungspotenzial:
   Der aktuelle Plot kann online auf GitHub eingesehen werden[^BOOT-PLOT].
 
 [^BOOT-PLOT]: \url{https://github.com/studentkittens/eulenfunk/blob/master/docs/paper/images/boot-plot.svg}
+
+\label{internal-owl-chapter}
 
 # Bedienkonzept/Menüsteuerung
 
@@ -1923,11 +1930,6 @@ Drehimpulsgeber setzt klare Grenzen für die Steuerung.
 Trotz dieser minimalistischen Umstände, ist es gelungen, eine weitgehend konsistente
 Menüführung umzusetzen. Nach einer kurzen Eingewöhnungsphase sollte das Bedienkonzept
 gut funktionieren.
-
-
-
-
-
 
 # Zusammenfassung
 
