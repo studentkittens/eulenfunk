@@ -1708,7 +1708,7 @@ werden:
 
 * Minimale sowie ansprechende Bedienelemente
 * Funktionales, zweckgebundenes *Design*
-* *Retro--Look*-Aussehen wünschenswert
+* *Retro--Look* wünschenswert
 
 Das *Design* soll im Grunde *minimalistisch*  gehalten werden, das heißt, es
 sollen aufgrund der Übersichtlichkeit nur so wenige »Bedienelemente« wie nötig
@@ -1721,21 +1721,21 @@ angebracht werden.
 \begin{figure}[h!]
   \centering
   \includegraphics[width=0.9\textwidth]{images/front_usage.png}
-  \caption{Frontansicht von *Eulenfunk*}
+  \caption{Frontansicht von \emph{Eulenfunk}}
   \label{front_usage}
 \end{figure}
 
-Bei der Bedienung von *Eulenfunk* bestand die Herausforderung vorallem darin,
+Bei der Bedienung von *Eulenfunk* bestand die Herausforderung vor allem darin,
 trotz minimaler Anzahl an Bedienelementen eine gute 
-Bedienbarkeit(Usability) zu erreichen.
+Bedienbarkeit (Usability) zu erreichen.
 
 Zur Verfügung stehen primär ein Lautstärkeregler und ein Drehimpulsgeber (Abb. \ref{front_usage}).
 Auf der Rückseite des Radios ermöglichen zusätzlich zwei Potentiometer die Regelung
-der Beleuchtung und des Kontrasts vom Display. Mit einem Kippschalter kann
-die Audioausgabe zwischen internen und externen Lautsprechern umgeleitet werden.
+der Beleuchtung und des Kontrastes vom Display. Mit einem Kippschalter kann
+die Audioausgabe zwischen internen und externen Lautsprechern geschaltet werden.
 
-Wie allgemein üblich, erhöht ein Rechtsdreh des Lautstärkereglers 
-die Lautstärke und ein Linksdreh verringert die Lautstärke.
+Wie allgemein üblich, erhöht ein »nach rechts Drehen« des Lautstärkereglers 
+die Lautstärke und »ein nach links Drehen« verringert die Lautstärke.
 
 Der Drehimpulsgeber (im Weiteren Master-Regler genannt) ist für die gesamte Navigation innerhalb des Menüs und das Ausführen von
 Aktionen zuständig. Drehen bewirkt grundsätzlich  ein *Vor* oder *Zurück*.
@@ -1764,18 +1764,19 @@ Ein Drücken des Master-Regler öffnet den gewählten Eintrag als neue Ansicht
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.2\textwidth]{images/currentsong.png}
-  \caption{Ansicht des Menüpunkts Current Song für Musikstücke und Radiosender}
+  \caption{Ansicht des Menüpunkts \emph{Current Song} für Musikstücke und Radiosender}
   \label{currentsong}
   \end{figure}
 
-Der Menüpunkt *Current Song* zeigt Informationen des aktuell gespielten
-Mediums an. Es gibt eine geringfügig abweichende Ansicht für Musikstücke
-und für Radiosender. Wie in Abbildung \ref{currentsong} zu sehen ist, wird bei einem
+Der Menüpunkt *Current Song* zeigt Informationen des aktuell gespielten Mediums
+an. Es gibt eine geringfügig abweichende Ansicht für Musikstücke und für
+Radiosender. Wie in Abbildung \ref{currentsong} zu sehen ist, wird bei einem
 Musikstück der Interpret, der Titel und das Album angezeigt. Sollte die Breite
-des Displays für die Länge dieser Werte nicht ausreichend sein, läuft die Anzeige
-der Zeichen durch. Die letzte Displayzeile zeigt an, ob Musik spielt, oder pausiert
-wird. Außerdem wird die Bitrate und die Spieldauer angezeigt. Die Ansicht für Radiosender
-enthält den Interpreten und den Titel in Zeile eins, gefolgt vom Radiosender in Zeile zwei.
+des Displays für die Länge dieser Werte nicht ausreichend sein, »scrollt« die
+Anzeige der Zeichen von rechts nach links durch. Die letzte Displayzeile zeigt
+an, ob Musik spielt, oder pausiert ist. Außerdem wird die Bitrate und die
+Spieldauer angezeigt. Die Ansicht für Radiosender enthält den Interpreten und
+den Titel in Zeile eins, gefolgt vom Radiosender in Zeile zwei.
 
 In beiden Ansichten führt ein Drücken des Master-Reglers zum Pausieren bzw. Abspielen
 der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Drehen des Reglers möglich.
@@ -1788,19 +1789,19 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.2\textwidth]{images/playlists.png}
-  \caption{Ansicht des Menüpunkts Playlists}
+  \caption{Ansicht des Menüpunkts \emph{Playlists}}
   \label{playlists}
-  \end{figure}
+\end{figure}
 
-  Der Menüpunkt *Playlists* (siehe Abb. \ref{playlists}) zeigt eine Übersicht der aktuell verfügbaren
-  Medien. Mögliche Listen sind Radiosender und Musikstücke. Wird ein USB-Gerät 
-  an das Radio angeschlossen, erscheint er hier als Playlist.
+Der Menüpunkt *Playlists* (siehe Abb. \ref{playlists}) zeigt eine Übersicht der
+aktuell verfügbaren Medien. Mögliche Listen sind Radiosender und Musikstücke.
+Wird ein USB-Gerät an das Radio angeschlossen, erscheint er hier als Playlist.
 
-  Ein Drücken des Master-Reglers führt zur Auswahl einer Playlist. Anschließend
-  wechselt die Anzeige auf den Modus *Current Song*, d.h. die Informationen 
-  zum aktuell aus der Playlist abgespielten Mediums werden angezeigt. Ein Drehen
-  des Master-Reglers navigiert innerhalb der Playlisten. In der Ansicht *Playlist* 
-  gibt es zusätzlich die Funktion *(Exit)*, die zum Hauptmenu führt.
+Ein Drücken des Master-Reglers führt zur Auswahl einer Playlist. Anschließend
+wechselt die Anzeige auf den Modus *Current Song*, d.h. die Informationen zum
+aktuell aus der Playlist abgespielten Mediums werden angezeigt. Ein Drehen des
+Master-Reglers navigiert innerhalb des Playlist--Ansicht. In der Ansicht
+*Playlists* gibt es zusätzlich die Funktion *(Exit)*, die zum Hauptmenu führt.
 
 
 
@@ -1809,7 +1810,7 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.2\textwidth]{images/clock.png}
-  \caption{Ansicht des Menüpunkts Clock}
+  \caption{Ansicht des Menüpunkts \emph{Clock}}
   \label{clock}
   \end{figure}
 
@@ -1822,13 +1823,17 @@ der Musik. Einen Titel bzw. Radiosender vor oder zurück wechseln ist durch Dreh
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.2\textwidth]{images/systeminfo.png}
-  \caption{Ansicht des Menüpunkts Systeminfo}
+  \caption{Ansicht des Menüpunkts \emph{Systeminfo}}
   \label{systeminfo}
   \end{figure}
 
   Der Menüpunkt *Systeminfo* (siehe Abb. \ref{systeminfo}) zeigt folgende Informationen zum System an:
-CPU-Auslastung, Speicher-Auslastung, IP-Adresse, Systemlaufzeit,
-WLAN-Empfangsstärke und CPU-Temperatur.
+
+* CPU-Auslastung 
+* Speicher-Auslastung 
+* IP-Adresse, Systemlaufzeit,
+* WLAN-Empfangsstärke 
+* CPU-Temperatur
 
 Ein Drücken des Master-Reglers führt zurück zum Hauptmenü.
 
@@ -1838,13 +1843,13 @@ Ein Drücken des Master-Reglers führt zurück zum Hauptmenü.
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.2\textwidth]{images/statistics.png}
-  \caption{Ansicht des Menüpunkts Statistics}
+  \caption{Ansicht des Menüpunkts \emph{Statistics}}
   \label{statistic}
   \end{figure}
 
-  Der Menüpunkt *Statistics* (siehe Abb. \ref{statistic}) zeigt an, wieviel Interpreten, Alben und
-Songs aktuell in den Playlisten insgesamt zu finden sind. Zusätzlich
-wird die Gesamtspieldauer aller Playlisten angezeigt.
+Der Menüpunkt *Statistics* (siehe Abb. \ref{statistic}) zeigt an, wieviele
+Interpreten, Alben und Songs aktuell in der Musikdatenbank insgesamt zu finden
+sind. Zusätzlich wird die Gesamtspieldauer angezeigt.
 
 
 Ein Drücken des Master-Reglers führt zurück zum Hauptmenü.
@@ -1854,21 +1859,17 @@ Ein Drücken des Master-Reglers führt zurück zum Hauptmenü.
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.2\textwidth]{images/options.png}
-  \caption{Ansicht der Kategorie Options}
+  \caption{Ansicht der Kategorie \emph{Options}}
   \label{options}
   \end{figure}
 
   *Options* ist eine Kategorie, die keine Unteransichten hat (siehe Abb. \ref{options}).
 Optionen werden direkt durch ein Drücken des Master-Reglers geändert.
 
-- Party!: Aus/Ein
-  		LEDs können aktiviert oder deaktiviert werden.
-- Output: stereo, mono
-		Umschalten zwischen stereo- und mono-Ausgabe.
-- Playback: Play, Pause, Stop
-	Wechsel zwischen Abspiel-, Pause-, und Stopmodus.
-- Random: Aus/Ein
-    Zufällige Wahl eines Musikstücks aus der aktuell gewählten Playlist.
+- **Party!:** LEDs können aktiviert oder deaktiviert werden (Aus/Ein).
+- **Output:** Umschalten zwischen stereo- und mono-Ausgabe (stereo, mono).
+- **Playback:** Wechsel zwischen Abspiel-, Pause-, und Stopmodus (Play, Pause, Stop).
+- **Random:** Zufällige Wahl eines Musikstücks aus der aktuell gewählten Playlist (Aus/Ein).
 
 
 ### Powermenu
@@ -1876,13 +1877,13 @@ Optionen werden direkt durch ein Drücken des Master-Reglers geändert.
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.2\textwidth]{images/powermenu.png}
-  \caption{Ansicht des Menüpunkts Powermenu}
+  \caption{Ansicht des Menüpunkts \emph{Powermenu}}
   \label{powermenu}
-  \end{figure}
+\end{figure}
 
-  Der Menüpunkt *Powermenu* (siehe Abb. \ref{powermenu}) enthält die Funktionen Poweroff für
-  das Herunterfahren des Systems und Reboot für einen Neustart des
-  Systems. Mit *(Exit)* gelangt man zurück ins Hauptmenü.
+Der Menüpunkt *Powermenu* (siehe Abb. \ref{powermenu}) enthält die Funktionen
+*Poweroff* für das Herunterfahren des Systems und *Reboot* für einen Neustart des
+Systems. Mit *(Exit)* gelangt man zurück ins Hauptmenü.
 
 
 ### About
@@ -1890,28 +1891,28 @@ Optionen werden direkt durch ein Drücken des Master-Reglers geändert.
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.2\textwidth]{images/about.png}
-  \caption{Ansicht des Menüpunkts About}
+  \caption{Ansicht des Menüpunkts \emph{About}}
   \label{about}
-  \end{figure}
+\end{figure}
 
-  Der Menüpunkt *About* (siehe Abb. \ref{about}) zeigt Informationen zu den Entwicklern des
-  Internetradios an.
+Der Menüpunkt *About* (siehe Abb. \ref{about}) zeigt Informationen zu den Entwicklern des
+Internetradios an.
 
 
 ## Shortcuts
 
-Ein Direktzugriff auf das Power Menu [(siehe 6.2.7)](#powermenu) ist durch
-Drücken des Master-Reglers von 3 Sekunden möglich --- in allen Anzeigemodi.
-Das führt zu mehr Komfortabilität in der Bedienung. Es kann direkt ins Power Menu 
-gewechselt werden, ohne die aktuelle Anzeige verlassen zu müssen, um manuell
-zum Power Menu zu navigieren.
+Ein Direktzugriff auf das *Powermenu* (siehe [6.2.7](#powermenu)) ist durch
+Drücken des Master-Reglers von drei Sekunden möglich --- in allen Anzeigemodi.
+Das führt zu mehr Komfortabilität in der Bedienung. Es kann direkt ins
+*Powermenu * gewechselt werden, ohne die aktuelle Anzeige verlassen zu müssen,
+um manuell zum *Powermenu* zu navigieren.
 
-In der Ansicht *Current Song* führt ein 600ms-Drücken des Master-Reglers 
+In der Ansicht *Current Song* führt ein längeres Drücken (mindestens 600ms) des Master-Reglers 
 ins Hauptmenü. Eine Abweichung zu der Funktionsweise in den anderen Ansichten
 war notwendig, weil auch der Wechsel zwischen Pause/Play möglich sein sollte.
 Für eine möglichst intuitive Bedienung bot es sich an, dies durch ein einfaches
 Drücken des Master-Reglers zu realisieren. Für den Wechsel ins Hauptmenü 
-wurde deshalb ein längerer Halte-Zeitraum gewählt.
+wurde deshalb ein längerer Drück--Zeitraum gewählt.
 
 
 ## Fazit
@@ -1923,10 +1924,6 @@ Drehimpulsgeber setzt klare Grenzen für die Steuerung.
 Trotz dieser minimalistischen Umstände, ist es gelungen, eine weitgehend konsistente
 Menüführung umzusetzen. Nach einer kurzen Eingewöhnungsphase sollte das Bedienkonzept
 gut funktionieren.
-
-
-
-
 
 
 # Zusammenfassung
