@@ -1824,7 +1824,7 @@ Ein Drücken des Master-Reglers führt zurück zum Hauptmenü.
   \end{figure}
 
 *Options* ist eine Kategorie, die keine Unteransichten hat.
-Opionen werden direkt durch ein Drücken des Master-Reglers geändert.
+Optionen werden direkt durch ein Drücken des Master-Reglers geändert.
 
 - Party!: Aus/Ein
   		LEDs können aktiviert oder deaktiviert werden.
