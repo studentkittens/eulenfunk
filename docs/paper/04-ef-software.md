@@ -17,7 +17,7 @@ festgelegt:
    Feature durch einen Absturz der Software aus, so sollten andere Teile des Radios
    nach Möglichkeit nicht betroffen sein. Auch sollte der abgestürzte Teil sich
    neu starten können und entsprechende Log--Nachrichten
-   hinterlassen. Dienste die von dem abgestürzten Dienst abhängen, sollten
+   hinterlassen. Dienste, die von dem abgestürzten Dienst abhängen, sollten
    sich bei Neustart dessen wieder neu verbinden.
 4. Leichte Wartbarkeit und Fehlersuche durch Schreiben von Logs.
 5. Einfache Erweiterbarkeit und Integrierbarkeit mit anderen Anwendungen durch
@@ -33,7 +33,7 @@ basieren soll. Andere Projekte greifen oft auf Abspielsoftware wie den *MOC*
 [vgl. @pietraszak2014buch], Seite 189 ff. oder *mplayer* [@exploring] Seite 638
 ff. zu. 
 
-Der MPD ist ein unter Unix gern genutzte Daemon zum Verwalten und Abspielen von
+Der MPD ist ein unter Unix gern genutzter Daemon zum Verwalten und Abspielen von
 Musik und Radiostreams. Er unterstützt dabei eine große Anzahl von Formaten und
 kann diese an mehrere Backends wie ALSA, Pulseaudio oder als HTTP--Stream
 ausgeben (siehe auch Abbildung \ref{mpd-overview}). Für unseren Einsatzzweck ist
@@ -43,7 +43,7 @@ vergleichsweise niedrigen Speicherverbrauch. Der zweite Grund ist die lose
 Kopplung zwischen Abspielsoftware und User--Interface: MPD selbst ist nur ein
 Daemon, der mittels eines zeilenbasierten Textprotokolls (dem
 MPD--Protokoll[^MPD-PROTO]) steuerbar ist. Um die Bedienoberfläche kümmert sich
-dann ein separates MPD--Client, welcher als »Fernbedienung« für den Daemon
+dann ein separater MPD--Client, welcher als »Fernbedienung« für den Daemon
 fungiert.
 
 [^MPD-PROTO]: Details unter \url{https://www.musicpd.org/doc/protocol}
@@ -57,30 +57,30 @@ fungiert.
 
 ## Softwarearchitektur
 
-Die Nachbaubarkeit vieler Bastelprojekte ist häufig durch die Software recht
+Die »Nachbaubarkeit« vieler Bastelprojekte ist häufig durch die Software recht
 eingeschränkt, da diese entweder nicht frei verfügbar ist oder zu wenig
 generisch ist als dass man die Software leicht auf das Projekt anpassen könnte.
 Meist handelt es sich dabei um ein einziges, großes C--Programm oder ein eher
 unübersichtliches Python--Skript. Aus diesem Grunde soll die
-Software für *Eulenfunk* derart modular aufgebaut sein, dass man einzelne Module
+Software für *Eulenfunk* derart modular aufgebaut sein, dass einzelne Module
 problemlos auch auf andere Projekte übertragbar sind und später eine leichte 
 Erweiterbarkeit gewährleistet ist. Damit auch andere die Software einsetzen
 können wird sie unter die GPL in der Version 3 (vgl. [@GplQuickstart]) gestellt.
 
-Zu diesem Zwecke ist die Software in zwei Hauptschichten unterteilt.
+Zu diesem Zweck ist die Software in zwei Hauptschichten unterteilt.
 Die untere Schicht bilden dabei die *Treiber*, welche die tatsächliche
-Ansteuerung der Hardware erledigt. Dabei gibt es für jeden Teil der Hardware
-einen eigene Treiber, im Falle von *Eulenfunk* also ein separates Programm für
-die LCD-Ansteuerung, das Setzen der LED Farbe und dem Auslesen des oberen Drehknopfs.
+Ansteuerung der Hardware erledigen. Dabei gibt es für jeden Teil der Hardware
+einen eigenen Treiber, im Falle von *Eulenfunk* also ein separates Programm für
+die LCD-Ansteuerung, das Setzen der LED--Farbe und dem Auslesen des Drehimpulsgebers.
 
 Die Schicht darüber bilden insgesamt fünf einzelne Dienste, die über eine
 Netzwerkschnittstelle angesprochen werden und jeweils eine Funktionalität des
 Radios umsetzen. So gibt es beispielsweise einen Dienst, der die Ansteuerung des
 LCD--Displays *komfortabel* macht, ein Dienst, der die LEDs passend zur Musik
-einfärbt und ein Dienst der automatisch eine Playlist aus der Musik auf
+einfärbt und ein Dienst, der automatisch eine Playlist aus der Musik auf
 angesteckten externen Speichermedien erstellt. Die jeweiligen Dienste sprechen
 mit den Treibern indem sie Daten auf ``stdin`` schreiben, bzw. Daten von
-``stdout`` lesen. Um die Dienste auf neue Projekte zu portieren ist also nur
+``stdout`` lesen. Um die Dienste auf neue Projekte zu portieren, ist also nur
 eine Anpassung oder Erweiterung der jeweiligen Treiber notwendig.
 
 Der Vorteil liegt dabei klar auf der Hand: Die lose Kopplung der einzelnen
@@ -95,25 +95,25 @@ verantwortlich ist.
 Die momentane Software ist in den Programmiersprachen *C* und *Go* geschrieben.
 Dazu kommt lediglich ein einzelnes Bash--Skript zum Auslesen von Systeminformationen.
 
-Die Ressourcen auf dem Raspberry Pi sind natürlich sehr limitiert, weswegen
+Die Ressourcen auf dem *Raspberry Pi* sind natürlich sehr limitiert, weswegen
 sehr speicherhungrige Sprachen wie Java oder Ähnliches von vornherein
 ausschieden. Obwohl Python nach Meinung des Autors eine schöne und komfortable
-Sprache ist und viele gute Bibliotheken für den Pi bietet, schied es ebenfalls
+Sprache ist und viele gute Bibliotheken für den *Pi* bietet, schied es ebenfalls
 aus diesem Grund aus.
 
 Ursprünglich war sogar geplant, alles in *Go* zu schreiben. Leider gibt es nur
-wenige Pakete für die GPIO Ansteuerung und auch keine Bibliothek für
+wenige Pakete für die GPIO--Ansteuerung und auch keine Bibliothek für
 softwareseitige Pulsweitenmodulation. Zwar hätte man diese notfalls auch selbst
 mittels ``/sys/class/gpio/*`` implementieren können, doch bietet *Go* leider auch
 keine native Möglichkeit mit Interrupts zu arbeiten. Wie später beschrieben ist
-dies allerdings für den Treiber nötig, der den Drehknopf ausliest.
+dies allerdings für den Treiber nötig, der den Drehimpulsgeber ausliest.
 
 Für *Go* sprechen ansonsten folgende Gründe als Sprache für die höhere Logik:
 
 - **Garbage Collector:** Erleichtert die Entwicklung lang laufender Dienste.
 - **Hohe Grundperformanz:** Zwar erreicht diese nicht die Performanz von C, 
   liegt aber zumindest in der selben Größenordnung (vgl. [@pike2009go], S. 37).
-- **Weitläufige Standardlibrary:** Kaum externe Bibliotheken notwendig.
+- **Weitläufige Standardbibliothek:** Kaum externe Bibliotheken notwendig.
 - **Schneller Kompiliervorgang:** Selbst große Anwendungen werden in wenigen 
   Sekunden in eine statische Binärdatei ohne Abhängigkeiten übersetzt.
 - **Kross--Kompilierung:** Durch Setzen der ``GOARCH=arm`` Umgebungsvariable kann 
@@ -122,8 +122,8 @@ Für *Go* sprechen ansonsten folgende Gründe als Sprache für die höhere Logik
 - **Eingebauter Scheduler:** Parallele und nebenläufige Anwendungen wie
   Netzwerkserver sind sehr einfach zu entwickeln ohne für jede Aufgabe einen neuen
   Thread starten zu müssen.
-- Ein Kriterium war natürlich auch dass der Autor gute Erfahrung mit der Sprache
-  hatte und **neugierig** war, ob sie auch für solche Bastelprojekte gut einsetzbar
+- Ein Kriterium war natürlich auch, dass die Autoren gute Erfahrung mit der Sprache
+  hatten und **neugierig** waren, ob sie auch für solche Bastelprojekte gut einsetzbar
   ist.
 
 ``C`` ist hingegen für die Entwicklung der Treiber vor allem aus diesen Gründen
@@ -141,15 +141,15 @@ Ein Überblick über die existierenden Dienste liefert Abbildung
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.0\textwidth]{images/eulenfunk-services.png}
-  \caption{Übersicht über die Softwarelandschaft von Eulenfunk. Dienste mit
+  \caption{Übersicht über die Softwarelandschaft von \emph{Eulenfunk}. Dienste mit
   einer Netzwerkschnittstelle sind durch den entsprechenden Port gekennzeichnet.}
   \label{eulenfunk-services}
 \end{figure}
 
-### Vorhandene Softwarelibraries
+### Vorhandene Softwarebibliotheken
 
 ``wiringPi`` (\url{http://wiringpi.com}): Eine Portierung der Arduino--``Wiring``
-Bibliothek von Gordon Henderson auf den Raspberry Pi. Sie dient wie ihr
+Bibliothek von Gordon Henderson auf den *Raspberry Pi*. Sie dient wie ihr
 Arduino--Pendant zur leichten Steuerung der verfügbaren Hardware, insbesondere
 der GPIO--Pins über ``/dev/mem``. Daneben wird für den LCD--Treiber auch die
 mitgelieferte LCD--Bibliothek genutzt. Für den LED--Treiber wird zudem die
@@ -157,15 +157,16 @@ softwarebasierte Pulsweitenmodulation genutzt, allerdings in einer leicht
 veränderten Form.
 
 ``go-mpd`` (\url{https://github.com/fhs/gompd}): Eine einfache MPD--Bibliothek, die
-wenig mehr als die meisten Kommandos des MPD--Protokolls unterstützt. 
+die wichtigsten Kommandos des MPD--Protokolls unterstützt. 
 
 ``go-colorful`` (\url{github.com/lucasb-eyer/go-colorful}): Eine Bibliothek um
-Farben in verschiedene Farbräume zu konvertieren. Der Dienst der die LED
+Farben in verschiedene Farbräume zu konvertieren. Der Dienst, der die LED
 passend zur Musik setzt, nutzt diese Bibliothek um RGB--Farbwerte in den
 HCL--Farbraum zu übersetzen. Dieser eignet sich besser um saubere Übergänge
 zwischen zwei Farben zu berechnen und Farbanpassungen vorzunehmen. 
 
-``cli`` (\url{github.com/urfave/cli}): Eine komfortable und reichhaltige Bibliothek um
+``cli`` (\url{github.com/urfave/cli}): Eine komfortable und reichhaltige
+Bibliothek, um
 Kommandozeilenargumente zu parsen. Unterstützt Subkommandos ähnlich wie
 ``git``, welche dann wiederum eigene Optionen oder weitere Subkommandos
 besitzen können. Beide Features wurden extensiv eingesetzt, um alle in *Go*
@@ -181,7 +182,7 @@ Präfix ``radio-`` beginnen:
 
 - ``radio-led:`` Setzt die Farbe des LED--Panels auf verschiedene Weise.
 - ``radio-lcd:`` Liest Befehle von ``stdin`` und setzt das Display entsprechend.
-- ``radio-rotary:`` Gibt Änderungen des Drehknopfs auf ``stdout`` aus.
+- ``radio-rotary:`` Gibt Änderungen des Drehimpulsgebers auf ``stdout`` aus.
 
 Die genaue Funktionsweise dieser drei Programme wird im Folgenden näher beleuchtet.
 
@@ -201,12 +202,12 @@ Usage:
   radio-led off ....... turn off LED
   radio-led cat ....... read rgb tuples from stdin
   radio-led rgb  r g b  Set LED color to r,g,b
-  radio-led hex #RRGGBB Set LED color from hexstring
+  radio-led hex  #RRGGBB Set LED color from hexstring
   radio-led fade ...... Show a fade for debugging
 ```
 
 Erklärung benötigt hierbei nur der ``cat``--Modus, bei dem der Treiber
-zeilenweise RGB--Farbtripel ``stdin`` liest und setzt. Dieser Modus wird benutzt,
+zeilenweise RGB--Farbtripel auf ``stdin`` liest und setzt. Dieser Modus wird benutzt,
 um kontinuierlich Farben zu setzen ohne ständig das Treiberprogramm neu zu starten.
 
 \begin{figure}[h!]
@@ -214,7 +215,7 @@ um kontinuierlich Farben zu setzen ohne ständig das Treiberprogramm neu zu star
   \includegraphics[width=1.0\textwidth]{images/eulenfunk-pwm.png}
   \caption{Grafische Darstellung der Pulsweitenmodulation mit zwei Beispielfrequenzen.
     Jeder weiße Block entspricht einem modulierten Wert. Die Prozentzahl darin entspricht dem »Duty--Cycle«
-    (dt. Tastgrad) an. Zusammen mit dem Wertebereich ergibt sich aus ihm der eigentliche Wert.
+    (dt. Tastgrad). Zusammen mit dem Wertebereich ergibt sich aus ihm der eigentliche Wert.
     (z.B. $255 \times 0.2 = 51$)
   } 
   \label{eulenfunk-pwm}
@@ -222,21 +223,21 @@ um kontinuierlich Farben zu setzen ohne ständig das Treiberprogramm neu zu star
 
 Da ein GPIO--Pin prinzipiell nur ein oder ausgeschaltet werden kann, verwenden
 wir Pulsweitenmodulation (vgl. dazu [@gay2014experimenting], S 183). Dabei
-macht man sich die träge Natur des menschlichen Auges zu nutze indem man die
-LED sehr schnell hintereinander ein und ausschaltet. Ist die LED dabei pro Ein-
-und Ausschaltvorgang genauso lang hell wie dunkel so leuchtet die LED mit etwa
+macht man sich die träge Natur des menschlichen Auges zu Nutze indem man die
+LED sehr schnell hintereinander ein-- und ausschaltet. Ist die LED dabei pro
+Ein-- und Ausschaltvorgang genauso lange hell wie dunkel, so leuchtet die LED mit etwa
 der Hälfte ihrer maximalen Leuchtstärke. Durch Verlängerung/Verkürzung des
 eingeschalteten Zustands können so viele verschiedene Helligkeitsstufen
 abgebildet werden. Eine beispielhafte Illustration findet sich in Abbildung
-\ref{eulenfunk-pw 
+\ref{eulenfunk-pwm}
 
 Da bei niedrigen Helligkeitswerten der ausgeschaltete Zustand besonders lange
-gehalten wird, kann es dazu kommen, dass ein flackernder Eindruck entsteht, da
+gehalten wird, kann es dazu kommen, dass ein Flackern entsteht, da
 man die ausgeschalteten Phasen als solche wahrnehmen kann. Um dies zu
-verhindern muss eine ausreichende hohe Frequenz gewählt werden. 
+verhindern, muss eine ausreichend hohe Frequenz gewählt werden. 
 
-Anders als ursprünglich angenommen, mussten wir feststellen dass die GPIO Pins
-des Raspberry Pi (mit Ausnahme von Pin 18 (vgl. [@gay2014experimenting], S.
+Anders als ursprünglich angenommen, mussten wir feststellen, dass die GPIO--Pins
+des *Raspberry Pi* (mit Ausnahme von Pin 18 (vgl. [@gay2014experimenting], S.
 185)) kein hardwareseitiges PWM unterstützen. Aus diesem Grund mussten wir auf
 softwareseitiges PWM zurückgreifen, um Farben mit mindestens 256 Abstufungen zu
 erhalten. Nach etwas Ausprobieren befanden wir die ``softPwm``--Bibliothek von
@@ -246,14 +247,14 @@ Diese hat allerdings das Problem, dass eine hartkodierte Pulsweite von 100µs
 verwendet wird. Für die meisten Anwendungsfälle und den vom Autor empfohlenen
 100 Abstufungen ist das auch in Ordnung. Hundert unterschiedliche Zustände
 waren nach kurzem Ausprobieren bei einem weichen Farbübergang zu stark
-abgestuft, obwohl kein nennenswertes Flackern mit 100Hz sichtbar war:
+abgestuft, obwohl mit 100Hz kein nennenswertes Flackern sichtbar war:
 
 $$T_{Periode} = 100\mu s\times 100= 10000\mu s = 0.01s$$
 
 $$f = \frac{1}{T_{Periode}} = 100Hz$$
 
-Optimal wären hier 256 unterschiedliche Zustände, um die volle 8-Bit Farbtiefe auszunutzen.
-Daher mussten wir die entsprechende C--Datei kopieren (GPL3--lizensiert) und manuell anpassen.
+Optimal wären hier 256 unterschiedliche Zustände, um die volle 8--Bit Farbtiefe auszunutzen.
+Daher mussten wir die entsprechende C--Datei kopieren (GPL3--lizenziert) und manuell anpassen.
 Dabei haben wir die Pulsweite auf 50µs herabgesetzt, was bei einer Spanne von 256 Werten
 eine Frequenz von optisch akzeptablen 78Hz ergibt:
 
@@ -262,14 +263,14 @@ $$T_{Periode} = 50\mu s\times 256 = 12800\mu s = 0.0128s$$
 $$f = \frac{1}{T_{Periode}} = 78.125Hz$$
 
 Diese Frequenz scheint optisch ausreichend flackerfrei zu sein und scheint die
-CPU nicht übermäßig stark zu beeinflussen (rund +3% Last pro Farbkanal).
+CPU nicht übermäßig stark zu belasten (rund +3% Last pro Farbkanal).
 
-Es besteht eine Verbindung zu einen früheren Bastelprojekt namens
+Es besteht eine Verbindung zu einem früheren Bastelprojekt namens
 ``catlight``[^catlight] --- einer mehrfarbigen, in einem Gehäuse montierten LED,
 die über USB angesprochen werden kann. Genutzt wird diese zur Benachrichtigung
 bei neuen E--Mails, Chat--Nachrichten und Ähnlichem. Zu diesem Zwecke wurde
 auch bereits damals ein Treiberprogramm entwickelt, welches das selbe
-Bedienungskonzept wie ``radio-led`` hat. Dies war während der Entwicklung von
+Bedienkonzept wie ``radio-led`` hat. Dies war während der Entwicklung von
 *Eulenfunk* nützlich, da es die Entwicklung der Dienste ``ambilight`` und
 ``lightd`` unabhängig von der Fertigstellung der Radio--Hardware machte.
 
@@ -280,7 +281,7 @@ Bedienungskonzept wie ``radio-led`` hat. Dies war während der Entwicklung von
 
 Der LCD--Treiber setzt Bereiche des LCD--Displays auf einen gegebenen Text.
 Beim Start leert er das Display und liest ähnlich wie »``radio-led cat``«
-zeilenweise von ``stdin`` und entnimmt diesen Zeilen die Information welchen
+zeilenweise von ``stdin`` und entnimmt diesen Zeilen die Information welcher
 Bereich des Displays gesetzt werden soll. Das vom Treiber erwartete
 Zeilenformat ist dabei ``LINENO[,OFFSET] TEXT...``, wobei ``LINENO`` die
 gewünschte Zeilennummer als Dezimalzahl ist und der optionale ``OFFSET`` der
@@ -290,18 +291,18 @@ getrennt beliebiger Text. Ist kein ``OFFSET`` gegeben, so wird die ganze Zeile
 als die Zeile wird der Text abgeschnitten.
 
 Der Treiber hält eine Matrix mit den aktuell gesetzten Zeichen und kann daher ein erneutes
-Zeichnen einer Zelle im Display verhindern, indem es das neue Zeichen mit dem Alten vergleicht.
+Zeichnen einer Zelle im Display verhindern, indem er das neue Zeichen mit dem Alten vergleicht.
 Unnötige Zeichenvorgänge waren als störende Schlieren auf dem Display wahrnehmbar.
 
-Zudem bietet der Treiber mit dem ``print-charset`` Argument die Möglichkeit die
+Zudem bietet der Treiber mit dem ``print-charset`` Argument die Möglichkeit, die
 auf dem Display verfügbaren Zeichen aufs selbige auszugeben. Dazu stellt er
-jeweils 80 Zeichen da und wartetet einige Sekunden bevor die nächsten 80
+jeweils 80 Zeichen dar und wartet einige Sekunden bevor die nächsten 80
 ausgegeben werden. Hat er alle 256 Zeichen ausgegeben beendet er sich. Optional
 kann man auch ein Start- und End--Offset mitgeben, an dem er das Zeichnen
 anfangen soll.
 
 Der Treiber unterstützt eine Reihe hardkodierter Spezialzeichen, welche in der
-Menüführung und der UI zu benutzt werden. Das LCD--Display unterstützt dabei 8
+Menüführung und der UI benutzt werden. Das LCD unterstützt dabei 8
 verschiedene *Custom Chars*, welche mittels der Codepoints 0-7 und 8-15
 (wiederholt) setzbar sind. Momentan sind diese auf folgende Glyphen gesetzt:
 
@@ -314,17 +315,16 @@ verschiedene *Custom Chars*, welche mittels der Codepoints 0-7 und 8-15
 
 Die eigentliche Ansteuerung der Pins übernimmt dabei wieder die
 ``wiringPi``--Bibliothek, beziehungsweise dessen
-LCD--Unterbibliothek[^WIRILCD]). Diese ist kompatibel mit dem populären Hitachi
-HD44780U und Nachbauten. Das Display wird im 4--Bit Modus angesprochen. Das
-heißt, dass nur vier Datenpins benötigt werden (bei uns Pin 25, 24, 23, und
-18). 
+LCD--Unterbibliothek[^WIRILCD]. Diese ist kompatibel mit dem populären Hitachi
+HD44780 und Nachbauten. Das Display wird im 4--Bit Modus angesprochen. Das
+heißt, dass nur vier Datenpins benötigt werden (bei uns Pin 25, 24, 23, und 18). 
 
 [^WIRILCD]: Siehe: \url{https://projects.drogon.net/raspberry-pi/wiringpi/lcd-library}
 
-### Drehknopf Treiber (``driver/rot-driver.c``)
+### Drehimpulsgeber Treiber (``driver/rot-driver.c``)
 
 Dieser Treiber kümmert sich um das Einlesen von Werten und Ereignissen vom
-oberen Drehknopf. Nach dem Start schreibt er alle registrierten Ereignisse auf
+Drehimpulsgeber. Nach dem Start schreibt er alle registrierten Ereignisse auf
 ``stdout``. Dabei nimmt jede Zeile ein neues Ereignis ein. Die jeweilige Zeile
 beginnt mit einem einzelnen Buchstaben und einem Leerzeichen, gefolgt von einem
 Wert. Der Buchstabe beschreibt die Art des Ereignisses:
@@ -332,18 +332,18 @@ Wert. Der Buchstabe beschreibt die Art des Ereignisses:
 - ``v:`` Änderung des **V**alues durch Drehen des Knopfes.
 - ``p:`` Der Knopf wurde gedrückt (eine ``1`` folgt) oder losgelassen eine
   (``0`` folgt).
-- ``t:`` Der Knopf wurde für eine bestimmte Zeit lang gedrückt. Die Zeit folgt
+- ``t:`` Der Knopf wurde für eine bestimmte Zeit gedrückt. Die Zeit folgt
   dahinter in Sekundenbruchteilen.
 
-Initial wird zudem der Wert ``v 0`` herausgeschrieben.
+Initial wird zudem die Zeile ``v 0`` herausgeschrieben.
 
 Technisch registriert sich der Treiber auf Änderungen an den GPIO--Pins 12, 13
-(Pin A und B des Rotarty--Switch) und 14 (Button--Pin) mittels der
-``wiringPi``--Funtkion ``wiringPiISR()``. Diese sorgt dafür dass bei jeder
+(Pin A und B vom Drehimpulsgeber) und 14 (Button--Pin) mittels der
+``wiringPi``--Funtkion ``wiringPiISR()``. Diese sorgt dafür, dass bei jeder
 Wertänderung ein Interrupt aufgerufen wird. 
 
-In dem Interrupt wird der aktuelle Wert der Pins 12 und 13 ausgelesen und mit
-den vorigen Wert verglichen. Dadurch ist es möglich zu entscheiden in welche
+In der Interrupt--Routine wird der aktuelle Wert der Pins 12 und 13 ausgelesen und mit
+dem vorherigen Wert verglichen. Dadurch ist es möglich zu entscheiden, in welche
 Richtung der Drehknopf bewegt wurde ohne dass ein Prellen auftritt. Mehr
 Informationen zum sogenannten »Grey Code« findet sich unter [@2014projekte], S.
 362 und folgenden Seiten.
@@ -352,20 +352,18 @@ Da pro Einrastung des Drehknopfs ca. vier Interrupts getriggert werden, wird
 auf eine globale Gleitkommazahl der Wert $\frac{1}{4}$ addiert. Beim Herausgeben
 des Wertes wird der Wert dann auf den nächsten Integer gerundet.
 Auch für jeden Knopfdruck wird ein Interrupt ausgelöst. Da der Knopf prellt,
-wird hier mit einen niedrigen Timeout gearbeitet, welcher die Störsignale
+wird hier mit einem niedrigen Timeout gearbeitet, welcher die Störsignale
 filtert.
 
-Da in Interrupts nur reentrante Funktionen aufgerufen werden sollte, werden nur
+Da in Interrupts nur reentrante Funktionen aufgerufen werden sollten, werden nur
 globale Flags in den Interruptfunktionen gesetzt. In der ``main``--Funktion
 läuft eine Schleife mit einem Timeout von 50 Millisekunden, welche diese Werte
-abholt, formattiert und auf ``stdout`` schreibt.
+abholt, formatiert und auf ``stdout`` schreibt. Der ursprüngliche Code für
+diesen Treiber stammt dabei von einem Blogpost[^BLOG]. Der Code wurde etwas
+aufgeräumt und um Knopfdrücke sowie Ausgabe auf ``stdout`` erweitert.
 
-Der ursprüngliche Code für diesen Treiber stammt dabei von diesem Blogpost:
+[^BLOG]: Ursprünglicher Treiber: \url{http://theatticlight.net/posts/Reading-a-Rotary-Encoder-from-a-Raspberry-Pi}
 
-- \url{http://theatticlight.net/posts/Reading-a-Rotary-Encoder-from-a-Raspberry-Pi}
-
-Der Code wurde etwas aufgeräumt und um Knopfdrücke sowie Ausgabe auf ``stdout``
-erweitert.
 
 ## Service Software
 
@@ -412,7 +410,7 @@ Der Displayserver ``displayd`` kümmert sich um die Verwaltung der
 Display--Inhalte. Er bietet eine höhere Abstraktionsschicht als der
 vergleichsweise simple LCD--Treiber. Dabei bietet er die Abstraktion von
 *Zeilen*, *Fenstern* und erleichtert dem Programmierer Enkodierungsaufgaben
-indem es ein Subset von Unicode unterstützt. Eine Zeile ist dabei eine beliebig
+indem es ein Subset von Unicode unterstützt. Eine Zeile ist dabei ein beliebig
 langer UTF8--enkodiertert Text ohne Zeilenumbruch. Die Zeile kann dabei länger
 als das Display sein. In diesem Fall wird die Zeile abgeschnitten oder scrollt
 je nach Konfiguration mit einer bestimmten Geschwindigkeit durch. Ein Fenster
@@ -435,9 +433,9 @@ Fenstermanagern übernommen.
 #### Architektur
 
 Das Protokoll von ``displayd`` ist ein relativ simpel gehaltenes,
-zeilenbasiertes Textprotokoll. Für den Zugriff auf dasselbige ist daher wird
-auch keine UI--Bibliothek benötigt, lediglich einige Netzwerk und
-Formatierungs--Hilfsfunktionen wurden implementiert[^LINEWRITER]
+zeilenbasiertes Textprotokoll. Für den Zugriff auf dasselbige wird daher
+auch keine UI--Bibliothek benötigt, lediglich einige Netzwerk-- und
+Formatierungs--Hilfsfunktionen wurden implementiert[^LINEWRITER].
 Basierend auf diesen Primitiven wurden aber auf Clientseite
 Funktionalitäten wie Menü--»Widgets« implementiert, welche die grafische Darstellung
 mit der Nutzereingabe verquicken.
@@ -445,7 +443,7 @@ mit der Nutzereingabe verquicken.
 [^LINEWRITER]: Siehe \url{https://godoc.org/github.com/studentkittens/eulenfunk/display\#LineWriter}
 
 Neben diesen Aufgaben löst ``displayd`` ein architektonisches Problem:
-Wenn mehrere Anwendung versuchen auf das Display zu schreiben käme ohne zentrale
+Wenn mehrere Anwendung versuchen auf das Display zu schreiben, käme ohne zentrale
 Instanz ein eher unleserliches Resultat dabei heraus. Durch ``displayd`` können
 Anwendungen auf ein separates Fenster schreiben, wovon jeweils nur eines aktiv
 angezeigt wird. Abbildung \ref{eulenfunk-displayd} zeigt die Architektur in der Übersicht.
@@ -453,7 +451,7 @@ angezeigt wird. Abbildung \ref{eulenfunk-displayd} zeigt die Architektur in der 
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.0\textwidth]{images/eulenfunk-displayd.png}
-  \caption{Archtitektonische Übersicht von \texttt{displayd} mit Beispielfenstern.}
+  \caption{Architekturübersicht von \texttt{displayd} mit Beispielfenstern.}
   \label{eulenfunk-displayd}
 \end{figure}
 
@@ -472,7 +470,7 @@ close                      -- Schließt die aktuelle Verbindung.
 quit                       -- Beendet Daemon und schließt Verbindung.
 ```
 
-Dabei kann in die <Platzhalter> folgendes eingesetzt werden:
+Dabei kann in die `<Platzhalter>` folgendes eingesetzt werden:
 
 ```
 <win>:   Ein valider Fenstername (andernfalls wird ein neues Fenster mit diesen Namen angelegt)
@@ -489,22 +487,22 @@ Treiberprogramm ``radio-lcd``. Dabei wird in periodischen Abständen (momentan
 150ms) das aktuelle Fenster auf den Treiber geschrieben. Zukünftige Versionen
 sollen dabei intelligenter sein und nur die aktuell geänderten Zeilen
 herausschreiben. Allerdings hat sich herausgestellt, dass man mit mehreren
-scrollenden Zeilen bereits mit diesen ereignisbasierten Ansatz auf eine höhere
+scrollenden Zeilen bereits mit diesem ereignisbasierten Ansatz auf eine höhere
 Aktualisierungsrate kommt als mit den statischen 150ms. Eine Art »VSync«,
 welches die Aktualisierungsrate intelligent limitiert wäre hier in Zukunft
 wünschenswert.
 
 #### Entwicklung
 
-Da der Raspberry Pi nur bedingt als Entwicklungsplattform tauglich ist
+Da der *Raspberry Pi* nur bedingt als Entwicklungsplattform tauglich ist
 (langsamer Compile/Run Zyklus), unterstützt ``displayd`` auch
 Debugging--Möglichkeiten. Im Folgenden werden einige Möglichkeiten gezeigt 
-mit ``displayd`` zu interagieren, beziehungsweise Programme zu untersuchen
+mit ``displayd`` zu interagieren, beziehungsweise Programme zu untersuchen,
 die ``displayd`` benutzen:
 
 ```bash
 # Den display server starten; --no-encoding schaltet spezielles LCD encoding
-# ab welches auf normalen Terminals zu Artifakten führt. 
+# ab welches auf normalen Terminals zu Artefakten führt. 
 $ eulenfunk display server --no-encoding &
 
 # Gebe in kurzen Abständen das "mpd" Fenster aus.
@@ -528,10 +526,11 @@ close
 
 #### Enkodierung
 
-Das LCD--Display unterstützt 8 bit pro Zeichen. Dabei sind die ersten 127 Zeichen weitesgehend
-deckungsgleich mit dem ASCII Standard. Lediglich die Zeichen 0 bis 31 sind durch *Custom Chars*
-und einige zusätzliche Zeichen belegt. Dies ist insofern auch sinnvoll, da in diesem Bereich 
-bei ASCII Steuerzeichen definiert sind, die auf dem LCD schlicht keinen Effekt hätten.
+Das LCD unterstützt 8--bit pro Zeichen. Dabei sind die ersten 127 Zeichen
+weitestgehend deckungsgleich mit dem ASCII--Standard. Lediglich die Zeichen 0 bis
+31 sind durch *Custom Chars* und einige zusätzliche Zeichen belegt. Dies ist
+insofern auch sinnvoll, da in diesem Bereich bei ASCII Steuerzeichen definiert
+sind, die auf dem LCD schlicht keinen Effekt hätten.
 
 Die Zeichen 128 bis 255 sind vom Hersteller des Displays mit verschiedenen
 Symbolen belegt worden, die keinem dem Autor bekannten Encoding entsprechen. Da
@@ -553,7 +552,7 @@ Folgende Seiten waren bei der Erstellung der Tabelle hilfreich:
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.0\textwidth]{images/encoding.png}
-  \caption{Unicode Version der LCD--Glyphen. Der normale ASCII Bereich (32-127) wurde ausgelassen.}
+  \caption{Unicode--Version der LCD--Glyphen. Der normale ASCII--Bereich (32-127) wurde ausgelassen.}
   \label{eulenfunk-encoding}
 \end{figure}
 
@@ -749,7 +748,6 @@ die es über einen Netzwerk--Socket auf Port 5555 erhält:
 * ``unmount <device> <label>:`` Entferne Playlist und Mountpoint wieder.
 * ``close:`` Trenne die Verbindung.
 * ``quit:``  Trenne die Verbindung und beende den daemon.
-```
 
 ### ``ui`` -- Menübasierte Bedienoberfläche
 
