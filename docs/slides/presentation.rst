@@ -18,8 +18,9 @@
 
 Projekt: Eulenfunk
 
-.. image:: images/poloroid.png
-   :width: 80%
+.. image:: ../paper/images/title.png
+   :width: 50%
+   :align: right
 
 ----
 
@@ -27,46 +28,42 @@ Projekt: Eulenfunk
 
 **gibt eine Übersicht über:**
 
-- Weiß nich?
 - Eine Wohngemeinschaft in Augsburg.
+- Neues Open-Source-Project namens Eulenfunk.
 - Den Weg vom Schrott zum Radio.
-- Neues Open-Source-Project.
+- Probleme während der Umsetzung.
 
-**gibt keine Details zu:**
-
-- Hardwareansteuerung.
-- Softwareimplementierung.
-
-- Internetradio für die Küche.
-- Auf Basis ,,alter'' Bauteile.
+**einen Überblick über die Vorbereitungen, Entwicklung und Testphase geben &
+Lust machen auf mehr.**
 
 ----
+
+.. note::
+
+    * Leben in einer WG zusammen
+    * Herausforderung für nicht-technischen Informatiker
 
 :blocky:`Dieses Eulenfunk...`
 
 **ist entstanden weil:**
 
-- Wir mit einer Eule zusammenleben.
-- Wir uns gerne in der Küche aufhalten.
 - Aktuelle Musik-Situation... war kompliziert.
-- Etwas ,,sinnvolles'' erstellt werden sollte.
-- Technische Informatiker Magie sein kann.
-- Wir Spaß haben wollten mit LEDs!
+- Wir etwas für den täglichen Gebraucht bauen wollten.
+- Alte Hardware vorhanden war.
 
 **ist anders weil:**
 
 - Es kein Nachbau ist.
 - Eigene Anforderungen umgesetzt wurden.
-
-.. note::
-
-    None
+- Diamanten nur unter Druck entstehen.
 
 -----
 
 :blocky:`Hardwarekomponenten`
 
-* Blockschaubild
+.. image:: ../paper/images/uebersicht.png
+   :width: 90%
+   :align: right
 
 -----
 
@@ -77,27 +74,73 @@ Projekt: Eulenfunk
 
 -----
 
-:blocky:`Impressions #1`
+:blocky:`Bilder sagen manchmal mehr als...`
 
-* Bilder Hardware
-
------
-
-:blocky:`Impressions #2`
-
-* Bilder Testaufbau
+.. image:: images/impressions/impressions.png
+   :width: 100%
 
 -----
 
-:blocky:`Impressions #3`
+:blocky:`Altes Analogradio`
 
-* Bilder Arbeit
+.. image:: images/impressions/Altes_AEG_MR_4104_pol.png
+   :width: 100%
 
 -----
 
-:blocky:`Impressions #4`
+:blocky:`Komponenten`
 
-* Bilder Elche oder Meerschweinchen.
+.. image:: images/impressions/componentes1_pol.png
+   :width: 100%
+
+-----
+
+:blocky:`Testaufbau der Basiskomponenten`
+
+.. image:: images/impressions/LCD_Testaufbau_pol.png
+   :width: 100%
+
+-----
+
+:blocky:`Testaufbau zur Ansteuerung der LEDs`
+
+.. image:: images/impressions/Transistorschaltung_Testaufbau_pol.png
+   :width: 100%
+
+-----
+
+:blocky:`Colorize`
+
+.. image:: images/impressions/front_color_pol.png
+   :width: 100%
+
+-----
+
+:blocky:`Front...back`
+
+.. image:: images/impressions/Front_mit_LCD_und_Switches_pol.png
+   :width: 100%
+
+-----
+
+:blocky:`It is broken...`
+
+.. image:: images/impressions/transled1_pol.png
+   :width: 100%
+
+-----
+
+:blocky:`Katzen bei der Arbeit...`
+
+.. image:: images/impressions/Hardware-Engineering_pol.png
+   :width: 100%
+
+-----
+
+:blocky:`Prototyp 1.0`
+
+.. image:: images/impressions/Transistorschaltung_pol.png
+   :width: 100%
 
 -----
 
