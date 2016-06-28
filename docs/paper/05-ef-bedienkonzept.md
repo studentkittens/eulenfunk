@@ -1,5 +1,7 @@
 # Bedienkonzept/Menüsteuerung
 
+\label{internal-owl-chapter}
+
 ## Optik-- und Usability--Anforderungen
 
 Die Eingabe--Peripherie soll möglichst einfach gehalten werden, um eine *schöne*
