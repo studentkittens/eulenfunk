@@ -91,7 +91,7 @@ Projekt: **Eulenfunk**
 
 :blocky:`Some assembly required:`
 
-.. image:: images/impressions/componentes1_pol.png
+.. image:: images/impressions/Komponenten_pol.png
    :width: 120%
 
 -----
@@ -172,13 +172,24 @@ Projekt: **Eulenfunk**
 
 -----
 
-:blocky:`Finaler Prototyp`
+:blocky:`Finaler Prototyp #1`
 
 .. note::
 
     * Hoffentlich koennt ihr das lied nicht erkennen :)
 
 .. image:: images/impressions/Eulenfunk_Prototyp_pol.png
+   :width: 100%
+
+-----
+
+:blocky:`Finaler Prototyp #2`
+
+.. note::
+
+    * Hoffentlich koennt ihr das lied nicht erkennen :)
+
+.. image:: images/impressions/Eulenfunk_Anschlüße_pol.png
    :width: 100%
 
 -----
@@ -219,7 +230,7 @@ Projekt: **Eulenfunk**
     * Sehr modular
 
 .. image:: ../paper/images/eulenfunk-services.png
-   :width: 110%
+   :width: 100%
    :align: right
 
 -----
