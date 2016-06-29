@@ -8,14 +8,14 @@ include-headers:
     - \usepackage[babel, german=quotes]{csquotes}
 fontsize: 11pt
 sections: yes
-toc: yes
-tocdepth: 1
-lof: yes
-lot: no
 date: \today
 ---
 
 \newpage
+\setcounter{tocdepth}{1}
+\tableofcontents
+\listoffigures
+
 \pagenumbering{arabic} 
 \setcounter{page}{1}
 
@@ -71,7 +71,7 @@ Für die Entwicklung und Dokumentation wurden folgende *GNU/Linux* Tools
 verwendet:
 
 * *Pandoc/LaTeX* (Dokumentation) 
-* *Vim* (Softwareentwicklung) 
+* *Vim* (Softwareentwicklung und Dokumentation) 
 * *Fritzing* (Schaltpläne).
 * *Imagemagick* (Bildbearbeitung) 
 
