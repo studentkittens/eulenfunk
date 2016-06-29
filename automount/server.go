@@ -64,8 +64,9 @@ func (srv *server) playlistFromDir(client *mpd.Client, label string) error {
 	//       (Also "find base <label>" would be easier than .GetFiles()
 	//        but the library really failed here too)
 	uris := []string{}
+	prefix := filepath.Join(mountSubDir, label)
 	for _, uri := range allUris {
-		if strings.HasPrefix(uri, label) {
+		if strings.HasPrefix(uri, prefix) {
 			uris = append(uris, uri)
 		}
 	}

@@ -40,15 +40,15 @@ noch erworben werden:
 
 **Mussten noch erworben werden:**
 
-* Audioverstärker (6 Euro)
-* Drehimpulsregler (3 Euro)
-* Kunststoffabdeckung für Front (0)
-* Farbe (Lack) (5 Euro)
-* Drehknöpfe für das Gehäuse (2 Euro)
-* Schrumpfschläuche (1 Euro)
-* Kippschalter (6 Euro)
+* Audioverstärker (\EUR{6})
+* Drehimpulsregler (\EUR{3})
+* Kunststoffabdeckung für Front (\EUR{0})
+* Farbe (Lack) (\EUR{5})
+* Drehknöpfe für das Gehäuse (\EUR{2})
+* Schrumpfschläuche (\EUR{1})
+* Kippschalter (\EUR{6})
 
-Insgesamt wurden für das Projekt ca. 23 Euro ausgegeben.
+Insgesamt wurden für das Projekt ca. \EUR{23} ausgegeben.
 
 [^AEG]: AEG Küchenradio 4104: \url{https://www.amazon.de/AEG-MR-4104-Desgin-Uhrenradio-buche/dp/B000HD19W8}
 
