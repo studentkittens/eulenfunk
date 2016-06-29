@@ -197,13 +197,14 @@ Wertebereich 0 bis 255. Die Hilfe des Programms zeigt die verschiedenen
 Aufrufmöglichkeiten:
 
 ```html
-Usage:
-  radio-led on  ....... turn on LED (white)
-  radio-led off ....... turn off LED
-  radio-led cat ....... read rgb tuples from stdin
-  radio-led rgb  r g b  Set LED color to r,g,b
-  radio-led hex  #RRGGBB Set LED color from hexstring
-  radio-led fade ...... Show a fade for debugging
+    $ radio-led
+    Usage:
+      radio-led on  ....... turn on LED (white)
+      radio-led off ....... turn off LED
+      radio-led cat ....... read rgb tuples from stdin
+      radio-led rgb  r g b  Set LED color to r,g,b
+      radio-led hex  #RRGGBB Set LED color from hexstring
+      radio-led fade ...... Show a fade for debugging
 ```
 
 Erklärung benötigt hierbei nur der ``cat``--Modus, bei dem der Treiber
@@ -462,7 +463,7 @@ Kommandos (mit Leerzeichen--getrennten Argumenten) unterstützt:
 ```
 switch <win>               -- Wechsle zum Fenster namens <win>.
 line <win> <pos> <text>... -- Setze die Zeile <pos> im Fenster <win> zu <text>
-scroll <win> <pos> <delay> -- Lässt Zeile <pos> in Fenster <win> mit der Geschwindigkeit <delay> scrollen.
+scroll <win> <pos> <delay> -- Lässt Zeile <pos> in Fenster <win> mit <delay> scrollen.
 move <win> <off>           -- Verschiebe Fenster <win> um <off> Zeilen nach unten.
 truncate <win> <max>       -- Schneide Fenster <win> nach <max> Zeilen ab.
 render                     -- Gebe aktuelles Fenster auf Verbindung aus.
@@ -473,13 +474,14 @@ quit                       -- Beendet Daemon und schließt Verbindung.
 Dabei kann in die `<Platzhalter>` folgendes eingesetzt werden:
 
 ```
-<win>:   Ein valider Fenstername (andernfalls wird ein neues Fenster mit diesen Namen angelegt)
-<pos>:   Eine Zeilennummer, beginnend bei 0 für die erste Zeile.
-<off>:   Ein Offset; 0 steht für keine Änderung; Kann negativ sein.
-<max>:   Maximale Zeilenanzahl nach der das Fenster abgeschnitten wird.
-<delay>: Zeitlicher Abstand zwischen zwei Scroll--Vorgängen.
-         Siehe auch: https://golang.org/pkg/time/#ParseDuration
-		 Beispiel: 100ms
+    <win>:   Ein valider Fenstername 
+             (andernfalls wird ein neues Fenster mit diesen Namen angelegt)
+    <pos>:   Eine Zeilennummer, beginnend bei 0 für die erste Zeile.
+    <off>:   Ein Offset; 0 steht für keine Änderung; Kann negativ sein.
+    <max>:   Maximale Zeilenanzahl nach der das Fenster abgeschnitten wird.
+    <delay>: Zeitlicher Abstand zwischen zwei Scroll--Vorgängen.
+             Siehe auch: https://golang.org/pkg/time/#ParseDuration
+             Beispiel: 100ms
 ```
 
 Für die tatsächliche Anzeige nutzt ``displayd`` wie oben erwähnt das
@@ -492,7 +494,7 @@ Aktualisierungsrate kommt als mit den statischen 150ms. Eine Art »VSync«,
 welches die Aktualisierungsrate intelligent limitiert wäre hier in Zukunft
 wünschenswert.
 
-#### Entwicklung
+#### Entwicklung mit ``displayd``
 
 Da der *Raspberry Pi* nur bedingt als Entwicklungsplattform tauglich ist
 (langsamer Compile/Run Zyklus), unterstützt ``displayd`` auch
@@ -501,30 +503,30 @@ mit ``displayd`` zu interagieren, beziehungsweise Programme zu untersuchen,
 die ``displayd`` benutzen:
 
 ```bash
-# Den display server starten; --no-encoding schaltet spezielles LCD encoding
-# ab welches auf normalen Terminals zu Artefakten führt. 
-$ eulenfunk display server --no-encoding &
+    # Den display server starten; --no-encoding schaltet spezielles LCD encoding
+    # ab welches auf normalen Terminals zu Artefakten führt. 
+    $ eulenfunk display server --no-encoding &
 
-# Gebe in kurzen Abständen das "mpd" Fenster aus.
-# (In separaten Terminal eingeben!)
-$ eulenfunk display --dump --update --window mpd
+    # Gebe in kurzen Abständen das "mpd" Fenster aus.
+    # (In separaten Terminal eingeben!)
+    $ eulenfunk display --dump --update --window mpd
 
-# Verbinde zu MPD und stelle aktuellen Status auf "mpd" Fenster dar.
-# (auch in separaten Terminal eingeben)
-$ eulenfunk info
-# Auch nach Unterbrechung wird der zuletzt gesetzte Text weiterhin angezeigt:
-$ <CTRL-C>
-# Änderungen sind auch möglich indem man direkt mit dem Daemon über telnet
-# oder netcat spricht. Hier wird die erste Zeile überschrieben, das aktuelle
-# Fenster angezeigt und dann die Verbindung geschlossen.
-$ telnet localhost 7777
-line mpd 0 Erste Zeile geändert!
-render                        
-(... Ausgabe ...)
-close
+    # Verbinde zu MPD und stelle aktuellen Status auf "mpd" Fenster dar.
+    # (auch in separaten Terminal eingeben)
+    $ eulenfunk info
+    # Auch nach Unterbrechung wird der zuletzt gesetzte Text weiterhin angezeigt:
+    $ <CTRL-C>
+    # Änderungen sind auch möglich indem man direkt mit dem Daemon über telnet
+    # oder netcat spricht. Hier wird die erste Zeile überschrieben, das aktuelle
+    # Fenster angezeigt und dann die Verbindung geschlossen.
+    $ telnet localhost 7777
+    line mpd 0 Erste Zeile geändert!
+    render                        
+    (... Ausgabe ...)
+    close
 ```
 
-#### Enkodierung
+#### LCD--optimierte Enkodierung
 
 Das LCD unterstützt 8--bit pro Zeichen. Dabei sind die ersten 127 Zeichen
 weitestgehend deckungsgleich mit dem ASCII--Standard. Lediglich die Zeichen 0 bis
@@ -595,11 +597,11 @@ Die möglichen Kommandos sind dabei wie folgt:
 ``<effect>`` darf dabei folgendes sein:
 
 ```
-{<r>,<g>,<b>}                              -- Einzelne Farbe.
-blend{<src-color>|<dst-color>|<duration>}  -- Blend Effekt.
-flash{<duration>|<color>|<repeat>}         -- Flash Effekt.
-fire{<duration>|<color>|<repeat>}          -- Fire Effekt.
-fade{<duration>|<color>|<repeat>}          -- Fade Effekt.
+    {<r>,<g>,<b>}                              -- Einzelne Farbe.
+    blend{<src-color>|<dst-color>|<duration>}  -- Blend Effekt.
+    flash{<duration>|<color>|<repeat>}         -- Flash Effekt.
+    fire{<duration>|<color>|<repeat>}          -- Fire Effekt.
+    fade{<duration>|<color>|<repeat>}          -- Fade Effekt.
 ```
 
 Der Platzhalter ``<*-color>`` steht dabei für eine einzelne Farbe.
@@ -826,7 +828,7 @@ Fernbedienung etwa), so wird die Änderung umgehend an die UI propagiert.
 ``info`` kann aus Gründen der Fehlersuche auch separat von der UI gestartet werden:
 
 ```bash
-$ eulenfunk info
+    $ eulenfunk info
 ```
 
 ### ``ympd`` -- MPD im Webbrowser
@@ -866,10 +868,10 @@ Falls das wegen mangelnder Namensauflösung aber nicht funktioniert, kann
 man *Zeroconf* (vgl. [@ietf2013zero]) dazu nutzen die IP von *Eulenfunk* herauszufinden:
 
 ```bash
-$ avahi-browse _mpd._tcp -r | grep 'hostname = \[eulenfunk' -A 2
-   hostname = [eulenfunk.local]
-   address = [192.168.23.30]
-   port = [6600]
+    $ avahi-browse _mpd._tcp -r | grep 'hostname = \[eulenfunk' -A 2
+       hostname = [eulenfunk.local]
+       address = [192.168.23.30]
+       port = [6600]
 ```
 
 Das funktioniert, weil der MPD--Server seine Anwesenheit mittels 
@@ -886,13 +888,13 @@ Dies soll hauptsächlich zur Referenz dienen, um das Radio nachbauen zu können.
 Installation aus den offiziellen Quellen (``mpd``) und aus dem AUR (``ympd``):
 
 ```bash
-$ pacman -S mpd mpc
-$ yaourt -S ympd
-$ mkdir -p /var/mpd/playlists
-$ touch /var/mpd/mpd.{db,state,log}
-$ cp eulenfunk/config/mpd.conf /var/mpd
-$ mpd /var/mpd/mpd.conf
-$ mpc update -w
+    $ pacman -S mpd mpc
+    $ yaourt -S ympd
+    $ mkdir -p /var/mpd/playlists
+    $ touch /var/mpd/mpd.{db,state,log}
+    $ cp eulenfunk/config/mpd.conf /var/mpd
+    $ mpd /var/mpd/mpd.conf
+    $ mpc update -w
 ```
 
 ``mpd`` und ``ympd`` sind die einzigen Dienste, die von Außen (ohne
@@ -911,8 +913,8 @@ von ``systemd`` überwachtes Verzeichnis (beispielsweise ``/usr/lib/systemd/syst
 nach einem »``systemctl daemon-reload``« den Dienst starten und für den nächsten Bootvorgang vormerken:
 
 ```bash
-$ systemctl start my-unit-file    # Jetzt den Dienst starten.
-$ systemctl enable my-unit-file   # Beim nächsten Boot starten.
+    $ systemctl start my-unit-file    # Jetzt den Dienst starten.
+    $ systemctl enable my-unit-file   # Beim nächsten Boot starten.
 ```
 
 In Abbildung \ref{eulenfunk-systemd} ist schematisch der Abhängigkeitsgraph der
@@ -935,15 +937,15 @@ ist. Besonders zur Fehlersuche war ``systemd`` bereits sehr hilfreich, da es
 möglich, ist die Ausgabe des Dienstes im Nachhinein zu betrachten:
 
 ```bash
-$ systemctl status radio-ui.service
-* radio-ui.service - MPD client that show the current state on the LCD
-  Active: active (running) since Mon 2016-06-27 23:45:55 CEST; 2h 0min ago
-[...]
-Jun 28 01:19:24 eulenfunk eulenfunk[410]: 2016/06/28 01:19:24 Pressed for 1s
-[...]
-# Alternativ falls mehrere Dienste zeitgleich angezeigt werden sollen:
-$ journalctl -u radio-ambilight.service -u radio-ui.service --since today
-[...]
+    $ systemctl status radio-ui.service
+    * radio-ui.service - MPD client that show the current state on the LCD
+      Active: active (running) since Mon 2016-06-27 23:45:55 CEST; 2h 0min ago
+    [...]
+    Jun 28 01:19:24 eulenfunk eulenfunk[410]: 2016/06/28 01:19:24 Pressed for 1s
+    [...]
+    # Alternativ falls mehrere Dienste zeitgleich angezeigt werden sollen:
+    $ journalctl -u radio-ambilight.service -u radio-ui.service --since today
+    [...]
 ```
 
 ### ``eulenfunk`` Software
@@ -951,13 +953,13 @@ $ journalctl -u radio-ambilight.service -u radio-ui.service --since today
 Die Software selbst kann ohne große Abhängigkeiten direkt von *GitHub* installiert werden:
 
 ```bash
-$ pacman -S wiringpi go git
-$ git clone https://github.com/studentkittens/eulenfunk && cd eulenfunk
-$ mkdir -p /root/go
-$ export GOPATH=/root/go
-$ export GOBIN=/root/go/bin
-$ go get .
-$ make install
+    $ pacman -S wiringpi go git
+    $ git clone https://github.com/studentkittens/eulenfunk && cd eulenfunk
+    $ mkdir -p /root/go
+    $ export GOPATH=/root/go
+    $ export GOBIN=/root/go/bin
+    $ go get .
+    $ make install
 ```
 
 Das mitgelieferte Makefile installiert alle ``.unit``--Files, Skripte, Treiber--Binärdateien und die
@@ -988,28 +990,28 @@ Auch wurde versucht, die Anzahl von gestarteten Prozess klein zu halten und
 nur das Nötigste zu starten:
 
 ```html
-$ pstree -A
-systemd-+-2*[agetty]
-        |-avahi-daemon---avahi-daemon
-        |-dbus-daemon
-        |-dhcpcd
-        |-eulenfunk display-+-radio-lcd
-        |-eulenfunk lightd-+-radio-led---3*[{radio-led}]
-        |-eulenfunk ambilight-+-2*[radio-led---3*[{radio-led}]]
-        |-eulenfunk automount---6*[{eulenfunk}]
-        |-eulenfunk ui-+-radio-rotary
-        |           |-radio-sysinfo.sh
-        |-haveged
-        |-mpd
-        |-sshd---sshd---sshd---bash---pstree
-        |-systemd---(sd-pam)
-        |-systemd-journal
-        |-systemd-logind
-        |-systemd-resolve
-        |-systemd-timesyn---{sd-resolve) S 1 
-        |-systemd-udevd
-        |-wpa_supplicant
-        `-ympd
+    $ pstree -A
+    systemd-+-2*[agetty]
+            |-avahi-daemon---avahi-daemon
+            |-dbus-daemon
+            |-dhcpcd
+            |-eulenfunk display-+-radio-lcd
+            |-eulenfunk lightd-+-radio-led---3*[{radio-led}]
+            |-eulenfunk ambilight-+-2*[radio-led---3*[{radio-led}]]
+            |-eulenfunk automount---6*[{eulenfunk}]
+            |-eulenfunk ui-+-radio-rotary
+            |           |-radio-sysinfo.sh
+            |-haveged
+            |-mpd
+            |-sshd---sshd---sshd---bash---pstree
+            |-systemd---(sd-pam)
+            |-systemd-journal
+            |-systemd-logind
+            |-systemd-resolve
+            |-systemd-timesyn---{sd-resolve) S 1 
+            |-systemd-udevd
+            |-wpa_supplicant
+            `-ympd
 ```
 
 Inwiefern Anforderung **#1** (*leichte Bedienbarkeit*) gewährleistet ist, wird
@@ -1052,6 +1054,3 @@ funktioniert, gibt es natürlich noch Verbesserungspotenzial:
   Der aktuelle Plot kann online auf GitHub eingesehen werden[^BOOT-PLOT].
 
 [^BOOT-PLOT]: \url{https://github.com/studentkittens/eulenfunk/blob/master/docs/paper/images/boot-plot.svg}
-
-ELCH TODO: Überschriften nochmal anschauen...bspw. bei displayd die
-unterüberschrieften wie Einleitung... Entwicklung sind seltsam.
