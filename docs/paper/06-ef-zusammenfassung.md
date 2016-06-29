@@ -41,6 +41,8 @@ sich bei *Eulenfunk* um ein Internetradio handelt wurde auf eine Echtzeituhr
 permanenten Internetverbindung mittels NTP[^NTP] über das Internet
 synchronisieren kann. Eine Erweiterung um eine Echtzeituhr wird in
 [@horan2013practical], Seite 145 ff. und [@gay2014experimenting], Seite 77 ff. ausführlich beschrieben.
+Mit einer RTC wäre die Implementierung einer Weckerfunktion möglich, welche
+das Radio gezielt zu einer bestimmten Uhrzeit aufweckt und Musik abspielt.
 
 ### Fernbedienung
 
