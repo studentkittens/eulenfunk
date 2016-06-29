@@ -45,8 +45,6 @@ Drücken bewirkt das kontextbezogene Ausführen einer Aktion. Näheres wird bei
 den jeweiligen Menüansichten beschrieben.
 
 
-\newpage
-
 ## Menüinhalt
 
 \begin{figure}[h!]
@@ -61,16 +59,18 @@ Ein Drehen des Master-Regler navigiert zwischen den einzelnen Einträgen.
 Ein Drücken des Master-Regler öffnet den gewählten Eintrag als neue Ansicht
 (Modes, System) oder setzt direkt andere Werte (Options).
 
-### Current Song
+\newpage
+
+### Now Playing
 
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1.2\textwidth]{images/currentsong.png}
-  \caption{Ansicht des Menüpunkts \emph{Current Song} für Musikstücke und Radiosender}
+  \caption{Ansicht des Menüpunkts \emph{Now Playing} für Musikstücke und Radiosender}
   \label{currentsong}
   \end{figure}
 
-Der Menüpunkt *Current Song* zeigt Informationen des aktuell gespielten Mediums
+Der Menüpunkt *Now Playing* zeigt Informationen des aktuell gespielten Mediums
 an. Es gibt eine geringfügig abweichende Ansicht für Musikstücke und für
 Radiosender. Wie in Abbildung \ref{currentsong} zu sehen ist, wird bei einem
 Musikstück der Interpret, der Titel und das Album angezeigt. Sollte die Breite
@@ -119,25 +119,6 @@ Master-Reglers navigiert innerhalb des Playlist--Ansicht. In der Ansicht
   Der Menüpunkt *Clock* (siehe Abb. \ref{clock}) zeigt die aktuelle Uhrzeit, sowie das Datum an. 
   Ein Drücken des Master-Reglers führt zurück zum Hauptmenü. 
 
-
-### Systeminfo
-
-\begin{figure}[h!]
-  \centering
-  \includegraphics[width=1.2\textwidth]{images/systeminfo.png}
-  \caption{Ansicht des Menüpunkts \emph{Systeminfo}}
-  \label{systeminfo}
-  \end{figure}
-
-  Der Menüpunkt *Systeminfo* (siehe Abb. \ref{systeminfo}) zeigt folgende Informationen zum System an:
-
-* CPU-Auslastung in Prozent.
-* Speicher-Auslastung in Prozent.
-* IP-Adresse, Systemlaufzeit,
-* WLAN-Empfangsstärke in Prozent.
-* CPU-Temperatur in Celsius.
-
-Ein Drücken des Master-Reglers führt zurück zum Hauptmenü.
 
 
 ### Statistics
@@ -188,6 +169,26 @@ Der Menüpunkt *Powermenu* (siehe Abb. \ref{powermenu}) enthält die Funktionen
 Systems. Mit *(Exit)* gelangt man zurück ins Hauptmenü.
 
 
+### Systeminfo
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1.2\textwidth]{images/systeminfo.png}
+  \caption{Ansicht des Menüpunkts \emph{Systeminfo}}
+  \label{systeminfo}
+  \end{figure}
+
+  Der Menüpunkt *Systeminfo* (siehe Abb. \ref{systeminfo}) zeigt folgende Informationen zum System an:
+
+* CPU-Auslastung in Prozent.
+* Speicher-Auslastung in Prozent.
+* IP-Adresse, Systemlaufzeit,
+* WLAN-Empfangsstärke in Prozent.
+* CPU-Temperatur in Celsius.
+
+Ein Drücken des Master-Reglers führt zurück zum Hauptmenü.
+
+
 ### About
 
 \begin{figure}[h!]
@@ -209,7 +210,7 @@ Das führt zu mehr Komfortabilität in der Bedienung. Es kann direkt ins
 *Powermenu * gewechselt werden, ohne die aktuelle Anzeige verlassen zu müssen,
 um manuell zum *Powermenu* zu navigieren.
 
-In der Ansicht *Current Song* führt ein längeres Drücken (mindestens 600ms) des Master-Reglers 
+In der Ansicht *Now Playing* führt ein längeres Drücken (mindestens 600ms) des Master-Reglers 
 ins Hauptmenü. Eine Abweichung zu der Funktionsweise in den anderen Ansichten
 war notwendig, weil auch der Wechsel zwischen Pause/Play möglich sein sollte.
 Für eine möglichst intuitive Bedienung bot es sich an, dies durch ein einfaches
