@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -173,10 +174,15 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 
 	defer util.Closer(client)
 
-	if dbErr := srv.updateDatabase(client, label); dbErr != nil {
-		log.Printf("Updating MPD failed: %v", dbErr)
-		return dbErr
+	log.Printf("Running `mpc update -w`")
+	if err := runBinary("mpc", "update", "-w"); err != nil {
+		return err
 	}
+
+	// if dbErr := srv.updateDatabase(client, label); dbErr != nil {
+	// 	log.Printf("Updating MPD failed: %v", dbErr)
+	// 	return dbErr
+	// }
 
 	playlists, err := client.ListPlaylists()
 	if err != nil {
@@ -296,75 +302,52 @@ func cancelled(ctx context.Context) bool {
 
 // Run creates a new automountd on the specified host and port.
 func Run(cfg *Config, ctx context.Context) error {
-
-	addr := fmt.Sprintf("%s:%d", cfg.MPDHost, cfg.MPDPort)
-	client, err := mpd.Dial("tcp", addr)
+	addr := fmt.Sprintf("%s:%d", cfg.AutomountHost, cfg.AutomountPort)
+	lsn, err := net.Listen("tcp", addr)
 	if err != nil {
+		log.Printf("Error listening: %v", err.Error())
 		return err
 	}
 
-	defer util.Closer(client)
-
 	subCtx, cancel := context.WithCancel(ctx)
+
 	srv := &server{
 		Config:  cfg,
 		Context: subCtx,
 		Cancel:  cancel,
 	}
 
-	if dbErr := srv.updateDatabase(client, "usb-music"); dbErr != nil {
-		log.Printf("Updating MPD failed: %v", dbErr)
-		return dbErr
+	defer util.Closer(lsn)
+	log.Println("Listening on " + addr)
+
+	// Manually trigger a udevadm run after a few seconds:
+	go func() {
+		time.Sleep(2 * time.Second)
+		if err := exec.Command("udevadm", "trigger", "-c", "add").Run(); err != nil {
+			log.Printf("Failed to trigger udev: %v", err)
+		}
+	}()
+
+	for !cancelled(ctx) {
+		if tcpLsn, ok := lsn.(*net.TCPListener); ok {
+			if err := tcpLsn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {
+				log.Printf("Setting deadline failed: %v", err)
+				return err
+			}
+		}
+
+		conn, err := lsn.Accept()
+		if err, ok := err.(*net.OpError); ok && err.Timeout() {
+			continue
+		}
+
+		if err != nil {
+			log.Printf("Error accepting: %v", err.Error())
+			return err
+		}
+
+		go srv.handleRequests(conn)
 	}
 
 	return nil
-
-	//	addr := fmt.Sprintf("%s:%d", cfg.AutomountHost, cfg.AutomountPort)
-	//	lsn, err := net.Listen("tcp", addr)
-	//	if err != nil {
-	//		log.Printf("Error listening: %v", err.Error())
-	//		return err
-	//	}
-	//
-	//	subCtx, cancel := context.WithCancel(ctx)
-	//
-	//	srv := &server{
-	//		Config:  cfg,
-	//		Context: subCtx,
-	//		Cancel:  cancel,
-	//	}
-	//
-	//	defer util.Closer(lsn)
-	//	log.Println("Listening on " + addr)
-	//
-	//	// Manually trigger a udevadm run after a few seconds:
-	//	go func() {
-	//		time.Sleep(2 * time.Second)
-	//		if err := exec.Command("udevadm", "trigger", "-c", "add").Run(); err != nil {
-	//			log.Printf("Failed to trigger udev: %v", err)
-	//		}
-	//	}()
-	//
-	//	for !cancelled(ctx) {
-	//		if tcpLsn, ok := lsn.(*net.TCPListener); ok {
-	//			if err := tcpLsn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {
-	//				log.Printf("Setting deadline failed: %v", err)
-	//				return err
-	//			}
-	//		}
-	//
-	//		conn, err := lsn.Accept()
-	//		if err, ok := err.(*net.OpError); ok && err.Timeout() {
-	//			continue
-	//		}
-	//
-	//		if err != nil {
-	//			log.Printf("Error accepting: %v", err.Error())
-	//			return err
-	//		}
-	//
-	//		go srv.handleRequests(conn)
-	//	}
-	//
-	//	return nil
 }
