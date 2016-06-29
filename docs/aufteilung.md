@@ -18,25 +18,26 @@ date: \today
 # Arbeitsaufteilung beim Kür--Projekt »Eulenfunk«
 
 Die Arbeit am Projekt »Eulenfunk« hat uns viel Spaß bereitet. Uns fällt es
-schwer eine eindeutige Abgrenzung der Aufgaben zu treffen, da alle drei
+jedoch schwer eine eindeutige Abgrenzung der Aufgaben zu treffen, da alle drei
 Teilnehmer mehr oder minder an allen Teilen des Projektes beteiligt waren und
 sich gegenseitig unterstützt haben. Aufgrund dieser Tatsache würden wir eine
 Gruppennote bevorzugen, wenn möglich.
 
-Grob gesagt lagen aber die Schwerpunkte wie folgt:
+Grob gesagt lagen die Schwerpunkte wie folgt:
 
-# Christoph Piechula 
+# Christoph Piechula  (``MN #944082``)
 
 - Entwurf und Bau der Hardware.
 - Dokumentation und Präsentation der Hardware.
 
-# Christopher Pahl
+# Christopher Pahl (``MN #944081``)
 
 - Konzeption und Implementierung der Software.
 - Dokumentation und Präsentation der Software.
-
-# Susanne Kießling
+ 
+# Susanne Kießling (``MN #948898``)
 
 - Usability und Interface Design.
 - Test und Validierung von Hard- und Software.
-- Dokumentation und Präsentation der Usability.
+- Dokumentation und Präsentation der Usability
+  und Teile von Hard- und Software.
