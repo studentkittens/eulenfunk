@@ -32,7 +32,7 @@
 
 body {
     background-color: #fdf6e3;
-    font-size: 150%;
+    font-size: 170%;
     font-family: Vollkorn, Verdana, Helvetica, Arial, sans-serif;
 }
 
@@ -43,13 +43,12 @@ div.heading h1 {
     margin-top: -42px;
 }
 
-
 div#first {
     font-family: Sketch, Verdana, Helvetica, Arial, sans-serif;
     font-size: 300%;
     font-style: normal;
+    text-align: center;
 }
-
 
 div#fin {
     text-align: center;
@@ -57,15 +56,21 @@ div#fin {
 
 .blocky {
     font-family: Sketch, Verdana, Helvetica, Arial, sans-serif;
-    font-size: 320%;
+    font-size: 210%;
     font-style: normal;
+    color: rgb(216,96,96);
+    text-align: center;
 }
 
 strong {
     font-family: Satisfy;
-    font-size: 110%;
+    font-size: 120%;
 }
 
 .underline {
     text-decoration: underline;
+}
+
+a {
+    color: rgb(216, 96, 96);
 }
