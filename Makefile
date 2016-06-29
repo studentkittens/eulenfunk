@@ -26,3 +26,6 @@ install: build
 
 doc:
 	cd docs/paper && $(MAKE) --no-print-directory
+
+slides:
+	cd docs/slides && $(MAKE) --no-print-directory

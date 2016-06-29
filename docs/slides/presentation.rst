@@ -19,7 +19,7 @@
 Projekt: **Eulenfunk**
 
 .. image:: ../paper/images/title.png
-   :width: 60%
+   :width: 45%
    :align: center
 
 ----
@@ -206,7 +206,10 @@ Projekt: **Eulenfunk**
 
 .. note:: 
 
-    * Bilderraetsel
+    * Bilderraetsel (Jeopardy)
+    * Moodbar utility: 1000 samples pro file.
+    * Vorberechnet, da ärmliche Performance.
+    * Frequenzen.
 
 .. image:: images/we-will-rock-you.png
    :width: 110%
@@ -226,8 +229,10 @@ Projekt: **Eulenfunk**
 
 .. note::
 
+    * Ich bin Schuld an der Software.
     * Hat dann doch mehr als 2 Wochen gedauert 
     * Sehr modular
+    * Playlisten von USB--Sticks
 
 .. image:: ../paper/images/eulenfunk-services.png
    :width: 100%
@@ -239,6 +244,7 @@ Projekt: **Eulenfunk**
 
     * Europaeische Variante des LCD.
     * Keine Encoding Tabelle gefunden, daher Abbildung
+    * Mapping von unicode 
     * in muehevoller Handarbeit erstellt
 
 :blocky:`Enkodierung`
@@ -253,7 +259,7 @@ Projekt: **Eulenfunk**
 
 .. note:: 
 
-    1. Playlisten von USB--Sticks
+    0. Minimales Bedienkonzept ähnlich Autoradio.
 
 .. image:: ../paper/images/hauptmenue.png
    :width: 100%
@@ -262,6 +268,11 @@ Projekt: **Eulenfunk**
 -----
 
 :blocky:`Demonstration`
+
+.. note:: 
+
+    1. Vorher einschalten und auf `If you have Ghosts gehen`
+    2. Pause und Schuhu spielen.
 
 .. image:: images/effekt.png
    :width: 100%
@@ -277,6 +288,7 @@ Projekt: **Eulenfunk**
     - Backfeed problem erklaeren
     - schwache hardware fuer visuelle Effekte
     - Go war gut, trotz fehlender Libraries.
+    - Bedienkonzept gut, trotz Skepsis von Elch.
 
 - Nur wenige Hardware Pins mit PWMs.
 - Strom/Spannungsversorgungsprobleme.
@@ -296,6 +308,13 @@ Projekt: **Eulenfunk**
 -----
 
 :blocky:`Schuhu (Ende)`
+
+.. note::
+
+    - Sehr eng im Gehäuse, Hitze.
+    - Softwareplus: Wettervorhersage, automount stabil, bootzeit.
+    - Design verschönern, labels für drehknöpfe, logo
+    * in memory alpine
 
 **Prototyp ist noch verbesserungswürdig:**
 
@@ -323,9 +342,7 @@ Projekt: **Eulenfunk**
 
 .. note::
 
-    BOOK!
-
-    If you really want to dive in Go, I can recommend those:
+   FRAGEN?
 
 :blocky:`Lust bekommen...`
 
