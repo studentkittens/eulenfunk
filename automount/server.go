@@ -64,8 +64,10 @@ func (srv *server) playlistFromDir(client *mpd.Client, label string) error {
 	//       (Also "find base <label>" would be easier than .GetFiles()
 	//        but the library really failed here too)
 	uris := []string{}
+	prefix := filepath.Join(mountSubDir, label)
 	for _, uri := range allUris {
-		if strings.HasPrefix(uri, label) {
+		log.Printf("Uri: %v %v", uri, prefix)
+		if strings.HasPrefix(uri, prefix) {
 			uris = append(uris, uri)
 		}
 	}
@@ -121,18 +123,32 @@ func (srv *server) waitFor(timeout time.Duration, events ...string) error {
 
 func (srv *server) updateDatabase(client *mpd.Client, label string) error {
 	subDir := filepath.Join(mountSubDir, label)
-	lastID, err := client.Update(subDir)
+
+	lastID, err := srv.getUpdateID(client)
 	if err != nil {
+		log.Printf("Getting initial status failed: %v", err)
 		return err
 	}
 
 	log.Printf("Updating MPD database with new songs (job: %d; dir: %v)", lastID, subDir)
+
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+
+		_, err := client.Update(subDir)
+		log.Printf("Sending update")
+		if err != nil {
+			log.Printf("Sending update failed: %v", err)
+			return
+		}
+	}()
 
 	for {
 		if err := srv.waitFor(15*time.Minute, "update"); err != nil {
 			return err
 		}
 
+		log.Printf("WaitFor done")
 		currID, err := srv.getUpdateID(client)
 		if err != nil {
 			return err
@@ -160,10 +176,20 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 
 	defer util.Closer(client)
 
-	if dbErr := srv.updateDatabase(client, label); dbErr != nil {
-		log.Printf("Updating MPD failed: %v", dbErr)
-		return dbErr
+	log.Printf("Running `mpc update -w`")
+	if err := runBinary("mpc", "update"); err != nil {
+		return err
 	}
+
+	// TODO: Remove this when updateDatabase() works again.
+	log.Printf("Sleeping 15s")
+	time.Sleep(15 * time.Second)
+
+
+	// if dbErr := srv.updateDatabase(client, label); dbErr != nil {
+	// 	log.Printf("Updating MPD failed: %v", dbErr)
+	// 	return dbErr
+	// }
 
 	playlists, err := client.ListPlaylists()
 	if err != nil {
@@ -174,13 +200,15 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 	for _, playlist := range playlists {
 		if playlist["playlist"] == playlistName {
 			if err := client.PlaylistClear(playlistName); err != nil {
-				return err
+				log.Printf("Failed to clear pl %s: %v", playlistName, err)
+				//return err
 			}
 
 			break
 		}
 	}
 
+	log.Printf("Creating playlist from %s...", label)
 	return srv.playlistFromDir(client, label)
 }
 
@@ -195,7 +223,7 @@ func (srv *server) mount(device, label string) error {
 		return err
 	}
 
-	if err := srv.mountToPlaylist(destPath, playlistNameFromLabel(label)); err != nil {
+	if err := srv.mountToPlaylist(destPath, label); err != nil {
 		return err
 	}
 
