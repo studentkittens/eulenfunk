@@ -64,8 +64,10 @@ func (srv *server) playlistFromDir(client *mpd.Client, label string) error {
 	//       (Also "find base <label>" would be easier than .GetFiles()
 	//        but the library really failed here too)
 	uris := []string{}
+	prefix := filepath.Join(mountSubDir, label)
 	for _, uri := range allUris {
-		if strings.HasPrefix(uri, label) {
+		log.Printf("Uri: %v %v", uri, prefix)
+		if strings.HasPrefix(uri, prefix) {
 			uris = append(uris, uri)
 		}
 	}
@@ -180,7 +182,9 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 	}
 
 	// TODO: Remove this when updateDatabase() works again.
-	time.Sleep(10 * time.Second)
+	log.Printf("Sleeping 15s")
+	time.Sleep(15 * time.Second)
+
 
 	// if dbErr := srv.updateDatabase(client, label); dbErr != nil {
 	// 	log.Printf("Updating MPD failed: %v", dbErr)
@@ -196,13 +200,15 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 	for _, playlist := range playlists {
 		if playlist["playlist"] == playlistName {
 			if err := client.PlaylistClear(playlistName); err != nil {
-				return err
+				log.Printf("Failed to clear pl %s: %v", playlistName, err)
+				//return err
 			}
 
 			break
 		}
 	}
 
+	log.Printf("Creating playlist from %s...", label)
 	return srv.playlistFromDir(client, label)
 }
 
@@ -217,7 +223,7 @@ func (srv *server) mount(device, label string) error {
 		return err
 	}
 
-	if err := srv.mountToPlaylist(destPath, playlistNameFromLabel(label)); err != nil {
+	if err := srv.mountToPlaylist(destPath, label); err != nil {
 		return err
 	}
 
