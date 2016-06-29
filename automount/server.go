@@ -175,9 +175,12 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 	defer util.Closer(client)
 
 	log.Printf("Running `mpc update -w`")
-	if err := runBinary("mpc", "update", "-w"); err != nil {
+	if err := runBinary("mpc", "update"); err != nil {
 		return err
 	}
+
+	// TODO: Remove this when updateDatabase() works again.
+	time.Sleep(10 * time.Second)
 
 	// if dbErr := srv.updateDatabase(client, label); dbErr != nil {
 	// 	log.Printf("Updating MPD failed: %v", dbErr)
