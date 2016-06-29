@@ -30,17 +30,12 @@ hardwareseitigen Arbeiten nach bestem Grundlagenwissen umgesetzt.
 
 ## Namensgebung
 
-Der Name des Projektes ist \frqq\texttt{Eulenfunk}\flqq. Die Bezeichnung der
-Eule wurde analog zum Tierreich gewählt, da die *Eule* hier als Vogel aufgrund
-ihrer Erkennungsmerkmale von anderen Vögeln in der Regel als *Fressfeind*[^EULE]
-klassifiziert wird. Analog dazu ist ein *Do--It--Yourself*--Internetradio ---
-welches je nach Konfiguration, im Vergleich zu einem *Closed--Source*--Produkt,
-günstiger und mit mehr Funktionalität ausgestattet werden kann ---
-möglicherweise ein Dorn im Auge kommerzieller Internet--Radio--Anbieter.
-
-ELCH: Wieso sollte das ein Dorn im Auge von Anbietern sein? Der Absatz ist arg
-      an den Haaren herbei gezogen... kann man da eine alternative erklärung
-      finden? Und ja ich weiß, dass es witzig sein soll.
+Der Name des Projektes ist \frqq\texttt{Eulenfunk}\flqq. Passend erschien uns
+dieser Name, weil er mit dem Spitznamen einer der Autoren zu tun hat. Auch sind
+unserer Meinung nach Eulen sehr faszinierende Tiere, die durch eine gewisse
+optische Ästhetik und interessante, manchmal verwirrende, Verhaltensstrukturen
+auffallen. Der Suffix »-funk« verleiht dem Name zudem durchaus etwas
+majestätisches.
 
 ## Zielsetzung 
 

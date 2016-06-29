@@ -66,7 +66,6 @@ func (srv *server) playlistFromDir(client *mpd.Client, label string) error {
 	uris := []string{}
 	prefix := filepath.Join(mountSubDir, label)
 	for _, uri := range allUris {
-		log.Printf("Uri: %v %v", uri, prefix)
 		if strings.HasPrefix(uri, prefix) {
 			uris = append(uris, uri)
 		}
@@ -176,20 +175,10 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 
 	defer util.Closer(client)
 
-	log.Printf("Running `mpc update -w`")
-	if err := runBinary("mpc", "update"); err != nil {
-		return err
+	if dbErr := srv.updateDatabase(client, label); dbErr != nil {
+		log.Printf("Updating MPD failed: %v", dbErr)
+		return dbErr
 	}
-
-	// TODO: Remove this when updateDatabase() works again.
-	log.Printf("Sleeping 15s")
-	time.Sleep(15 * time.Second)
-
-
-	// if dbErr := srv.updateDatabase(client, label); dbErr != nil {
-	// 	log.Printf("Updating MPD failed: %v", dbErr)
-	// 	return dbErr
-	// }
 
 	playlists, err := client.ListPlaylists()
 	if err != nil {
@@ -200,15 +189,13 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 	for _, playlist := range playlists {
 		if playlist["playlist"] == playlistName {
 			if err := client.PlaylistClear(playlistName); err != nil {
-				log.Printf("Failed to clear pl %s: %v", playlistName, err)
-				//return err
+				return err
 			}
 
 			break
 		}
 	}
 
-	log.Printf("Creating playlist from %s...", label)
 	return srv.playlistFromDir(client, label)
 }
 
@@ -223,7 +210,7 @@ func (srv *server) mount(device, label string) error {
 		return err
 	}
 
-	if err := srv.mountToPlaylist(destPath, label); err != nil {
+	if err := srv.mountToPlaylist(destPath, playlistNameFromLabel(label)); err != nil {
 		return err
 	}
 
