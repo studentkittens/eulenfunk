@@ -907,7 +907,7 @@ eingehängt. Dazu wurde in ``/etc/fstab`` ein Eintrag hinzugefügt[^SSHFS_FSTAB]
 Verbindung mit ``systemd`` bewirkt, dass beim Zugriff auf das Musikverzeichnis
 der Mount automatisch eingehängt wird.
 
-[^SSHFS_FSTAB]: Siehe dazu: \url{https://wiki.archlinux.org/index.php/SSHFS#On_demand}
+[^SSHFS_FSTAB]: Siehe dazu: \url{https://wiki.archlinux.org/index.php/SSHFS\#On\_demand}
 
 ### ``systemd`` -- Start und Status von Diensten
 

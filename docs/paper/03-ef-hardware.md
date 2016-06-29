@@ -176,8 +176,6 @@ schwachen beziehungsweise unzureichenden Darstellungskontrast, weswegen der 5V
 Betrieb gewählt wurde. Zudem wurde an *Pin3* (LCD) ein 100$\Omega$ Potentiometer
 hinzugefügt. Dies ermöglicht den Kontrast variabel einzustellen.
 
-ELCH: Was heißt "Die GPIO--Pins werden nicht schreibend benutzt"?
-
 Die Hintergrundbeleuchtung des Displays wurde direkt über ein Potentiometer mit
 2K$\Omega$ an die 5V Spannungsversorgung angeschlossen. Es wurde hier die
 direkte Speisung vom Netzteil gewählt, um den GPIO--Header nicht unnötig zu belasten.
@@ -366,7 +364,7 @@ $$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{200\mu
   \label{transled}
 \end{figure}
 
-Damit der Transistor jedoch *sicher*[^SICHER] durchschaltet, werden Wiederstände mit $10k
+Damit der Transistor jedoch *sicher* durchschaltet, werden Wiederstände mit $10k
 \Omega$ verwendet. Die in Abbildung \ref{transled} gelisteten
 LED--Vorwiderstände ergeben sich aufgrund der verschiedenen Spannungen der
 unterschiedlichen Farben[^RGBGP]. Die Berechnung für den Vorwiderstand pro LED
@@ -377,8 +375,6 @@ $$R_{LED} = \frac{U_{Betriebsspannung} - U_{LED}}{I_{LED}} = \frac{5V - 3,15V}{2
 
 Analog errechnet sich für die Farbe rot ein Vorwiderstand von $145\Omega$ und für grün
 ein Vorwiderstand von $87\Omega$.
-
-[^SICHER]: In diesem Kontext: Volle und nicht nur teilweise Durchschaltung.
 
 ## USB--Hub und Netzteil
 
