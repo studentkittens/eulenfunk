@@ -19,7 +19,7 @@ der einzelnen Komponenten.
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.7\textwidth]{images/uebersicht.png}
+  \includegraphics[width=0.8\textwidth]{images/uebersicht.png}
   \caption{Grobe Übersicht der verwendeten Komponenten im Zusammenspiel}
   \label{uebersicht}
 \end{figure}
@@ -184,7 +184,8 @@ Laut Datenblatt kann die Hintergrundbeleuchtung entweder mit 3.4V ohne
 Vorwiderstand oder mit 5V bei einem 27$\Omega$ Widerstand betrieben werden. Damit das
 Display beim herunter geregeltem Potentiometer keinen Schaden nimmt, wurden
 zusätzlich zwei Widerstände mit 100$\Omega$ (parallel geschaltet = 50$\Omega$) zwischen Display
-und Potentiometer gehängt.
+und Potentiometer gehängt. Abbildung \ref{lcd} zeigt die Verdrahtung des LCD mit
+dem *Raspberry Pi*.
 
 Der resultierende Gesamtwiderstand ohne Potentiometer beträgt in diesem Fall
 $\approx$ 50 $\Omega$:
@@ -359,7 +360,7 @@ $$R_{Basis} = \frac{U_{GPIO} - U_{Basis}}{I_{Basis}} = \frac{3,3V - 0,7V}{200\mu
 
 \begin{figure}[h!]
   \centering
-\includegraphics[width=0.9\textwidth]{images/transistorled.png}
+\includegraphics[width=1\textwidth]{images/transistorled.png}
   \caption{Transistor--RGB--LED Schaltung}
   \label{transled}
 \end{figure}
@@ -409,7 +410,6 @@ führen bei Lastspitzen zu Problemen (Abstürze, fehlerhaftes Rendering auf
 Display, GPIO--Flips, et cetera). Das *backfeed* des USB--Hubs scheint die
 genannten Probleme teilweise zu verstärken (vgl . [@suehle2014hacks], Seite 27).
 
-\newpage
 
 ## Gehäuse
 
@@ -481,6 +481,8 @@ eine Profil--basierte Konfigurationsmöglichkeit. Ein Profil kann über das
 *ncurses*--basierte Tool `wifi-menu` erstellt werden. In unserem Fall wurde das
 Profil `wlan0-Phobos` erstellt. Anschließend kann das erstellte Profil mit
 *netctl* verwendet werden. 
+
+\newpage 
 
 **Auflistung der bekannten Profile**
 

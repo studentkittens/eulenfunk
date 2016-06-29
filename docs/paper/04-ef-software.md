@@ -302,7 +302,8 @@ ausgegeben werden. Hat er alle 256 Zeichen ausgegeben beendet er sich. Optional
 kann man auch ein Start- und End--Offset mitgeben, an dem er das Zeichnen
 anfangen soll.
 
-Der Treiber unterstützt eine Reihe hardkodierter Spezialzeichen, welche in der
+Der Treiber unterstützt eine Reihe hardkodierter Spezialzeichen (siehe Abbildung
+\ref{eulenfunk-symbols}), welche in der
 Menüführung und der UI benutzt werden. Das LCD unterstützt dabei 8
 verschiedene *Custom Chars*, welche mittels der Codepoints 0-7 und 8-15
 (wiederholt) setzbar sind. Momentan sind diese auf folgende Glyphen gesetzt:
