@@ -902,6 +902,12 @@ Authentifizierung) zugreifbar sind. Auch wenn *Eulenfunk* normal in einem
 abgesicherten WLAN hängt, wurde für die beiden Dienste jeweils ein eigener
 Nutzer mit eingeschränkten Rechten und ``/bin/false`` als Login--Shell angelegt.
 
+Im täglichen Betrieb wird die Musik von einem anderen Rechner via ``sshfs``
+eingehängt. Dazu wurde in ``/etc/fstab`` ein Eintrag hinzugefügt[^SSHFS_FSTAB], der in
+Verbindung mit ``systemd`` bewirkt, dass beim Zugriff auf das Musikverzeichnis
+der Mount automatisch eingehängt wird.
+
+[^SSHFS_FSTAB]: Siehe dazu: \url{https://wiki.archlinux.org/index.php/SSHFS#On_demand}
 
 ### ``systemd`` -- Start und Status von Diensten
 
