@@ -1,6 +1,6 @@
 # Hardware
 
-## Hardwareanforderungen
+## Anforderungen
 
 Das Radio soll dem Benutzer folgende Hardwarekonfigurationsmöglichkeiten bieten:
 
@@ -40,13 +40,13 @@ noch erworben werden:
 
 **Mussten noch erworben werden:**
 
-* Audioverstärker (6 Euro)
-* Drehimpulsregler (3 Euro)
-* Kunststoffabdeckung für Front (0)
+* Audioverstärker (6 \EUR)
+* Drehimpulsgeber (3 \EUR)
+* Kunststoffabdeckung für Front  (0 \EUR)
 * Farbe (Lack) (5 Euro)
-* Drehknöpfe für das Gehäuse (2 Euro)
-* Schrumpfschläuche (1 Euro)
-* Kippschalter (6 Euro)
+* Drehknöpfe für das Gehäuse (2 \EUR)
+* Schrumpfschläuche (1 \EUR)
+* Kippschalter (6 \EUR)
 
 Insgesamt wurden für das Projekt ca. 23 Euro ausgegeben.
 
@@ -430,13 +430,13 @@ Das Plexiglas für die Front wurde von der Firma *ira-Kunststoffe* in
 Schwarzenbach/Saale zugeschnitten. In der Plexiglasfront wurden mit Hilfe von
 Herrn Schäferling zwei 5mm Löcher (Drehimpulsgeber, Lautstärkeregler--Poti)
 gebohrt. Anschließend wurde die Plexiglas--Front von der Innenseite
-lackiert[^LACK], hierbei wurden die Flächen für LCD und die drei LEDs abgelebt.
+lackiert[^LACK], hierbei wurden die Flächen für LCD und die drei LEDs abgeklebt.
 Zudem werden schwarze Knöpfe in Alu--Optik mit $\diameter$ 30mm  für den
 Lautstärkeregler und den Drehimpulsgeber verwendet.
 
-### Hinterseite
+### Rückseite
 
-Für die Hinterseite wird die alte Abdeckung des AEG--Radios verwendet. Diese
+Für die Rückseite wird die alte Abdeckung des AEG--Radios verwendet. Diese
 musste teilweise leicht modifiziert werden. An dieser befinden sich zwei Potis
 für Kontrastregelung und Hintergrundbeleuchtung des LCD, eine
 USB--Female--Kabelpeitsche, zwei Cinch Stecker für externe Lautsprecher und ein
@@ -448,7 +448,7 @@ Kippschalter zum Umschalten zwischen internen und externen Lautsprechern.
 ## Betriebssystem
 
 Mittlerweile gibt es für den *Raspberry Pi* viele offiziell zugeschnittene
-Betriebssysteme (vgl. [@pietraszak2014buch], Seite 29 ff., [@warner2013hacking],
+Betriebssysteme (vgl. [@pietraszak2014buch], Seite 29 ff. und [@warner2013hacking],
 Seite 47 ff.). Bei den Linux--Distributionen ist *Raspbian* eine der bekanntesten Distribution -- welche auf
 *Debian* basiert. *Raspbian* bringt ein komplettes Linux--basiertes System mit
 grafischer Benutzeroberfläche mit sich. 
@@ -511,4 +511,95 @@ mit dem Profil `wlan0-Phobos`.
 [^ARCH]: Arch Linux ARM: \url{https://archlinuxarm.org/}
 [^INSTALL]: Arch Linux Installation für Raspberry Pi: https://archlinuxarm.org/platforms/armv6/raspberry-pi#installation
 
+## Erweiterungen und alternative Ansätze
+
+### Allgemein
+
+Der aktuelle Prototyp hat lediglich nur ein Potentiometer um die Hintergrundbeleuchtung
+des LCD zu regeln. Ein anderer Ansatz wäre der Einsatz eines Relais, welches es
+ermöglichen würde die LCD--Hintergrundbeleuchtung Software--seitig ein-- und auszuschalten.
+Die Software könnte dann automatisch nach längerer Inaktivtät die Beleuchtung dimmen.
+
+\label{internal-audio-vis}
+
+### Audio--Visualisierung
+
+Beim Projekt *Eulenfunk* wird die Visualisierung von Musik aufgrund der
+begrenzten Zeit und Hardwareressourcen des *Raspberry Pi *über eine
+vorberechnete Moodbar--Datei realisiert. Dieser Ansatz funktioniert bei nicht
+live gestreamter Musik gut. Bei live gestreamter Musik könnte für die
+Visualisierung eine Fast--Fourier--Transformation in Echtzeit durchgeführt
+werden. Da jedoch die Ressourcen des *Raspberry Pi* sehr begrenzt sind, sollte hier
+auf die Verwendung einer GPU--beschleunigten--FFT zurückgegriffen werden
+(vgl. [@Sabarinath2015], Seite 657 ff.).
+
+Ein alternativer Ansatz wäre auch die Realisierung einer Musik--Visualisierung
+mittels Hardwarekomponenten. Ein möglicher Ansatz aus Hardware--basierten
+Hochpass-- und Tiefpassfiltern in Form einer Disco--Beleuchtung wird unter
+[@2014projekte], Seite 261 ff. beschrieben.
+
+### Echtzeituhr
+
+Der *Raspberry Pi* besitzt keine Hardware--Uhr. Aufgrund der Tatsache, dass es
+sich bei *Eulenfunk* um ein Internetradio handelt wurde auf eine Echtzeituhr
+(real time clock, RTC) verzichtet, da sich die Uhr von *Eulenfunk* aufgrund der
+permanenten Internetverbindung mittels NTP[^NTP] über das Internet
+synchronisieren kann. Eine Erweiterung um eine Echtzeituhr wird in
+[@horan2013practical], Seite 145 ff. und [@gay2014experimenting], Seite 77 ff. ausführlich beschrieben.
+Mit einer RTC wäre die Implementierung einer Weckerfunktion möglich, welche
+das Radio gezielt zu einer bestimmten Uhrzeit aufweckt und Musik abspielt.
+
+### Fernbedienung
+
+Eine weitere Erweiterung wäre die Integration einer Fernbedienung. Diese ließe
+sich relativ einfach mittels eines Infrarot--Sensors und beispielsweise der
+*lirc*--Bibliothek umsetzen. Siehe auch [@warner2013hacking], Seite 190 ff. für
+weitere Informationen.
+
+### Batteriebetrieb
+
+Da die Strom-- beziehungsweise Spannungsversorgung beim *Raspberry Pi*
+problematisch ist, wäre auch ein Batterie-- beziehungsweise Akkubetrieb möglich.
+Eine einfache Schaltung für einen Batteriebetrieb würde sich beispielsweise mit
+einem *LM7805*--Spannungsregler oder einem Abwärtswandler realisieren lassen
+([vgl. @gay2014mastering], Seite 24 ff.). 
+
+[^NTP]: Network Time Protocol:
+\url{https://de.wikipedia.org/wiki/Network_Time_Protocol}
+
+### Wettervorhersage
+
+Eine praktische Erweiterung von *Eulenfunk* wäre die Anzeige der
+Wettervorhersage für den aktuellen und die nächsten Tage. Oft wäre eine
+entsprechende Information nützlich, um beispielsweise die Durchführung einer
+Radtour zu planen oder ob man trockenen Fußes einkaufen gehen kann. Die Daten
+könnte dabei von Online--APIs wie OpenWeatherMap[^OWM] geholt werden. Der Zugang
+ist dort kostenlos, aber auf 60 Anfragen pro Minute limitiert.
+
+[^OWM]: Mehr Informationen unter: \url{http://www.openweathermap.org/}
+
+
+## Fazit 
+
+Grundsätzlich kann der Hardware--Prototyp als erfolgreich umgesetzt betrachtet werden.
+Die geplanten Anforderungen an die Hardware konnten soweit alle umgesetzt
+werden. Jedoch sollte gesagt werden, dass das Netzteil und der USB--Hub --- wie
+bereits im  jeweiligem Kapitel erläutert --- aktuell ein eher instabiles
+Verhalten aufweisen. Hier ist noch eine Umstellung auf einen besseren USB--Hub
+(und Netzteil mit 5V, 3A) ohne *backfeed* nötig.
+
+[^PIHUB]: Spezieller USB--Hub für den Raspberry Pi: \url{https://www.raspberrypi.org/blog/pihub-a-robust-powered-hub-for-your-pi/}
+
+Auf der Seite des Betriebssystems wäre die relativ junge Linux--Distribution
+*Alpine Linux*[^APL] eine mögliche Verbesserung für den Einsatzzweck
+Internetradio. Diese Distribution hat ihren Fokus auf Ressourceneffizienz und
+Systemsicherheit. Ein weiterer Vorteil wäre der `diskless mode`, welcher das
+komplette Betriebssystem in den Arbeitsspeicher lädt. In diesem Modus müssen
+Änderungen mit einem *Alpine Local Backup (lbu)*--Tool explizit auf die
+Festplatte geschrieben werden. Das hätte den Vorteil, dass man die Abnutzung des
+Flash--Speichers, durch unnötige Schreib/Lese--Vorgänge, minimieren würde.
+Momentan unterstützt diese Distribution allerdings noch nicht das von uns
+favorisierte ``systemd``.
+
+[^APL]: Alpine Linux für Raspberry Pi: \url{https://wiki.alpinelinux.org/wiki/Raspberry_Pi}
 \label{internal-software-anforderungen}

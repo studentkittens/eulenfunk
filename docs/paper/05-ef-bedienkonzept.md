@@ -2,7 +2,7 @@
 
 \label{internal-owl-chapter}
 
-## Optik-- und Usability--Anforderungen
+## Anforderungen
 
 Die Eingabe--Peripherie soll möglichst einfach gehalten werden, um eine *schöne*
 Produkt--Optik zu gewährleisten, dabei sollen folgende Anforderungen erfüllt
