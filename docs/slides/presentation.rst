@@ -314,7 +314,7 @@ Projekt: **Eulenfunk**
     - Sehr eng im Gehäuse, Hitze.
     - Softwareplus: Wettervorhersage, automount stabil, bootzeit.
     - Design verschönern, labels für drehknöpfe, logo
-    * in memory alpine
+    - in memory alpine
 
 **Prototyp ist noch verbesserungswürdig:**
 
