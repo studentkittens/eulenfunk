@@ -1060,3 +1060,15 @@ funktioniert, gibt es natürlich noch Verbesserungspotenzial:
   Der aktuelle Plot kann online auf GitHub eingesehen werden[^BOOT-PLOT].
 
 [^BOOT-PLOT]: \url{https://github.com/studentkittens/eulenfunk/blob/master/docs/paper/images/boot-plot.svg}
+
+### Wettervorhersage
+
+Eine praktische Erweiterung von *Eulenfunk* wäre die Anzeige der
+Wettervorhersage für den aktuellen und die nächsten Tage. Oft wäre eine
+entsprechende Information nützlich, um beispielsweise die Durchführung einer
+Radtour zu planen oder ob man trockenen Fußes einkaufen gehen kann. Die Daten
+könnte dabei von Online--APIs wie OpenWeatherMap[^OWM] geholt werden. Der Zugang
+ist dort kostenlos, aber auf 60 Anfragen pro Minute limitiert.
+
+[^OWM]: Mehr Informationen unter: \url{http://www.openweathermap.org/}
+

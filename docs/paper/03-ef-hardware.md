@@ -567,18 +567,6 @@ einem *LM7805*--Spannungsregler oder einem Abwärtswandler realisieren lassen
 [^NTP]: Network Time Protocol:
 \url{https://de.wikipedia.org/wiki/Network_Time_Protocol}
 
-### Wettervorhersage
-
-Eine praktische Erweiterung von *Eulenfunk* wäre die Anzeige der
-Wettervorhersage für den aktuellen und die nächsten Tage. Oft wäre eine
-entsprechende Information nützlich, um beispielsweise die Durchführung einer
-Radtour zu planen oder ob man trockenen Fußes einkaufen gehen kann. Die Daten
-könnte dabei von Online--APIs wie OpenWeatherMap[^OWM] geholt werden. Der Zugang
-ist dort kostenlos, aber auf 60 Anfragen pro Minute limitiert.
-
-[^OWM]: Mehr Informationen unter: \url{http://www.openweathermap.org/}
-
-
 ## Fazit 
 
 Grundsätzlich kann der Hardware--Prototyp als erfolgreich umgesetzt betrachtet werden.
