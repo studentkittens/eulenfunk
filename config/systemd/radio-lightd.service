@@ -1,9 +1,0 @@
-[Unit]
-Description=LED locking and effect service
-
-[Service]
-ExecStart=/root/go/bin/eulenfunk lightd --driver radio-led
-Restart=on-failure
-
-[Install]
-WantedBy=default.target
