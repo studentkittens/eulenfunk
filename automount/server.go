@@ -100,6 +100,8 @@ func (srv *server) getUpdateID(client *mpd.Client) (int, error) {
 
 func (srv *server) waitFor(timeout time.Duration, events ...string) error {
 	addr := fmt.Sprintf("%s:%d", srv.Config.MPDHost, srv.Config.MPDPort)
+	log.Printf("Waiting for %v of %s", events, addr)
+
 	watcher, err := mpd.NewWatcher("tcp", addr, "", events...)
 	if err != nil {
 		return err
@@ -118,12 +120,13 @@ func (srv *server) waitFor(timeout time.Duration, events ...string) error {
 }
 
 func (srv *server) updateDatabase(client *mpd.Client, label string) error {
-	lastID, err := client.Update(label)
+	subDir := filepath.Join(mountSubDir, label)
+	lastID, err := client.Update(subDir)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Updating MPD database with new songs (job: %d)", lastID)
+	log.Printf("Updating MPD database with new songs (job: %d; dir: %v)", lastID, subDir)
 
 	for {
 		if err := srv.waitFor(15*time.Minute, "update"); err != nil {
@@ -157,9 +160,7 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 
 	defer util.Closer(client)
 
-	playlistName := playlistNameFromLabel(label)
-
-	if dbErr := srv.updateDatabase(client, filepath.Join(mountSubDir, label)); dbErr != nil {
+	if dbErr := srv.updateDatabase(client, label); dbErr != nil {
 		log.Printf("Updating MPD failed: %v", dbErr)
 		return dbErr
 	}
@@ -169,6 +170,7 @@ func (srv *server) mountToPlaylist(destPath, label string) error {
 		return err
 	}
 
+	playlistName := playlistNameFromLabel(label)
 	for _, playlist := range playlists {
 		if playlist["playlist"] == playlistName {
 			if err := client.PlaylistClear(playlistName); err != nil {
