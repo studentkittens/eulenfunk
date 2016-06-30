@@ -155,7 +155,7 @@ int main(void) {
         // Sleep for a short amount to save cpu-time:
         struct timespec delay = {
             .tv_sec = 0,
-            .tv_nsec = 1000 * 1000 * 50,
+            .tv_nsec = 1000 * 1000 * 25,
         };
 
         nanosleep(&delay, NULL);
