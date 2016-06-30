@@ -18,7 +18,7 @@
 
 Projekt: **Eulenfunk**
 
-.. image:: ../paper/images/title.png
+.. image:: images/title.png
    :width: 45%
    :align: center
 
@@ -196,7 +196,7 @@ Projekt: **Eulenfunk**
 
 :blocky:`Die Hardware`
 
-.. image:: ../paper/images/uebersicht.png
+.. image:: images/uebersicht.png
    :width: 90%
    :align: right
 
@@ -234,7 +234,7 @@ Projekt: **Eulenfunk**
     * Sehr modular
     * Playlisten von USB--Sticks
 
-.. image:: ../paper/images/eulenfunk-services.png
+.. image:: images/eulenfunk-services.png
    :width: 100%
    :align: right
 
@@ -249,7 +249,7 @@ Projekt: **Eulenfunk**
 
 :blocky:`Enkodierung`
 
-.. image:: ../paper/images/encoding.png
+.. image:: images/encoding.png
    :width: 100%
    :align: right
 
@@ -261,7 +261,7 @@ Projekt: **Eulenfunk**
 
     0. Minimales Bedienkonzept ähnlich Autoradio.
 
-.. image:: ../paper/images/hauptmenue.png
+.. image:: images/hauptmenue.png
    :width: 100%
    :align: center
 
