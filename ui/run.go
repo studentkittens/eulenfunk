@@ -307,6 +307,10 @@ func createMainMenu(mgr *MenuManager, MPD *mpd.Client) error {
 			ActionFunc: switcher(mgr, "clock"),
 		},
 		&ClickEntry{
+			Text:       "Weather",
+			ActionFunc: switcher(mgr, "weather"),
+		},
+		&ClickEntry{
 			Text:       "Statistics",
 			ActionFunc: switcher(mgr, "stats"),
 		},
@@ -465,6 +469,7 @@ func Run(cfg *Config, ctx context.Context) error {
 	go MPD.Run()
 	go RunClock(lw, cfg.Width, ctx)
 	go RunSysinfo(lw, cfg.Width, ctx)
+	go RunWeather(lw, cfg.Width, ctx)
 
 	if err := createMainMenu(mgr, MPD); err != nil {
 		return err
