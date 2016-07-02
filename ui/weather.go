@@ -84,7 +84,7 @@ func toScreen(w *owm.ForecastWeatherData, p *owm.ForecastWeatherList, dayOff, wi
 	stats := fmt.Sprintf(
 		"R%5.1f%% %2d%% %s%4.1fm/s",
 		p.Rain,
-		p.Humidity,
+		humidity,
 		degToDirection(p.Deg),
 		p.Speed,
 	)
@@ -105,30 +105,56 @@ func toScreen(w *owm.ForecastWeatherData, p *owm.ForecastWeatherList, dayOff, wi
 	}
 }
 
-// RunClock displays the current time in the "clock" window.
+func errorScreen(width int) [][]string {
+	return [][]string{{
+		strings.Repeat("=", 20),
+		"Sorry, no weather today.",
+		"Please see the log.",
+		strings.Repeat("=", 20),
+	}}
+}
+
+func downloadData(width int) [][]string {
+	w, err := weatherForecast()
+	if err != nil {
+		log.Printf("Failed to retrieve forecast: %v", err)
+		return errorScreen(width)
+	}
+
+	screens := [][]string{}
+	for dayOff, p := range w.List {
+		screens = append(screens, toScreen(w, &p, dayOff, width))
+	}
+
+	return screens
+}
+
+// RunWeather displays a weather forecast in the "weather" window.
 func RunWeather(lw *display.LineWriter, width int, ctx context.Context) {
+	switchTicker := time.NewTicker(10 * time.Second)
+	updateTicker := time.NewTicker(10 * time.Minute)
+
+	screens := downloadData(width)
+	screenIdx := 0
+
 	for {
 		select {
+		// Generate the data:
+		case <-updateTicker.C:
+			screens = downloadData(width)
+		// Watch for aborts:
 		case <-ctx.Done():
 			return
-		default:
-		}
-
-		w, err := weatherForecast()
-		if err != nil {
-			log.Printf("Failed to get forecast: %v", err)
-			lw.Line("weather", 0, strings.Repeat("=", width))
-			lw.Line("weather", 1, "Sorry, no weather today.")
-			lw.Line("weather", 2, "Please see the log.")
-			lw.Line("weather", 3, strings.Repeat("=", width))
-		} else {
-			for dayOff, p := range w.List {
-				for idx, line := range toScreen(w, &p, dayOff, width) {
-					lw.Line("weather", idx, line)
+		// Toggle through:
+		case <-switchTicker.C:
+			currScreen := screens[screenIdx]
+			for idx, line := range currScreen {
+				if err := lw.Line("weather", idx, line); err != nil {
+					log.Printf("Failed to display weather widget: %v", err)
 				}
 			}
-		}
 
-		time.Sleep(15 * time.Minute)
+			screenIdx = (screenIdx + 1) % len(screens)
+		}
 	}
 }
