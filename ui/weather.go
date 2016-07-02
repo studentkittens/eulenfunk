@@ -40,6 +40,7 @@ func degToDirection(deg int) string {
 func weatherForecast() (*owm.ForecastWeatherData, error) {
 	w, err := owm.NewForecast("C", "DE")
 	if err != nil {
+		log.Printf("Failed to instance new forecast: %v", err)
 		return nil, err
 	}
 
@@ -52,10 +53,11 @@ func weatherForecast() (*owm.ForecastWeatherData, error) {
 	)
 
 	if err != nil {
+		fmt.Printf("Failed to download by coordinate")
 		return nil, err
 	}
 
-	return w, err
+	return w, nil
 }
 
 func toScreen(w *owm.ForecastWeatherData, p *owm.ForecastWeatherList, dayOff, width int) []string {
@@ -108,10 +110,10 @@ func toScreen(w *owm.ForecastWeatherData, p *owm.ForecastWeatherList, dayOff, wi
 
 func errorScreen(width int) [][]string {
 	return [][]string{{
-		strings.Repeat("=", 20),
-		"Sorry, no weather today.",
+		strings.Repeat("=", width),
+		"Sorry, no weather...",
 		"Please see the log.",
-		strings.Repeat("=", 20),
+		strings.Repeat("=", width),
 	}}
 }
 
@@ -130,6 +132,16 @@ func downloadData(width int) [][]string {
 	return screens
 }
 
+func displayWeather(lw *display.LineWriter, screen []string) {
+	for idx, line := range screen {
+		if err := lw.Line("weather", idx, line); err != nil {
+			log.Printf("Failed to display weather widget: %v", err)
+		}
+
+		log.Printf("weather: %02d: %s", idx, line)
+	}
+}
+
 func init() {
 	// The OWM API is a bit weird:
 	// They expect the API Key in the OWM_API_KEY env var.
@@ -146,24 +158,25 @@ func RunWeather(lw *display.LineWriter, width int, ctx context.Context) {
 	screens := downloadData(width)
 	screenIdx := 0
 
+	if len(screens) > 0 {
+		displayWeather(lw, screens[0])
+	}
+
 	for {
 		select {
 		// Generate the data:
 		case <-updateTicker.C:
 			screens = downloadData(width)
+		// Toggle through:
+		case <-switchTicker.C:
+			if screenIdx < len(screens) {
+				displayWeather(lw, screens[screenIdx])
+				screenIdx = (screenIdx + 1) % len(screens)
+			}
+
 		// Watch for aborts:
 		case <-ctx.Done():
 			return
-		// Toggle through:
-		case <-switchTicker.C:
-			currScreen := screens[screenIdx]
-			for idx, line := range currScreen {
-				if err := lw.Line("weather", idx, line); err != nil {
-					log.Printf("Failed to display weather widget: %v", err)
-				}
-			}
-
-			screenIdx = (screenIdx + 1) % len(screens)
 		}
 	}
 }
