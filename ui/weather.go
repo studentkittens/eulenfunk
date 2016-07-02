@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -39,7 +40,7 @@ func degToDirection(deg int) string {
 func weatherForecast() (*owm.ForecastWeatherData, error) {
 	w, err := owm.NewForecast("C", "DE")
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
 
 	err = w.DailyByCoordinates(
@@ -127,6 +128,14 @@ func downloadData(width int) [][]string {
 	}
 
 	return screens
+}
+
+func init() {
+	// The OWM API is a bit weird:
+	// They expect the API Key in the OWM_API_KEY env var.
+	if err := os.Setenv("OWM_API_KEY", "7e8a8d42af13c734b8960a714e966c5c"); err != nil {
+		log.Printf("Failed to set OWM_API_KEY env var (huh?): %v", err)
+	}
 }
 
 // RunWeather displays a weather forecast in the "weather" window.
