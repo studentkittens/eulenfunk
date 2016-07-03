@@ -123,27 +123,23 @@ func (srv *server) waitFor(timeout time.Duration, events ...string) error {
 func (srv *server) updateDatabase(client *mpd.Client, label string) error {
 	subDir := filepath.Join(mountSubDir, label)
 
-	lastID, err := srv.getUpdateID(client)
+	lastID, err := client.Update(subDir)
+	log.Printf("Sending update")
 	if err != nil {
-		log.Printf("Getting initial status failed: %v", err)
+		log.Printf("Sending update failed: %v", err)
 		return err
 	}
 
+	// lastID, err := srv.getUpdateID(client)
+	// if err != nil {
+	// 	log.Printf("Getting initial status failed: %v", err)
+	// 	return err
+	// }
+
 	log.Printf("Updating MPD database with new songs (job: %d; dir: %v)", lastID, subDir)
 
-	go func() {
-		time.Sleep(500 * time.Millisecond)
-
-		_, err := client.Update(subDir)
-		log.Printf("Sending update")
-		if err != nil {
-			log.Printf("Sending update failed: %v", err)
-			return
-		}
-	}()
-
 	for {
-		if err := srv.waitFor(15*time.Minute, "update"); err != nil {
+		if err := srv.waitFor(10 * time.Second, "update"); err != nil {
 			return err
 		}
 
@@ -157,7 +153,12 @@ func (srv *server) updateDatabase(client *mpd.Client, label string) error {
 		if currID == 0 || currID > lastID {
 			break
 		}
+
+		log.Printf("Continueing...")
 	}
+
+	// "Security" wait:
+	time.Sleep(5 * time.Second)
 
 	return nil
 }

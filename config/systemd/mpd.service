@@ -3,8 +3,7 @@ Description=Music Player Daemon
 After=network.target sound.target
 
 [Service]
-# TODO: Change to /var/mpd/mpd.conf for final
-ExecStart=/usr/bin/mpd --no-daemon --verbose /var/mpd-demo/mpd.conf
+ExecStart=/usr/bin/mpd --no-daemon --verbose /var/mpd/mpd.conf
 
 # allow MPD to use real-time priority 50
 LimitRTPRIO=50
