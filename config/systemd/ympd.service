@@ -1,0 +1,12 @@
+[Unit]
+Description=ympd server daemon
+After=mpd.service
+Requires=mpd.service
+PartOf=mpd.service
+
+[Service]
+ExecStart=/usr/bin/ympd --user ympd --webport 8080 --host localhost --port 6600
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
