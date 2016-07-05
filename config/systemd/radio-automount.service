@@ -5,7 +5,7 @@ Requires=mpd.service
 PartOf=mpd.service
 
 [Service]
-ExecStart=/root/go/bin/eulenfunk automount --music-dir /root/music
+ExecStart=/root/go/bin/eulenfunk automount --music-dir /music
 Restart=on-failure
 
 [Install]
