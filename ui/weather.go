@@ -24,7 +24,7 @@ func celsius(c float64) string {
 
 func degToDirection(deg int) string {
 	switch {
-	case deg > 315 && deg <= 45:
+	case deg > 315 || deg <= 45:
 		return "↑"
 	case deg <= 135:
 		return "→"
@@ -44,6 +44,7 @@ func weatherForecast() (*owm.ForecastWeatherData, error) {
 		return nil, err
 	}
 
+	// That's Augsburg:
 	err = w.DailyByCoordinates(
 		&owm.Coordinates{
 			Latitude:  48.3830555,
@@ -153,7 +154,7 @@ func init() {
 // RunWeather displays a weather forecast in the "weather" window.
 func RunWeather(lw *display.LineWriter, width int, ctx context.Context) {
 	switchTicker := time.NewTicker(10 * time.Second)
-	updateTicker := time.NewTicker(10 * time.Minute)
+	updateTicker := time.NewTicker(30 * time.Minute)
 
 	screens := downloadData(width)
 	screenIdx := 0
@@ -164,7 +165,7 @@ func RunWeather(lw *display.LineWriter, width int, ctx context.Context) {
 
 	for {
 		select {
-		// Generate the data:
+		// Update the data:
 		case <-updateTicker.C:
 			screens = downloadData(width)
 		// Toggle through:
