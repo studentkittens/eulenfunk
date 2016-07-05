@@ -26,7 +26,7 @@ import (
 )
 
 // UseDefaultMoodbar enables a builtin default moodbar if none was found
-const UseDefaultMoodbar = true
+const UseDefaultMoodbar = false
 
 // Config holds all possible adjusting screws for ambilightd.
 type Config struct {
@@ -201,11 +201,6 @@ func readMoodbarFile(path string) ([]timedColor, error) {
 // Create a HCL Gradient between c1 and c2 using N steps.
 // Returns the gradient as slice of individual colors.
 func createBlend(c1, c2 timedColor, N int) []timedColor {
-	// Do nothing if it's the same color:
-	if c1.R == c2.R && c1.G == c2.G && c1.B == c2.B {
-		return []timedColor{c1}
-	}
-
 	cc1 := colorful.Color{
 		R: float64(c1.R) / 255.,
 		G: float64(c1.G) / 255.,
@@ -295,9 +290,9 @@ func moodbarRunner(server *server, colors <-chan timedColor) {
 				continue
 			}
 
-			blendInterval := 2
+			blendInterval := 3
 			if color.Duration > 20*time.Millisecond {
-				blendInterval = int(math.Sqrt(float64(color.Duration/time.Millisecond))) / 2
+				blendInterval = int(math.Sqrt(float64(color.Duration/time.Millisecond)) / 2)
 			}
 
 			blend = createBlend(lastColor, color, blendInterval)
@@ -314,7 +309,8 @@ func moodbarRunner(server *server, colors <-chan timedColor) {
 
 				time.Sleep(color.Duration)
 			} else {
-				time.Sleep(100 * time.Millisecond)
+				// Nothing to blend over; wait a bit:
+				time.Sleep(25 * time.Millisecond)
 			}
 		}
 	}
@@ -337,22 +333,16 @@ func sendColor(locker *lightd.Locker, col timedColor, colorsCh chan<- timedColor
 	}
 }
 
-func adjust(srv *server, locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- timedColor, colors *[]timedColor) int {
-	currIdx := 0
-
+func loadMoodbar(srv *server, locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- timedColor, colors *[]timedColor) {
 	// Adjust the moodbar seek offset (1000 samples per total time)
-	if ev.TotalMs > 0 {
-		currIdx = int((ev.ElapsedMs / ev.TotalMs) * 1000)
-	}
-
 	if !ev.SongChanged {
-		return currIdx
+		return
 	}
 
 	data, err := readMoodbarFile(ev.Path)
 	if err == nil {
 		*colors = data
-		return currIdx
+		return
 	}
 
 	log.Printf("Failed to read moodbar at `%s`: %v", ev.Path, err)
@@ -363,20 +353,13 @@ func adjust(srv *server, locker *lightd.Locker, ev *mpdEvent, colorsCh chan<- ti
 	} else {
 		sendColor(locker, timedColor{0, 0, 0, 0}, colorsCh)
 		*colors = []timedColor{}
-		return 0
 	}
-
-	return currIdx
 }
 
 func eatColor(locker *lightd.Locker, currEv *mpdEvent, currCol *timedColor, colorsCh chan<- timedColor, initialSend *bool) {
-
-	// Figure out how much time is needed for one color:
-	(*currCol).Duration = time.Millisecond * time.Duration(currEv.TotalMs/1000)
-
 	if currEv.IsStopped {
 		// Black out on stop, but wait a bit to save cpu time:
-		sendColor(locker, timedColor{0, 0, 0, 500 * time.Millisecond}, colorsCh)
+		sendColor(locker, timedColor{0, 0, 0, 250 * time.Millisecond}, colorsCh)
 	} else if currEv.IsPlaying || *initialSend {
 		// Send the color to the fader:
 		sendColor(locker, *currCol, colorsCh)
@@ -411,6 +394,13 @@ func moodbarAdjuster(srv *server, eventCh <-chan mpdEvent, colorsCh chan<- timed
 		close(colorsCh)
 	}()
 
+	// Buffer events a bit to prevent high cpu usage:
+	delay := 125
+	adjustTimer := time.NewTicker(time.Duration(delay) * time.Millisecond)
+	currElapsed := float64(0)
+
+	lastUpdate := time.Now()
+
 	for {
 		select {
 		case ev, ok := <-eventCh:
@@ -419,19 +409,31 @@ func moodbarAdjuster(srv *server, eventCh <-chan mpdEvent, colorsCh chan<- timed
 			}
 
 			// A new event happened, we need to adjust or even load a new moodbar file:
-			currIdx = adjust(srv, locker, &ev, colorsCh, &colors)
+			currElapsed = ev.ElapsedMs
+			loadMoodbar(srv, locker, &ev, colorsCh, &colors)
 			currEv = &ev
-		default:
+		case <-adjustTimer.C:
 			if currIdx >= len(colors) || currEv == nil {
 				continue
 			}
 
 			// Nothing happened, give the led some input:
+			newIdx := 0
+			if currEv.TotalMs > 0 {
+				newIdx = int((currElapsed / currEv.TotalMs) * 1000)
+			} else {
+				newIdx = 0
+			}
+
+			currIdx = newIdx
+			colors[currIdx].Duration = time.Since(lastUpdate) + (25 * time.Millisecond)
+
 			eatColor(locker, currEv, &colors[currIdx], colorsCh, &initialSend)
+			lastUpdate = time.Now()
 
 			// No need to go forth on "pause" or "stop":
 			if currEv.IsPlaying {
-				currIdx++
+				currElapsed += float64(delay)
 			}
 		}
 	}
@@ -474,7 +476,7 @@ func statusUpdater(server *server, updateCh <-chan bool, eventCh chan<- mpdEvent
 		}
 
 		// Find out how much progress we did in the current song.
-		// These atteributes might be empty for the stopped state.
+		// These attributes might be empty for the stopped state.
 		elapsedMs, err := strconv.ParseFloat(status["elapsed"], 64)
 		if err != nil && status["elapsed"] != "" {
 			log.Printf("Failed to parse elpased (%s): %v", status["elapsed"], err)
