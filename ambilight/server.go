@@ -226,7 +226,7 @@ func createBlend(c1, c2 timedColor, N int) []timedColor {
 		l = (l*l)/2 + (l / 2)
 
 		// Convert back to (gamma corrected) RGB for catlight:
-		r, g, b := colorful.Hcl(h, c, l).LinearRgb()
+		r, g, b := colorful.Hcl(h, c, l).FastLinearRgb()
 		//hcl := colorful.Hcl(h, c, l)
 		//r, g, b := hcl.R, hcl.G, hcl.B
 		colors = append(colors, timedColor{
@@ -418,17 +418,17 @@ func moodbarAdjuster(srv *server, eventCh <-chan mpdEvent, colorsCh chan<- timed
 			}
 
 			// Nothing happened, give the led some input:
-			newIdx := 0
 			if currEv.TotalMs > 0 {
-				newIdx = int((currElapsed / currEv.TotalMs) * 1000)
+				currIdx = int((currElapsed / currEv.TotalMs) * 1000)
 			} else {
-				newIdx = 0
+				currIdx = 0
 			}
 
-			currIdx = newIdx
-			colors[currIdx].Duration = time.Since(lastUpdate) + (25 * time.Millisecond)
+			if currIdx < len(colors) {
+				colors[currIdx].Duration = time.Since(lastUpdate) + (25 * time.Millisecond)
+				eatColor(locker, currEv, &colors[currIdx], colorsCh, &initialSend)
+			}
 
-			eatColor(locker, currEv, &colors[currIdx], colorsCh, &initialSend)
 			lastUpdate = time.Now()
 
 			// No need to go forth on "pause" or "stop":

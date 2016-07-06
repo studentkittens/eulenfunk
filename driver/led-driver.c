@@ -23,10 +23,15 @@ static void usage(char *name) {
     exit(1);
 }
 
+static int linearize(int v) {
+    // Half linear and half quadratic mix:
+    return ((v / 256.) * (v / 256.)) * 128 + (v / 128.);
+}
+
 static void set_rgb(int r, int g, int b) { 
-    softPwmWrite(PIN_RED, r);
-    softPwmWrite(PIN_GREEN, g);
-    softPwmWrite(PIN_BLUE, b);
+    softPwmWrite(PIN_RED, linearize(r));
+    softPwmWrite(PIN_GREEN, linearize(g));
+    softPwmWrite(PIN_BLUE, linearize(b));
 }
 
 static int string_to_col(const char * arg) {
