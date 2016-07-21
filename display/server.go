@@ -98,8 +98,8 @@ func newServer(cfg *Config, ctx context.Context) (*server, error) {
 	}
 
 	go func() {
-		// Update the screen with about 7Hz
-		ticker := time.NewTicker(150 * time.Millisecond)
+		// Update the screen with 2Hz
+		ticker := time.NewTicker(500 * time.Millisecond)
 
 		for {
 			select {
